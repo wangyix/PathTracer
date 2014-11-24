@@ -31,6 +31,9 @@ public:
     bool isInsideClosed(const STPoint3& pt);
 
     AABB* getAABB();
+
+    float getSurfaceArea() const;
+
 private:
     STPoint3 center;
     float radius;

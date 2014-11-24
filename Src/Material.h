@@ -21,7 +21,9 @@ public:
     float shininess, snell;
     VolumetricTexture* volumetric_texture;
 
-    Material(const STColor3f& amb = STColor3f(0,0,0), const STColor3f& diff = STColor3f(0,0,0), const STColor3f& spec = STColor3f(0,0,0), const STColor3f& mirr = STColor3f(0,0,0), float shine = 0.f, const STColor3f& refr = STColor3f(0,0,0), float sn = 0., VolumetricTexture* vt = 0)
+    Material(const STColor3f& amb = STColor3f(0,0,0), const STColor3f& diff = STColor3f(0,0,0), const STColor3f& spec = STColor3f(0,0,0),
+        const STColor3f& mirr = STColor3f(0,0,0), float shine = 0.f, const STColor3f& refr = STColor3f(0,0,0),
+        float sn = 0., VolumetricTexture* vt = 0)
     : ambient(amb), diffuse(diff), specular(spec), mirror(mirr), shininess(shine), refract(refr), snell(sn), volumetric_texture(vt) {}
     //~Material() {if(volumetric_texture!=0)delete volumetric_texture;}
     STColor3f shade(Intersection* inter, STVector3 view, std::vector<Light *>& lights, const STColor3f& mirrorCol = STColor3f(), const STColor3f& refractCol = STColor3f());

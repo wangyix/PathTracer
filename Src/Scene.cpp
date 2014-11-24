@@ -94,6 +94,11 @@ void Scene::Render() {
 
                     int i = 1;      // length of path so far
                     while (true) {
+                        // if zi is on a light source, terminate eye subpath,
+                        // light subpath will have 0 vertices
+                        if (zi_object->i)
+
+
                         if (i >= MIN_SUBPATH_LENGTH) {
                             // probabilistically determine if path should terminate
                             

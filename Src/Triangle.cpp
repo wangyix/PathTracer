@@ -4,6 +4,7 @@
 //#####################################################################
 
 #include "Triangle.h"
+#include "STVector3.h"
 
 float determinant(const STVector3& a, const STVector3& b, const STVector3& c) {
     return a.x*(b.y*c.z-b.z*c.y)-b.x*(a.y*c.z-a.z*c.y)+c.x*(a.y*b.z-a.z*b.y);
@@ -56,4 +57,9 @@ AABB* Triangle::getAABB()
     if(v3.z > zmax)zmax = v3.z;
     
     return new AABB(xmin, xmax, ymin, ymax, zmin, zmax);
+}
+
+
+float Triangle::getSurfaceArea() const {
+    return 0.5f * STVector3::Cross(v2 - v1, v3 - v1).Length();
 }

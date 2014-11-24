@@ -10,16 +10,61 @@
 #include "Ray.h"
 #include "Material.h"
 #include "STTransform4.h"
+#include "Bsdf.h"
 
 class SceneObject {
 public:
-    SceneObject(Shape* _shape=NULL, const Material* _material=NULL, const STTransform4* _transform=NULL, const int _texture_index=-1)
-    : shape(_shape), aabb(NULL), material(_material==NULL?Material():(*_material)), transform(_transform==NULL?STTransform4::Identity():(*_transform)), texture_index(_texture_index), name("scene_object")
+    SceneObject(Shape* _shape=NULL, const Material* _material=NULL, const STTransform4* _transform=NULL, const int _texture_index=-1) :
+        shape(_shape),
+        aabb(NULL),
+        material(_material==NULL?Material():(*_material)),
+        transform(_transform==NULL?STTransform4::Identity():(*_transform)),
+        texture_index(_texture_index),
+        name("scene_object"),
+        bsdf(&lambertianBsdf),
+        emittedPower(0.f)
     {
         tInverse = transform.Inverse();
         tInverseTranspose = tInverse.Transpose();
-        if(shape)aabb=shape->getAABB();if(aabb)aabb->rescale(transform);
-        if(shape)name=shape->name;
+        if (shape) aabb=shape->getAABB();
+        if (aabb) aabb->rescale(transform);
+        if (shape) name=shape->name;
+    }
+
+    // non light-source object (bsdf is used)
+    SceneObject(Shape* shape, const STTransform4& transform, Bsdf* bsdf) :
+        shape(shape),
+        aabb(NULL),
+        material(),
+        transform(transform),
+        texture_index(-1),
+        name("scene_object"),
+        bsdf(bsdf),
+        emittedPower(0.0f)
+    {
+        tInverse = transform.Inverse();
+        tInverseTranspose = tInverse.Transpose();
+        if (shape) aabb = shape->getAABB();
+        if (aabb) aabb->rescale(transform);
+        if (shape) name = shape->name;
+    }
+
+    // light-source object (power is emitted diffusely and evenly across surface)
+    SceneObject(Shape* shape, const STTransform4& transform, STColor3f emittedPower) :
+        shape(shape),
+        aabb(NULL),
+        material(),
+        transform(transform),
+        texture_index(-1),
+        name("scene_object"),
+        bsdf(&lambertianBsdf),
+        emittedPower(emittedPower)
+    {
+        tInverse = transform.Inverse();
+        tInverseTranspose = tInverse.Transpose();
+        if (shape) aabb = shape->getAABB();
+        if (aabb) aabb->rescale(transform);
+        if (shape) name = shape->name;
     }
 
     ~SceneObject()
@@ -48,12 +93,61 @@ public:
         return inter;
     }
 
+
+    // Assuming power is emitted in perfecly diffuse manner evenly across
+    // surface area, so Le doesn't depend on x or w.
+    virtual STColor3f Le() const {
+        return emittedPower / (shape->getSurfaceArea() * M_PI);
+    }
+    // positional component of Le
+    virtual STColor3f Le0() const {
+        return emittedPower / shape->getSurfaceArea();
+    }
+
+
+    // COMBINE sample_y0 and sample_y0y1 ????? 
+    //  should sampled y0 and w be returned in world space???????? prolly
+
+
+    // chooses a point y0 on surface, returns Le0(y0), also calculates Pa(y0) and the normal at y0.
+    // y0, 
+    virtual STColor3f sample_y0(STPoint3* y0, STVector3* y0_n, float* pdf_a) {
+        //*y0 = shape->uniformSamplePoint();
+        *pdf_a = 1.f / shape->getSurfaceArea();
+        return Le0();
+    }
+
+    // chooses a ray direction w from y0, returns Le1(y0, w).
+    // also calculates Psig(w)
+    virtual STColor3f sample_y0y1(const STPoint3& y0, const STVector3 y0_n,
+        STVector3* wo, float* pdf_sig) {
+        
+        // cosine-sample the hemisphere
+        float r = (float)rand() / RAND_MAX;                     // [0, 1]
+        float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
+        float sqrt_r = sqrtf(r);
+        STVector3 woN;
+        woN.x = sqrt_r * cosf(theta);
+        woN.y = sqrt_r * sinf(theta);
+        woN.z = sqrtf((std::max)(0.f, 1.f - woN.x*woN.x - woN.y*woN.y));
+        
+        // transform from normal-space to object-space
+        
+
+        *pdf_sig = 1.0f / M_PI;
+        return STColor3f(1.0f / M_PI);  // Le1(y0, w)
+
+    }
+
     Shape* shape;
     AABB* aabb;
     Material material;
 	int texture_index;
     STTransform4 transform, tInverse, tInverseTranspose;
     std::string name;
+
+    Bsdf* bsdf;             // replaces material
+    STColor3f emittedPower; // if != 0, then this is light source, and bsdf is ignored
 
 private:
     SceneObject(const SceneObject& copy)    ////shallow copy

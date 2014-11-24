@@ -92,6 +92,13 @@ public:
         return aabb;
     }
 
+
+    float getSurfaceArea() const {
+        float sum = 0.0f;
+        for (const Triangle* t : sides) sum += t->getSurfaceArea();
+        return sum;
+    }
+
 private:
     STPoint3 o;
     STVector3 i, j, k;

@@ -225,3 +225,9 @@ AABB* Cylinder::getAABB()
 
 	return new AABB(xMin-radius, xMax+radius, yMin-radius, yMax+radius, zMin-radius, zMax+radius);
 }
+
+
+float Cylinder::getSurfaceArea() const {
+    return (2.0f * M_PI * radius * radius) + (2.0f * M_PI * radius * (A - B).Length());
+}
+

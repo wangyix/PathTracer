@@ -5,6 +5,9 @@
 
 #include "Sphere.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 Intersection* Sphere::getIntersect(const Ray &ray) {
 	float a = ray.d.LengthSq();
 	float b = 2 * STVector3::Dot(ray.d, ray.e - center);
@@ -90,4 +93,9 @@ bool Sphere::isInsideOpen(const STPoint3 &pt) {
 AABB* Sphere::getAABB()
 {
     return new AABB(center.x - radius, center.x + radius, center.y - radius, center.y + radius, center.z - radius, center.z + radius);
+}
+
+
+float Sphere::getSurfaceArea() const {
+    return 4.0f * M_PI * radius * radius;
 }

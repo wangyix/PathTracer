@@ -52,6 +52,9 @@ public:
     bool isInsideOpen(const STPoint3& pt) { return false; }
     bool isInsideClosed(const STPoint3& pt) { return false; }
     AABB* getAABB();
+
+    float getSurfaceArea() const;
+
 private:
     STPoint3 v1, v2, v3;
     STVector3 n1, n2, n3;
