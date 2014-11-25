@@ -236,7 +236,7 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
     // I, J are unit length, perpendicular to K, which is equal to B-A;
     STVector3 I, J;
     STVector3 K = B - A;
-    if (K.z == 0.f) {
+    if (K.x == 0.f && K.y == 0.f) {
         I = STVector3(1.f, 0.f, 0.f);
         J = STVector3(0.f, 1.f, 0.f);
     } else {
@@ -279,6 +279,7 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
         float h = (float)rand() / RAND_MAX;
 
         *normal = cosf(theta)*I + sinf(theta)*J;
+        normal->Normalize();
         return A + h*K + *normal*radius;
     }
 }

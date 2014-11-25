@@ -77,5 +77,6 @@ STPoint3 Triangle::uniformSampleSurface(STVector3* normal) const {
     float c3 = sqrt_r1 * r2;
 
     *normal = c1*n1 + c2*n2 + c3*n3;
+    normal->Normalize();
     return c1*v1 + c2*v2 + c3*v3;
 }

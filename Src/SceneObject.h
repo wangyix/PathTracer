@@ -105,63 +105,47 @@ public:
     }
 
 
-    // COMBINE sample_y0 and sample_y0y1 ????? 
-    //  should sampled y0 and w be returned in world space???????? prolly
-
-
     // chooses point y0 on surface and outgoing direction w.
     // also calculates Pa(y0), Le0(y0), Psig(y0, w), Le1(y0, w)
     virtual void sample_y0y1(STPoint3* y0, float* pdf_a_y0, STColor3f* Le0_y0,
         STVector3* w, float* pdf_sig_w, STColor3f* Le1_y0_w) {
 
-        // choose y0
-        //*y0 = shape->uniformSamplePoint();
+        // uniform-randomly choose a point y0 on surface, record its normal
+        STVector3 y0_n;
+        *y0 = shape->uniformSampleSurface(&y0_n);
+
         *pdf_a_y0 = 1.f / shape->getSurfaceArea();
         *Le0_y0 = Le0();
+
+        // construct unit axes around y0_n: I, J, K where K=y0_n
+        STVector3 I, J;
+        STVector3 K = y0_n;
+        if (K.x == 0.f && K.y == 0.f) {
+            I = STVector3(1.f, 0.f, 0.f);
+            J = STVector3(0.f, 1.f, 0.f);
+        } else {
+            I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
+            I.Normalize();
+            J = STVector3::Cross(K, I);
+            J.Normalize();
+        }
 
         // choose w (cosine-sample the hemisphere)
         float r = (float)rand() / RAND_MAX;                     // [0, 1]
         float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
         float sqrt_r = sqrtf(r);
-        w->x = sqrt_r * cosf(theta);
-        w->y = sqrt_r * sinf(theta);
-        w->z = sqrtf((std::max)(0.f, 1.f - w->x*w->x - w->y*w->y));
+        float x = sqrt_r * cosf(theta);
+        float y = sqrt_r * sinf(theta);
+        float z = sqrtf((std::max)(0.f, 1.f - x*x - y*y));
+        *w = x*I + y*J + z*K;
         *pdf_sig_w = 1.0f / M_PI;
         *Le1_y0_w = STColor3f(1.0f / M_PI);
         
-        // transform y0, w from normal-space to object-space to world-space
+        // transform y0, w from object-space to world-space
+        *y0 = transform * *y0;
+        *w = tInverseTranspose * *w;
     }
 
-
-
-    /*// chooses a point y0 on surface, returns Le0(y0), also calculates Pa(y0) and the normal at y0.
-    // y0, 
-    virtual STColor3f sample_y0(STPoint3* y0, STVector3* y0_n, float* pdf_a) {
-        //*y0 = shape->uniformSamplePoint();
-        *pdf_a = 1.f / shape->getSurfaceArea();
-        return Le0();
-    }
-
-    // chooses a ray direction w from y0, returns Le1(y0, w).
-    // also calculates Psig(w)
-    virtual STColor3f sample_y0y1(const STPoint3& y0, const STVector3 y0_n,
-        STVector3* wo, float* pdf_sig) {
-        
-        // cosine-sample the hemisphere
-        float r = (float)rand() / RAND_MAX;                     // [0, 1]
-        float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
-        float sqrt_r = sqrtf(r);
-        STVector3 woN;
-        woN.x = sqrt_r * cosf(theta);
-        woN.y = sqrt_r * sinf(theta);
-        woN.z = sqrtf((std::max)(0.f, 1.f - woN.x*woN.x - woN.y*woN.y));
-        
-        // transform from normal-space to object-space
-        
-
-        *pdf_sig = 1.0f / M_PI;
-        return STColor3f(1.0f / M_PI);  // Le1(y0, w)
-    }*/
 
     Shape* shape;
     AABB* aabb;

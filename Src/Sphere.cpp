@@ -110,5 +110,6 @@ STPoint3 Sphere::uniformSampleSurface(STVector3* normal) const {
     normal->x = sinf(phi) * cosf(theta);
     normal->y = sinf(phi) * sinf(theta);
     normal->z = cosf(phi);
+    normal->Normalize();
     return center + radius * *normal;
 }
