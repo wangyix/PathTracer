@@ -109,7 +109,32 @@ public:
     //  should sampled y0 and w be returned in world space???????? prolly
 
 
-    // chooses a point y0 on surface, returns Le0(y0), also calculates Pa(y0) and the normal at y0.
+    // chooses point y0 on surface and outgoing direction w.
+    // also calculates Pa(y0), Le0(y0), Psig(y0, w), Le1(y0, w)
+    virtual void sample_y0y1(STPoint3* y0, float* pdf_a_y0, STColor3f* Le0_y0,
+        STVector3* w, float* pdf_sig_w, STColor3f* Le1_y0_w) {
+
+        // choose y0
+        //*y0 = shape->uniformSamplePoint();
+        *pdf_a_y0 = 1.f / shape->getSurfaceArea();
+        *Le0_y0 = Le0();
+
+        // choose w (cosine-sample the hemisphere)
+        float r = (float)rand() / RAND_MAX;                     // [0, 1]
+        float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
+        float sqrt_r = sqrtf(r);
+        w->x = sqrt_r * cosf(theta);
+        w->y = sqrt_r * sinf(theta);
+        w->z = sqrtf((std::max)(0.f, 1.f - w->x*w->x - w->y*w->y));
+        *pdf_sig_w = 1.0f / M_PI;
+        *Le1_y0_w = STColor3f(1.0f / M_PI);
+        
+        // transform y0, w from normal-space to object-space to world-space
+    }
+
+
+
+    /*// chooses a point y0 on surface, returns Le0(y0), also calculates Pa(y0) and the normal at y0.
     // y0, 
     virtual STColor3f sample_y0(STPoint3* y0, STVector3* y0_n, float* pdf_a) {
         //*y0 = shape->uniformSamplePoint();
@@ -136,8 +161,7 @@ public:
 
         *pdf_sig = 1.0f / M_PI;
         return STColor3f(1.0f / M_PI);  // Le1(y0, w)
-
-    }
+    }*/
 
     Shape* shape;
     AABB* aabb;

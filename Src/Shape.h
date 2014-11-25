@@ -20,6 +20,7 @@ public:
     virtual AABB* getAABB() = 0;
     
     virtual float getSurfaceArea() const { return -1.f; }
+    virtual STPoint3 uniformSampleSurface(STVector3* normal) const { return STPoint3(); }
 
     std::string name;
     int maxInt;

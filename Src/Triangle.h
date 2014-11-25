@@ -54,6 +54,7 @@ public:
     AABB* getAABB();
 
     float getSurfaceArea() const;
+    STPoint3 uniformSampleSurface(STVector3* normal) const;
 
 private:
     STPoint3 v1, v2, v3;

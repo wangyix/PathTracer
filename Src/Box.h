@@ -99,6 +99,28 @@ public:
         return sum;
     }
 
+    STPoint3 uniformSampleSurface(STVector3* normal) const {
+        // triangles with same areas are: (0,1,2,3), (4,5,6,7), (8,9,10,11)
+       
+        // chose a group out of those 3 based on ratio of the areas of its triangles.
+        float A_cutoff = sides[0]->getSurfaceArea();
+        float B_cutoff = A_cutoff + sides[4]->getSurfaceArea();
+        float total = B_cutoff + sides[8]->getSurfaceArea();
+        
+        // generate random in [0,total] and see if it's in [0,Acutoff], [Acutoff,Bcutoff],
+        // or [Bcutoff,total] to choose a triangle group.
+        // generate an int in [0,3] to pick a triangle within that group to sample from.
+        float r = (float)rand() / RAND_MAX * total;
+        int k = rand() % 4;
+        if (r < A_cutoff) {
+            return sides[k]->uniformSampleSurface(normal);
+        } else if (r < B_cutoff) {
+            return sides[4 + k]->uniformSampleSurface(normal);
+        } else {
+            return sides[8 + k]->uniformSampleSurface(normal);
+        }
+    }
+
 private:
     STPoint3 o;
     STVector3 i, j, k;

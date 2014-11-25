@@ -231,3 +231,54 @@ float Cylinder::getSurfaceArea() const {
     return (2.0f * M_PI * radius * radius) + (2.0f * M_PI * radius * (A - B).Length());
 }
 
+STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
+    // construct axes for cylinder (cylinder along z axis, from 0 to |A-B|
+    // I, J are unit length, perpendicular to K, which is equal to B-A;
+    STVector3 I, J;
+    STVector3 K = B - A;
+    if (K.z == 0.f) {
+        I = STVector3(1.f, 0.f, 0.f);
+        J = STVector3(0.f, 1.f, 0.f);
+    } else {
+        I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
+        I.Normalize();
+        J = STVector3::Cross(K, I);
+        J.Normalize();
+    }
+
+    // generate random in [0,total] and see if it's in [0,topCapCutoff],
+    // [topCapCutoff,bottomCapCutoff], or [bottomCapCutoff,total] to choose either
+    // the top cap, bottom cap, or side.
+    float topCapCutoff = M_PI * radius * radius;
+    float bottomCapCutoff = topCapCutoff + topCapCutoff;
+    float total = bottomCapCutoff + (2.0f * M_PI * radius * (A - B).Length());
+
+    float r = (float)rand() / RAND_MAX * total;
+    if (total < bottomCapCutoff) {
+        // uniform-sample a unit disk
+        float r = (float)rand() / RAND_MAX;                     // [0, 1]
+        float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
+        float sqrt_r = sqrtf(r);
+        float x = sqrt_r * cosf(theta);
+        float y = sqrt_r * sinf(theta);
+
+        if (total < topCapCutoff) {
+            // get point on top cap
+            *normal = K;
+            normal->Normalize();
+            return B + radius * (x*I + y*J);
+        } else {
+            // get point on bottom cap
+            *normal = -K;
+            normal->Normalize();
+            return A + radius * (x*I + y*J);
+        }
+    } else {
+        // sample the cylinder side (theta in [0,2pi], h in [0,1])
+        float theta = (float)rand() / RAND_MAX * 2.f * M_PI;
+        float h = (float)rand() / RAND_MAX;
+
+        *normal = cosf(theta)*I + sinf(theta)*J;
+        return A + h*K + *normal*radius;
+    }
+}

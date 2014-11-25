@@ -63,3 +63,19 @@ AABB* Triangle::getAABB()
 float Triangle::getSurfaceArea() const {
     return 0.5f * STVector3::Cross(v2 - v1, v3 - v1).Length();
 }
+
+STPoint3 Triangle::uniformSampleSurface(STVector3* normal) const {
+    // sample triangle: P=(1-sqrt(r1))A + sqrt(r1)(1-r2)B + sqrt(r1)r2C
+    // where r1, r2 are uniform randoms in [0, 1]
+    float r1 = (float)rand() / RAND_MAX;
+    float r2 = (float)rand() / RAND_MAX;
+    float sqrt_r1 = sqrtf(r1);
+
+    // barycentric coordinates for chosen point
+    float c1 = 1 - sqrt_r1;
+    float c2 = sqrt_r1 * (1 - r2);
+    float c3 = sqrt_r1 * r2;
+
+    *normal = c1*n1 + c2*n2 + c3*n3;
+    return c1*v1 + c2*v2 + c3*v3;
+}
