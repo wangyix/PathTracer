@@ -23,6 +23,8 @@ STColor3f fresnelDielEvaluate(float cosi, float etai, float etat);
 static const Lambertian lambertianBsdf(STColor3f(0.5f));
 
 
+// convention: wi,wo both point outwards
+
 class Bsdf {
 public:
     virtual STColor3f f(const STVector3& wo, const STVector3& wi) const = 0;

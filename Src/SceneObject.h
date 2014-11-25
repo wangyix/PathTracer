@@ -21,6 +21,7 @@ public:
         transform(_transform==NULL?STTransform4::Identity():(*_transform)),
         texture_index(_texture_index),
         name("scene_object"),
+        isLight(false),
         bsdf(&lambertianBsdf),
         emittedPower(0.f)
     {
@@ -39,8 +40,9 @@ public:
         transform(transform),
         texture_index(-1),
         name("scene_object"),
+        isLight(false),
         bsdf(bsdf),
-        emittedPower(0.0f)
+        emittedPower(0.f)
     {
         tInverse = transform.Inverse();
         tInverseTranspose = tInverse.Transpose();
@@ -57,6 +59,7 @@ public:
         transform(transform),
         texture_index(-1),
         name("scene_object"),
+        isLight(true),
         bsdf(&lambertianBsdf),
         emittedPower(emittedPower)
     {
@@ -154,8 +157,9 @@ public:
     STTransform4 transform, tInverse, tInverseTranspose;
     std::string name;
 
+    bool isLight;           // if true, bsdf is ignored.  If false, emittedPower is ignored
     Bsdf* bsdf;             // replaces material
-    STColor3f emittedPower; // if != 0, then this is light source, and bsdf is ignored
+    STColor3f emittedPower;
 
 private:
     SceneObject(const SceneObject& copy)    ////shallow copy

@@ -93,14 +93,17 @@ void Scene::Render() {
                     aE.push_back(1.0f / camera->Psig(u, v));        // aE2 = 1 / Psig(z0->z1)
 
                     int i = 1;      // length of path so far
+                    bool ranIntoLight = false;
                     while (true) {
-                        // if zi is on a light source, terminate eye subpath,
+                        // if zi is on a light source, terminate eye subpath at zi;
                         // light subpath will have 0 vertices
-                        if (zi_object->i)
+                        if (zi_object->isLight) {
+                            rainIntoLight = true;
+                        }
 
 
                         if (i >= MIN_SUBPATH_LENGTH) {
-                            // probabilistically determine if path should terminate
+                            // probabilistically determine if eye subpath should terminate at zi
                             
                         }
 
