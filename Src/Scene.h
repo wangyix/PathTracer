@@ -105,6 +105,10 @@ protected:
     void fillLightsWithAttenuation(std::vector<Light *>& lights, std::vector<STColor3f>& attenuations, Intersection* inter);
     STColor3f traceShadowRay(const Ray& ray, const Light& light);
     void getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb);
+
+    int generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
+        std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q,
+        bool* ranIntoLight);
 };
 
 #endif //SCENE_H

@@ -41,7 +41,96 @@ std::string Scene::info() {
     return out.str();
 }
 
+
+
 #define MIN_SUBPATH_LENGTH 3
+
+// intersections[i] = z_i
+// p_sig[0] = Pa(z0),   p_sig[i] = Psig(z_(i-1) -> z_i)
+// aE[i] = aE_i
+// q[i] = q corresponding to Psig(z_(i-1) -> z_i), or continuation probably at vertex z_(i-1)
+// returns nE: num vertices
+
+int Scene::generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
+    std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q, 
+    bool* ranIntoLight) {
+
+    /*intersections.clear();
+    p_sig.clear();
+    aE.clear();
+    q.clear();*/
+
+    Ray zi_zi1;
+    SceneObject* zi_object;
+    std::unique_ptr<Intersection> zi;
+    STColor3f f_z1i_zi_zi1;
+    float p_sig_zi_zi1;
+    float q_zi_zi1;
+    
+    aE.push_back(STColor3f(1.f));         // aE_0 = 1
+
+    // vertex z0 = xe
+    intersections.push_back(InterSectionBsdf(Intersection(0.f, camera->getEye(), camera->getLook()), NULL));
+    p_sig.push_back(1.0f);          // Pa(z0) = delta(z0 - xe)
+    q.push_back(1.0f);
+    aE.push_back(STColor3f(1.f));   // aE_1 = 1;  this should work instead of C?
+
+    // ray z0_z1 goes through (u,v) on img plane
+    camera->generateRay(zi_zi1, u, v);  zi_zi1.d.Normalize();   // generateRay does not normalize Ray::d for some reason
+    f_z1i_zi_zi1 = STColor3f(1.f);      // We1(z0->z1) = 1; this should work instead of 1/C?
+    p_sig_zi_zi1 = camera->Psig(u, v);  // Psig(z0->z1) depends on camera properties
+    q_zi_zi1 = 1.f;
+
+
+    int i = 1;      // current vertex
+    *ranIntoLight = false;
+    while (true) {
+        // intersect zi_zi1 with scene to find next vertex zi1
+        zi.reset(Intersect(zi_zi1, zi_object));
+        if (!zi) {
+            // zi_zi1 didn't hit anything; terminate path at current zi
+            return i + 1;
+        }
+
+        // record new intersection, Psig, and aE
+        intersections.push_back(InterSectionBsdf(*zi, zi_object->bsdf));
+        p_sig.push_back(p_sig_zi_zi1);
+        q.push_back(q_zi_zi1);
+        aE.push_back(aE.back() * f_z1i_zi_zi1 / (q_zi_zi1 * p_sig_zi_zi1));
+
+        i++;
+
+        // if zi is on a light source, terminate eye subpath at zi;
+        // light subpath will have 0 vertices
+        if (zi_object->isLight) {
+            *ranIntoLight = true;
+            return i + 1;     // return nE
+        }
+
+        // choose next direction for ray zi_zi1 by sampling BSDF at zi.
+        // wo_w = -zi_zi1.d,  reverse direction of the most recent zi_zi1 ray.
+        // wi_w will become the direction of the next zi_zi1 ray
+        STVector3 wi_w;
+        f_z1i_zi_zi1 = intersections.back().sample_f(-zi_zi1.d, &wi_w, &p_sig_zi_zi1);
+        
+        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
+        // with some probability.
+        if (i >= MIN_SUBPATH_LENGTH) {
+            // probabilistically determine if eye subpath should terminate at zi
+            // use the max component of f_z1i_zi_zi1 in f/p_sig evaluation
+            float f_z1i_zi_zi1_max = (std::max)((std::max)(f_z1i_zi_zi1.r, f_z1i_zi_zi1.g), f_z1i_zi_zi1.b);
+            q_zi_zi1 = (std::min)(f_z1i_zi_zi1_max / p_sig_zi_zi1, 1.f);
+            if ((float)rand() / RAND_MAX >= q_zi_zi1) {
+                return i + 1;
+            }
+        }
+
+        // update zi_zi1 to start from current zi and shoot in direction wi_w
+        zi_zi1.at = zi->point;
+        zi_zi1.d = wi_w;
+    }
+}
+
 
 void Scene::Render() {
     std::cout << "------------------ray tracing started------------------" << std::endl;
@@ -68,56 +157,18 @@ void Scene::Render() {
                     float v = ys / height;
                     
 
-                    // eye subpath
+                    // generate eye subpath thru (u,v)
+                    int nE;
+                    std::vector<InterSectionBsdf> intersections_E;
+                    std::vector<float> p_sig_E;
+                    std::vector<STColor3f> aE;
+                    std::vector<float> q_E;
+                    bool ranIntoLight;
+
+                    nE = generateEyeSubpath(u, v, intersections_E, p_sig_E, aE, q_E, &ranIntoLight);
+
+
                     
-                    std::vector<float> aE;
-
-                    Ray zi_zi1;
-                    SceneObject* zi_object;
-                    std::unique_ptr<Intersection> zi;
-
-                    aE.push_back(1.0f);         // aE_0 = 1.0f;
-
-                    // vertex z0 = xe
-                    aE.push_back(1.0f);         // aE_1 = 1.0f;  this should work instead of C?
-
-                    // ray z0_z1 goes through (u,v) on img plane
-                    camera->generateRay(zi_zi1, u, v);
-                    
-                    // calculate vertex z1
-                    zi.reset(Intersect(zi_zi1, zi_object));
-                    if (!zi) {
-                        // terminate path at z0
-                    }
-                    // Psig(z0->z1) is caculated by camera->Psig()
-                    aE.push_back(1.0f / camera->Psig(u, v));        // aE2 = 1 / Psig(z0->z1)
-
-                    int i = 1;      // length of path so far
-                    bool ranIntoLight = false;
-                    while (true) {
-                        // if zi is on a light source, terminate eye subpath at zi;
-                        // light subpath will have 0 vertices
-                        if (zi_object->isLight) {
-                            rainIntoLight = true;
-                        }
-
-
-                        if (i >= MIN_SUBPATH_LENGTH) {
-                            // probabilistically determine if eye subpath should terminate at zi
-                            
-                        }
-
-                        // choose direction for ray zi_zi1 using BSDF at zi
-
-
-                        // find vertex z(i+1) by intersecting zi_zi1 with scene
-
-                        // calculate aE(i+2)
-
-                        i++;
-                    }
-
-
                 }
             }
 

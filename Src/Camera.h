@@ -19,6 +19,13 @@ public:
     float getFocalRatio(const STPoint3& f);
     STPoint3 pointOnPlane(float u, float v) const;
 
+    const STPoint3& getEye() const { return eye; }
+    STVector3 getLook() const {
+        STVector3 look = lookAt - eye;
+        look.Normalize();
+        return look;
+    }
+
     float Psig(float u, float v) const;
 private:
     STPoint3 eye;
