@@ -86,6 +86,9 @@ protected:
     std::vector<Light *> lights;
     std::vector<AreaLight *> areaLights;
 
+    // replaces lights and areaLights; is built from lights in render()
+    std::vector <SceneObject*> lightObjects;
+
     ////texture
     STColor3f textureColor(const int texture_index, const STPoint2& uv);
 
@@ -109,6 +112,9 @@ protected:
     int generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
         std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q,
         bool* ranIntoLight);
+
+    int generateLightSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
+        std::vector<float>& p_sig, std::vector<STColor3f>& aL, std::vector<float>& q);
 };
 
 #endif //SCENE_H
