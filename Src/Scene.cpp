@@ -52,8 +52,7 @@ std::string Scene::info() {
 // returns nE: num vertices
 
 int Scene::generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
-    std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q, 
-    bool* ranIntoLight) {
+    std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q) {
 
     /*intersections.clear();
     p_sig.clear();
@@ -83,7 +82,6 @@ int Scene::generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& i
 
 
     int i = 1;      // current vertex
-    *ranIntoLight = false;
     while (true) {
         // intersect zi_zi1 with scene to find next vertex zi1
         zi.reset(Intersect(zi_zi1, zi_object));
@@ -99,13 +97,6 @@ int Scene::generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& i
         aE.push_back(aE.back() * f_z1i_zi_zi1 / (q_zi_zi1 * p_sig_zi_zi1));
 
         i++;
-
-        // if zi is on a light source, terminate eye subpath at zi;
-        // light subpath will have 0 vertices
-        if (zi_object->isLight) {
-            *ranIntoLight = true;
-            return i + 1;     // return nE
-        }
 
         // choose next direction for ray zi_zi1 by sampling BSDF at zi.
         // wo_w = -zi_zi1.d,  reverse direction of the most recent zi_zi1 ray.
@@ -209,13 +200,6 @@ int Scene::generateLightSubpath(std::vector<InterSectionBsdf>& intersections,
             return i + 1;
         }
 
-        if (yi_object->isLight) {
-            // yi_yi1 hit a light; terminate path at current yi; this prevents
-            //  light subpaths that contain more than 1 vertex on a light, which
-            // is something the eye subpath cannot accomplish.
-            return i + 1;
-        }
-
         // record new intersection, Psig, and aE
         intersections.push_back(InterSectionBsdf(*yi, yi_object->bsdf));
         p_sig.push_back(p_sig_yi_yi1);
@@ -231,7 +215,8 @@ int Scene::generateLightSubpath(std::vector<InterSectionBsdf>& intersections,
 
 
 void Scene::Render() {
-    // build list of light objects
+    // build list of light objects and their powers (max component) to be used
+    // when picking the light object to sample y0 from.
     lightObjects.clear();
     lightPowers.clear();
     powerTotal = 0.f;
@@ -246,6 +231,7 @@ void Scene::Render() {
 
     std::cout << "------------------ray tracing started------------------" << std::endl;
     STImage *im = new STImage(width, height);
+    STImage *im_L = new STImage(width, height);     // light image (for s=1 paths)
     ImagePlane imPlane = ImagePlane(width, height);
 
     int percent = 0, computed = 0;
@@ -274,16 +260,23 @@ void Scene::Render() {
                     std::vector<float> p_sig_E;
                     std::vector<STColor3f> aE;
                     std::vector<float> q_E;
-                    bool ranIntoLight;
+                    nE = generateEyeSubpath(u, v, intersections_E, p_sig_E, aE, q_E);
 
-                    nE = generateEyeSubpath(u, v, intersections_E, p_sig_E, aE, q_E, &ranIntoLight);
+                    // generate light subpath
+                    int nL;
+                    std::vector<InterSectionBsdf> intersections_L;
+                    std::vector<float> p_sig_L;
+                    std::vector<STColor3f> aL;
+                    std::vector<float> q_L;
+                    nL = generateLightSubpath(intersections_L, p_sig_L, aL, q_L);
+                    
 
-
+                    // calculate s=1 contributions: (light image paths)
                     
                 }
             }
 
-
+            /*
             int subimage_w0 = 242; int subimage_w1 = 242;
             int subimage_h0 = 310; int subimage_h1 = 310;
             bool use_subimage = false;
@@ -314,7 +307,7 @@ void Scene::Render() {
                         std::cout << percent << "% ";
                     }
                 }
-            }
+            }*/
 
             im->Save(imageFilename);
             delete im;

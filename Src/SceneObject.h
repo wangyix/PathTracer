@@ -32,35 +32,16 @@ public:
         if (shape) name=shape->name;
     }
 
-    // non light-source object (bsdf is used)
-    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf) :
+    // updated object that uses bsdf.
+    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf, STColor3f emittedPower=STColor3f(0.f)) :
         shape(shape),
         aabb(NULL),
         material(),
         transform(transform),
         texture_index(-1),
         name("scene_object"),
-        isLight(false),
+        isLight(emittedPower.maxComponent() > 0.f),
         bsdf(bsdf),
-        emittedPower(0.f)
-    {
-        tInverse = transform.Inverse();
-        tInverseTranspose = tInverse.Transpose();
-        if (shape) aabb = shape->getAABB();
-        if (aabb) aabb->rescale(transform);
-        if (shape) name = shape->name;
-    }
-
-    // light-source object (power is emitted diffusely and evenly across surface)
-    SceneObject(Shape* shape, const STTransform4& transform, STColor3f emittedPower) :
-        shape(shape),
-        aabb(NULL),
-        material(),
-        transform(transform),
-        texture_index(-1),
-        name("scene_object"),
-        isLight(true),
-        bsdf(&blackLambertian),
         emittedPower(emittedPower)
     {
         tInverse = transform.Inverse();

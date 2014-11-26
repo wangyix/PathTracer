@@ -88,9 +88,6 @@ private:
 // used as the bsdf for SceneObjects that are constructed with the old constructor
 static const Lambertian grayLambertian(STColor3f(0.5f));
 
-// used as bsdf for light-emitting SceneObjects
-static const Lambertian blackLambertian(STColor3f(0.f));
 
-// pointed to by bsdf member of all SceneObjects that have no specified bsdf
-// also used for anything with a lambertian bsdf with full albedo
+// used as the bsdf for the IntersectionBsdf returned for the chosen vertex y0 
 static const Y0Lambertian y0Lambertian;
