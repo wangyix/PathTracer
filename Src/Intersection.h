@@ -22,11 +22,19 @@ struct Intersection {
     ~Intersection(){}
 };
 
-struct InterSectionBsdf {
+class InterSectionBsdf {
+public:
+    InterSectionBsdf() : bsdf(NULL) {}
 
-    InterSectionBsdf(const Intersection& intersection, Bsdf* bsdf)
-        : intersection(intersection), bsdf(bsdf)
+    InterSectionBsdf(const Intersection& intersection, const Bsdf* bsdf)
+        : bsdf(bsdf)
     {
+        setIntersection(intersection);
+    }
+
+    void setIntersection(const Intersection& inter) {
+        intersection = inter;
+
         const STVector3& n = intersection.normal;
         const STPoint3& P = intersection.point;
 
@@ -43,15 +51,19 @@ struct InterSectionBsdf {
             J = STVector3::Cross(K, I);
             J.Normalize();
         }
-        
+
         // generate transform matrices between normal- and world-space from I,J,K axes
         normalToWorld = STTransform4(
-            I.x,    J.x,    K.x,    P.x,
-            I.y,    J.y,    K.y,    P.y,
-            I.z,    J.z,    K.z,    P.z,
-            0.f,    0.f,    0.f,    1.f
-        );
+            I.x, J.x, K.x, P.x,
+            I.y, J.y, K.y, P.y,
+            I.z, J.z, K.z, P.z,
+            0.f, 0.f, 0.f, 1.f
+            );
         worldToNormal = normalToWorld.Inverse();
+    }
+
+    void setBsdf(const Bsdf* bsdf) {
+        this->bsdf = bsdf;
     }
 
 
@@ -70,8 +82,12 @@ struct InterSectionBsdf {
         return f;
     }
 
+    const Intersection& getIntersection() const { return intersection; }
+    const Bsdf* getBsdf() const { return bsdf; }
+
+private:
     struct Intersection intersection;
-    Bsdf* bsdf;
+    const Bsdf* bsdf;
     STTransform4 normalToWorld, worldToNormal;  // transforms between world-space and normal-space
 };
 

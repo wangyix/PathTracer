@@ -22,7 +22,7 @@ public:
         texture_index(_texture_index),
         name("scene_object"),
         isLight(false),
-        bsdf(&lambertianBsdf),
+        bsdf(&grayLambertian),
         emittedPower(0.f)
     {
         tInverse = transform.Inverse();
@@ -33,7 +33,7 @@ public:
     }
 
     // non light-source object (bsdf is used)
-    SceneObject(Shape* shape, const STTransform4& transform, Bsdf* bsdf) :
+    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf) :
         shape(shape),
         aabb(NULL),
         material(),
@@ -60,7 +60,7 @@ public:
         texture_index(-1),
         name("scene_object"),
         isLight(true),
-        bsdf(&lambertianBsdf),
+        bsdf(&blackLambertian),
         emittedPower(emittedPower)
     {
         tInverse = transform.Inverse();
@@ -107,8 +107,32 @@ public:
         return emittedPower / shape->getSurfaceArea();
     }
 
+    // chooses point y0 on surface and calculates an IntersectionBsdf for it.
+    // y1 can then be chosen by sampling the bsdf in y0_intersection (which
+    // really represents Le_1(y0, w))
+    virtual void sample_y0(InterSectionBsdf* y0_intersection,
+        float* pdf_a_y0, STColor3f* Le0_y0) {
 
-    // chooses point y0 on surface and outgoing direction w.
+        // uniform-randomly choose a point y0 on surface, record its normal
+        STPoint3 y0;
+        STVector3 y0_n;
+        y0 = shape->uniformSampleSurface(&y0_n);
+
+        // transform y0 and y0_n from object-space to world-space
+        STPoint3 y0_w = transform * y0;
+        STVector3 y0_n_w = tInverseTranspose * y0_n;
+        y0_n_w.Normalize();
+
+        // build IntersectionBsdf from y0_w and y0_n_w
+        y0_intersection->setIntersection(Intersection(0.f, y0_w, y0_n_w));
+        y0_intersection->setBsdf(&y0Lambertian);
+
+        *pdf_a_y0 = 1.f / shape->getSurfaceArea();
+        *Le0_y0 = Le0();
+    }
+
+
+    /*// chooses point y0 on surface and outgoing direction w.
     // also calculates Pa(y0), Le0(y0), Psig(y0, w), Le1(y0, w)
     virtual void sample_y0y1(STPoint3* y0, float* pdf_a_y0, STColor3f* Le0_y0,
         STVector3* w, float* pdf_sig_w, STColor3f* Le1_y0_w) {
@@ -147,7 +171,7 @@ public:
         // transform y0, w from object-space to world-space
         *y0 = transform * *y0;
         *w = tInverseTranspose * *w;
-    }
+    }*/
 
 
     Shape* shape;
@@ -158,7 +182,7 @@ public:
     std::string name;
 
     bool isLight;           // if true, bsdf is ignored.  If false, emittedPower is ignored
-    Bsdf* bsdf;             // replaces material
+    const Bsdf* bsdf;             // replaces material
     STColor3f emittedPower;
 
 private:

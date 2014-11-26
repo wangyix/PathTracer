@@ -19,8 +19,6 @@ STColor3f FrCond(float cosi, const STColor3f& eta, const STColor3f& k);
 
 STColor3f fresnelDielEvaluate(float cosi, float etai, float etat);
 
-// pointed to by bsdf member of all SceneObjects that have no specified bsdf
-static const Lambertian lambertianBsdf(STColor3f(0.5f));
 
 
 // convention: wi,wo both point outwards
@@ -38,6 +36,14 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
 private:
     STColor3f R;    // albedo
+};
+
+// used for describing Le1(y0, w); direction wo is unused
+// same as Lambertian except albedo is 1 and sample_f always gives wi in positive-z hemisphere
+class Y0Lambertian : public Bsdf {
+    Y0Lambertian() {}
+    STColor3f f(const STVector3& wo, const STVector3& wi) const;
+    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
 };
 
 class SpecularDiel : public Bsdf {
@@ -69,12 +75,22 @@ private:
 
 class ScaledBsdf : public Bsdf {
 public:
-    ScaledBsdf(Bsdf *bsdf, const STColor3f& scale) : bsdf(bsdf), s(scale) {}
+    ScaledBsdf(const Bsdf *bsdf, const STColor3f& scale) : bsdf(bsdf), s(scale) {}
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
 
 private:
-    Bsdf* bsdf;
+    const Bsdf* bsdf;
     STColor3f s;
 };
 
+
+// used as the bsdf for SceneObjects that are constructed with the old constructor
+static const Lambertian grayLambertian(STColor3f(0.5f));
+
+// used as bsdf for light-emitting SceneObjects
+static const Lambertian blackLambertian(STColor3f(0.f));
+
+// pointed to by bsdf member of all SceneObjects that have no specified bsdf
+// also used for anything with a lambertian bsdf with full albedo
+static const Y0Lambertian y0Lambertian;

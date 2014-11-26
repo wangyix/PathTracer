@@ -88,6 +88,10 @@ protected:
 
     // replaces lights and areaLights; is built from lights in render()
     std::vector <SceneObject*> lightObjects;
+    
+    // cached for randomly selecting a light based on power (max component)
+    std::vector<float> lightPowers;
+    float powerTotal;
 
     ////texture
     STColor3f textureColor(const int texture_index, const STPoint2& uv);
@@ -113,7 +117,7 @@ protected:
         std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q,
         bool* ranIntoLight);
 
-    int generateLightSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
+    int generateLightSubpath(std::vector<InterSectionBsdf>& intersections,
         std::vector<float>& p_sig, std::vector<STColor3f>& aL, std::vector<float>& q);
 };
 
