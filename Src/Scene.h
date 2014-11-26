@@ -114,10 +114,12 @@ protected:
     void getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb);
 
     int generateEyeSubpath(float u, float v, std::vector<InterSectionBsdf>& intersections,
-        std::vector<float>& p_sig, std::vector<STColor3f>& aE, std::vector<float>& q);
+        std::vector<float>& p_sig, std::vector<float>& G, std::vector<STColor3f>& aE,
+        std::vector<float>& q, STColor3f* C_0t_sum);
 
     int generateLightSubpath(std::vector<InterSectionBsdf>& intersections,
-        std::vector<float>& p_sig, std::vector<STColor3f>& aL, std::vector<float>& q);
+        std::vector<float>& p_sig, std::vector<float>& G, std::vector<STColor3f>& aL,
+        std::vector<float>& q);
 };
 
 #endif //SCENE_H

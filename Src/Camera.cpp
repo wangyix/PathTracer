@@ -45,7 +45,7 @@ float Camera::getFocalRatio(const STPoint3 &f) {
 // calculates Psig(z0->z1) assuming pinhole camera.
 // Psig(z0->z1) = 0 when z1 not in img plane; this assumes (u,v) is in img plane
 // Psig(z0->z1) = 1 / (4 * a * tan(fovy/2)^2 * cos(theta)^4)
-float Camera::Psig(float u, float v) const {
+float Camera::Psig_cosW(float u, float v, float* cos_w) const {
     // convert (u,v) to half-NDC coordinates (s,t) which are [-0.5, 0.5]
     float s = u - 0.5f;
     float t = v - 0.5f;
@@ -54,6 +54,7 @@ float Camera::Psig(float u, float v) const {
     float d = 0.5f / tanHalfFovy;   // eye distance to img plane if height=1
     float as = aspect * s;
     float cosThetaSq = d*d / (as*as + t*t + d*d);
+    *cos_w = sqrtf(cosThetaSq);
     float tanHalfFovy_cosThetaSq = tanHalfFovy * cosThetaSq;
     return 1.0f / (4.0f * aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
 }

@@ -26,7 +26,7 @@ public:
         return look;
     }
 
-    float Psig(float u, float v) const;
+    float Psig_cosW(float u, float v, float* cos_w) const;
 private:
     STPoint3 eye;
     STVector3 up;

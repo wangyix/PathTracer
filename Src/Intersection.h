@@ -74,10 +74,12 @@ public:
         STVector3 wi = worldToNormal * wi_w;
         return bsdf->f(wo, wi);
     }
-    STColor3f sample_f(const STVector3& wo_w, STVector3* wi_w, float *pdf_sig) const {
+    STColor3f sample_f(const STVector3& wo_w, STVector3* wi_w, float* pdf_sig,
+        float* cos_wi) const {
         STVector3 wo = worldToNormal * wo_w;
         STVector3 wi;
         STColor3f f = bsdf->sample_f(wo, &wi, pdf_sig);
+        *cos_wi = AbsCosTheta(wi);
         *wi_w = normalToWorld * wi;
         return f;
     }
