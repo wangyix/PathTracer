@@ -288,22 +288,17 @@ void Scene::Render() {
                     float u = xs / width;
                     float v = ys / height;
                     
+                    STColor3f C_sum(0.f);
 
-                    // generate eye subpath thru (u,v)
-                    int nE;
-                    std::vector<InterSectionBsdf> intersections_E;
-                    std::vector<float> p_sig_E;
-                    std::vector<STColor3f> aE;
-                    std::vector<float> q_E;
-                    nE = generateEyeSubpath(u, v, intersections_E, p_sig_E, aE, q_E);
+                    // generate eye subpath thru (u,v), accumulate C0t contributions
+                    std::vector<Vertex> vertices_E;
+                    STColor3f C0t_sum;
+                    generateEyeSubpath(u, v, vertices_E, &C0t_sum);
+                    C_sum += C0t_sum;
 
                     // generate light subpath
-                    int nL;
-                    std::vector<InterSectionBsdf> intersections_L;
-                    std::vector<float> p_sig_L;
-                    std::vector<STColor3f> aL;
-                    std::vector<float> q_L;
-                    nL = generateLightSubpath(intersections_L, p_sig_L, aL, q_L);
+                    std::vector<Vertex> vertices_L;
+                    generateLightSubpath(vertices_L);
                     
 
                     // calculate s=1 contributions: (light image paths)
