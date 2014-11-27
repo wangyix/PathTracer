@@ -54,6 +54,8 @@ std::string Scene::info() {
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
+    *C_0t_sum = STColor3f(0.f);
+
     STPoint3 point;
     STVector3 w;
     STColor3f alpha;
@@ -117,6 +119,48 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         delete inter;
         inter = NULL;
 
+        // ------------------------------------------------------------------------------------
+
+        // if we hit a light, accumulate the contribution of the sample path from technique p_0t
+        // where t is the number of vertices we have so far.
+        // the sample from technique p_0t is only nonzero if the eye-subpath prefix ends on a light
+        if (inter_obj->isLight) {
+            // calculate unweighted contribution C*_0t
+            STColor3f Cs_0t = alpha * inter_obj->Le();
+
+            // calculate weight w_st = 1 / (1 + (p1/p0)^2 + (p2/p0)^2 + .. + (pt/p0)^2)
+
+            float pi_over_p0 = 1.f;
+            float denom_sum = 1.f;
+
+            // vertices[i] is the vertex that's changing sides
+            for (int i = vertices.size() - 1; i >= 0; i--) {
+                float Pa_E;     // Pa of this vertex when chosen from the eye side
+                if (i > 0) {
+                    Pa_E = vertices[i - 1].qPsig_adj * vertices[i].G_prev;
+                } else {
+                    Pa_E = 1.f;     // Pa(z0) = delta()
+                }
+
+                float Pa_L;     // Pa of this vertex when chosen from the light side
+                if (i < vertices.size() - 1) {
+                    Pa_L = vertices[i + 1].qPsig_adj * vertices[i + 1].G_prev;
+                } else {
+                    Pa_L = lightDistribution.Pa_y0(inter_obj);  // Pa(y0)
+                }
+
+                pi_over_p0 *= (Pa_L / Pa_E);
+
+                if (!vertices[i].bsdf->isSpecular() &&
+                    (i > 0 && !vertices[i-1].bsdf->isSpecular())) {
+                    denom_sum += (pi_over_p0 * pi_over_p0);
+                }
+            }
+            float w_st = 1.f / denom_sum;
+
+            *C_0t_sum += (w_st * Cs_0t);
+        }
+
 
         // ------------------------------------------------------------------------------------
 
@@ -145,23 +189,12 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     STVector3 w;
     STColor3f alpha;
 
-    // choose a light source to sample based on max component of emitted power
-    float r = (float)rand() / RAND_MAX * powerTotal;
-    int chosen_i = 0;
-    while (chosen_i < lightPowers.size() - 1) {
-        r -= lightPowers[chosen_i];
-        if (r < 0.f) break;
-        chosen_i++;
-    }
-    float Pa_y0_multiplier = lightPowers[chosen_i] / powerTotal;
-
-    // choose y0 by sampling selected light source
     STVector3 y0_n;
     const Bsdf* y0_bsdf;
-    float Pa_y0_obj;
+    float Pa_y0;
     STColor3f Le0_y0;
-    lightObjects[chosen_i]->sample_y0(&point, &y0_n, &y0_bsdf, &Pa_y0_obj, &Le0_y0);
-    float Pa_y0 = Pa_y0_multiplier * Pa_y0_obj;
+    lightDistribution.sample_y0(&point, &y0_n, &y0_bsdf, &Pa_y0, &Le0_y0);
+
     alpha = Le0_y0 / Pa_y0;
 
     // record y0
@@ -229,19 +262,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
 
 void Scene::Render() {
-    // build list of light objects and their powers (max component) to be used
-    // when picking the light object to sample y0 from.
-    lightObjects.clear();
-    lightPowers.clear();
-    powerTotal = 0.f;
-    for (SceneObject* o : objects) {
-        if (o->isLight) {
-            lightObjects.push_back(o);
-            float power = o->emittedPower.maxComponent();
-            lightPowers.push_back(power);
-            powerTotal += power;
-        }
-    }
+    lightDistribution.init(objects);
 
     std::cout << "------------------ray tracing started------------------" << std::endl;
     STImage *im = new STImage(width, height);

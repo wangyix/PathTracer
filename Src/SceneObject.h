@@ -88,6 +88,10 @@ public:
         return emittedPower / shape->getSurfaceArea();
     }
 
+    virtual float Pa() const {
+        return 1.f / shape->getSurfaceArea();
+    }
+
     // chooses point y0 on surface and calculates an IntersectionBsdf for it.
     // y1 can then be chosen by sampling the bsdf in y0_intersection (which
     // really represents Le_1(y0, w))
