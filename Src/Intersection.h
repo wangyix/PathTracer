@@ -22,19 +22,15 @@ struct Intersection {
     ~Intersection(){}
 };
 
-class InterSectionBsdf {
+struct Vertex {
 public:
-    InterSectionBsdf() : bsdf(NULL) {}
 
-    InterSectionBsdf(const Intersection& intersection, const Bsdf* bsdf)
-        : bsdf(bsdf)
-    {
+    Vertex(const Intersection& intersection, const Bsdf* bsdf) : bsdf(bsdf) {
         setIntersection(intersection);
     }
 
     void setIntersection(const Intersection& inter) {
         intersection = inter;
-
         const STVector3& n = intersection.normal;
         const STPoint3& P = intersection.point;
 
@@ -51,7 +47,6 @@ public:
             J = STVector3::Cross(K, I);
             J.Normalize();
         }
-
         // generate transform matrices between normal- and world-space from I,J,K axes
         normalToWorld = STTransform4(
             I.x, J.x, K.x, P.x,
@@ -62,10 +57,7 @@ public:
         worldToNormal = normalToWorld.Inverse();
     }
 
-    void setBsdf(const Bsdf* bsdf) {
-        this->bsdf = bsdf;
-    }
-
+    const Intersection& getIntersection() const { return intersection; }
 
     // wrappers around the Bsdf versions;
     // wo and wi are given/returned in world-space instead of normal-space
@@ -84,12 +76,15 @@ public:
         return f;
     }
 
-    const Intersection& getIntersection() const { return intersection; }
-    const Bsdf* getBsdf() const { return bsdf; }
+public:
+    STVector3 w_prev;   // direction zi_z1i
+    STColor3f alpha;    // alpha_i1
+    float qPsig_adj;    // q*Psig(zi->zi1) = q*Psig(zi->z_1i)
+    float G_prev;       // G(zi->z1i) 
+    const Bsdf* bsdf;   // used for isSpecular, f( ), and Psig( )
 
 private:
-    struct Intersection intersection;
-    const Bsdf* bsdf;
+    Intersection intersection;
     STTransform4 normalToWorld, worldToNormal;  // transforms between world-space and normal-space
 };
 
