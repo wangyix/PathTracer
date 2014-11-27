@@ -91,68 +91,23 @@ public:
     // chooses point y0 on surface and calculates an IntersectionBsdf for it.
     // y1 can then be chosen by sampling the bsdf in y0_intersection (which
     // really represents Le_1(y0, w))
-    virtual void sample_y0(InterSectionBsdf* y0_intersection,
+    virtual void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf,
         float* pdf_a_y0, STColor3f* Le0_y0) {
 
         // uniform-randomly choose a point y0 on surface, record its normal
-        STPoint3 y0;
-        STVector3 y0_n;
-        y0 = shape->uniformSampleSurface(&y0_n);
+        *y0 = shape->uniformSampleSurface(y0_n);
 
         // transform y0 and y0_n from object-space to world-space
-        STPoint3 y0_w = transform * y0;
-        STVector3 y0_n_w = tInverseTranspose * y0_n;
-        y0_n_w.Normalize();
+        *y0 = transform * *y0;
+        *y0_n = tInverseTranspose * *y0_n;
+        y0_n->Normalize();
 
         // build IntersectionBsdf from y0_w and y0_n_w
-        y0_intersection->setIntersection(Intersection(0.f, y0_w, y0_n_w));
-        y0_intersection->setBsdf(&y0Lambertian);
+        *bsdf = &y0Lambertian;
 
         *pdf_a_y0 = 1.f / shape->getSurfaceArea();
         *Le0_y0 = Le0();
     }
-
-
-    /*// chooses point y0 on surface and outgoing direction w.
-    // also calculates Pa(y0), Le0(y0), Psig(y0, w), Le1(y0, w)
-    virtual void sample_y0y1(STPoint3* y0, float* pdf_a_y0, STColor3f* Le0_y0,
-        STVector3* w, float* pdf_sig_w, STColor3f* Le1_y0_w) {
-
-        // uniform-randomly choose a point y0 on surface, record its normal
-        STVector3 y0_n;
-        *y0 = shape->uniformSampleSurface(&y0_n);
-
-        *pdf_a_y0 = 1.f / shape->getSurfaceArea();
-        *Le0_y0 = Le0();
-
-        // construct unit axes around y0_n: I, J, K where K=y0_n
-        STVector3 I, J;
-        STVector3 K = y0_n;
-        if (K.x == 0.f && K.y == 0.f) {
-            I = STVector3(1.f, 0.f, 0.f);
-            J = STVector3(0.f, 1.f, 0.f);
-        } else {
-            I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
-            I.Normalize();
-            J = STVector3::Cross(K, I);
-            J.Normalize();
-        }
-
-        // choose w (cosine-sample the hemisphere)
-        float r = (float)rand() / RAND_MAX;                     // [0, 1]
-        float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
-        float sqrt_r = sqrtf(r);
-        float x = sqrt_r * cosf(theta);
-        float y = sqrt_r * sinf(theta);
-        float z = sqrtf((std::max)(0.f, 1.f - x*x - y*y));
-        *w = x*I + y*J + z*K;
-        *pdf_sig_w = 1.0f / M_PI;
-        *Le1_y0_w = STColor3f(1.0f / M_PI);
-        
-        // transform y0, w from object-space to world-space
-        *y0 = transform * *y0;
-        *w = tInverseTranspose * *w;
-    }*/
 
 
     Shape* shape;

@@ -25,11 +25,13 @@ struct Intersection {
 struct Vertex {
 public:
 
-    Vertex(const Intersection& intersection, const Bsdf* bsdf) : bsdf(bsdf) {
-        setIntersection(intersection);
-    }
-
-    void setIntersection(const Intersection& inter) {
+    Vertex(const Intersection& inter) :
+        bsdf(NULL),
+        w_prev(0.f),
+        alpha(-1.f),
+        G_prev(-1.f),
+        qPsig_adj(-1.f)
+    {
         intersection = inter;
         const STVector3& n = intersection.normal;
         const STPoint3& P = intersection.point;
@@ -77,11 +79,12 @@ public:
     }
 
 public:
-    STVector3 w_prev;   // direction zi_z1i
-    STColor3f alpha;    // alpha_i1
-    float qPsig_adj;    // q*Psig(zi->zi1) = q*Psig(zi->z_1i)
-    float G_prev;       // G(zi->z1i) 
     const Bsdf* bsdf;   // used for isSpecular, f( ), and Psig( )
+    STVector3 w_prev;   // direction to previous vertex
+    STColor3f alpha;    // alpha_i1
+    float G_prev;       // G(zi->z1i) 
+
+    float qPsig_adj;    // q*Psig(zi->zi1) = q*Psig(zi->z_1i)
 
 private:
     Intersection intersection;

@@ -75,6 +75,14 @@ STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_si
     return f(wo, *wi);
 }
 
+float Lambertian::p_sig(const STVector3& wo, const STVector3& wi) const {
+    if ((wo.z >= 0.f) == (wi.z >= 0.f)) {
+        return 1.f / M_PI;
+    }
+    return 0.f;
+}
+
+
 
 STColor3f Y0Lambertian::f(const STVector3& wo, const STVector3& wi) const {
     if (wi.z >= 0.f) {
@@ -95,6 +103,14 @@ STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     *pdf_sig = 1.0f / M_PI;
     return STColor3f(1.f / M_PI);
 }
+
+float Y0Lambertian::p_sig(const STVector3& wo, const STVector3& wi) const {
+    if (wi.z >= 0.f) {
+        return 1.f / M_PI;
+    }
+    return 0.f;
+}
+
 
 
 STColor3f SpecularDiel::f(const STVector3& wo, const STVector3& wi) const {
@@ -153,6 +169,12 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     }
 }
 
+float SpecularDiel::p_sig(const STVector3& wo, const STVector3& wi) const {
+    return 0.f;
+}
+
+
+
 STColor3f SpecularCond::f(const STVector3& wo, const STVector3& wi) const {
     return STColor3f(0.f);
 }
@@ -168,10 +190,19 @@ STColor3f SpecularCond::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     return FrCond(AbsCosTheta(wo), eta, k) * R / AbsCosTheta(*wi);
 }
 
+float SpecularCond::p_sig(const STVector3& wo, const STVector3& wi) const {
+    return 0.f;
+}
+
+
 STColor3f ScaledBsdf::f(const STVector3& wo, const STVector3& wi) const {
     return s * bsdf->f(wo, wi);
 }
 
 STColor3f ScaledBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const {
     return s * bsdf->sample_f(wo, wi, pdf_sig);
+}
+
+float ScaledBsdf::p_sig(const STVector3& wo, const STVector3& wi) const {
+    return bsdf->p_sig(wo, wi);
 }
