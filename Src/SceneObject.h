@@ -102,7 +102,6 @@ public:
         *y0_n = tInverseTranspose * *y0_n;
         y0_n->Normalize();
 
-        // build IntersectionBsdf from y0_w and y0_n_w
         *bsdf = &y0Lambertian;
 
         *pdf_a_y0 = 1.f / shape->getSurfaceArea();

@@ -51,138 +51,99 @@ std::string Scene::info() {
 
 #define MIN_SUBPATH_LENGTH 3
 
-// intersections[i] = z_i
-// p_sig[0] = Pa(z0),   p_sig[i] = Psig(z_(i-1) -> z_i)
-// aE[i] = aE_i
-// q[i] = q corresponding to Psig(z_(i-1) -> z_i), or continuation probably at vertex z_(i-1)
-// returns nE: num vertices
 
-int Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
+void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
-    
-
-
-
-
-
-
-
-    // contributions Cst where s=0; this accumulates whenver this subpath runs into a light.
-    *C_0t_sum = STColor3f(0.f);
-
-    STColor3f f_z1i_zi_zi1;
-    float p_sig_zi_zi1;
-    float q_zi_zi1;
-    Ray zi_zi1;
-    std::unique_ptr<Intersection> zi_inter;
-    SceneObject* zi_object;
-    STColor3f aE_i1;
-
-    // cos of angle between w and normal, where w is the last direction
-    // chosen by sample_f
+    STPoint3 point;
+    STVector3 w;
+    STColor3f alpha;
+    float Psig;
+    float q;
+    STColor3f f;
     float cos_sampled_w;
+
+    // vertex z0 is eye
+    point = camera->getEye();
+    alpha = STColor3f(1.f);     // We0(z0)/Pa(z0) = C*delta()/delta() = C   (1 should be okay)
     
-    aE_i1 = STColor3f(1.f);                        // aE_1 = 1;  this should work instead of C?
-
-    // vertex z0 = eye
-    vertices.emplace_back(Vertex(Intersection(0.f, camera->getEye(), camera->getLook()), NULL));
-    vertices.back().alpha = aE_i1;
-
-    
-    /* // vertex z0 = xe
-    intersections.push_back(InterSectionBsdf(Intersection(0.f, camera->getEye(), camera->getLook()), NULL));
-    p_sig.push_back(1.0f);          // Pa(z0) = delta(z0 - xe)
-    G.push_back(1.0f);              // G not really defined, but set it so that p_sig[0] * G[0] = Pa(z0)
-    q.push_back(1.0f);
-    aE.push_back(STColor3f(1.f));   // aE_1 = 1;  this should work instead of C?
-    */
-
-    // ray z0_z1 goes through (u,v) on img plane
-    camera->generateRay(zi_zi1, u, v);
-    zi_zi1.d.Normalize();               // generateRay does not normalize Ray::d for some reason
-    f_z1i_zi_zi1 = STColor3f(1.f);      // We1(z0->z1) = 1; this should work instead of 1/C?
-    p_sig_zi_zi1 = camera->Psig_cosW(u, v, &cos_sampled_w);  // Psig(z0->z1) depends on camera properties
-    q_zi_zi1 = 1.f;
+    // generate direction w to z1
+    Ray z0_z1;
+    camera->generateRay(z0_z1, u, v);
+    z0_z1.d.Normalize();                            // generateRay does not normalize Ray::d for some reason
+    w = z0_z1.d;
+    q = 1.f;
+    f = STColor3f(1.f);                             // We1(z0->z1) = 1/C   (1 should be okay)
+    Psig = camera->Psig_cosW(w, &cos_sampled_w);    // Psig(z0->z1) depends on camera properties
 
 
-    vertices.back().qPsig_adj = q_zi_zi1 * p_sig_zi_zi1;
+    // record vertex z0
+    vertices.emplace_back(Vertex(Intersection(0.f, point, camera->getLook())));
+    //vertices.back().bsdf      // We(z0->z1) = 1, will be handled specially
+    //vertices.back().w_prev    // not defined for z0
+    vertices.back().alpha = alpha;
+    //vertices.back().G_prev    // not defined for z0
 
 
-    int i = 1;      // current vertex
     while (true) {
-        // intersect zi_zi1 with scene to find next vertex zi1
-        zi_inter.reset(Intersect(zi_zi1, zi_object));
-        if (!zi_inter) {
-            // zi_zi1 didn't hit anything; terminate path at current zi
-            return i + 1;
+        // find intersection between chosen direction and scene.
+        Ray w_ray(point, w);
+        SceneObject* inter_obj;
+        Intersection* inter = Intersect(w_ray, inter_obj);
+        if (!inter) {
+            // ray didn't hit anything; terminate path
+            return;
         }
+        point = inter->point;
 
-        i++;
-        
-        // calculate G(zi<->zi1)
-        float r = zi_inter->t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-zi_zi1.d, zi_inter->normal));
-        float G_z1i_zi = cos_sampled_w * cos_intersected_w / (r*r);
-        
+        // calculate qPsig_adj for previous vertex, now that we know the direction
+        // from it to the new vertex
+        vertices.back().qPsig_adj = q * Psig;
 
         // calculate new alpha
-        aE_i1 *= (f_z1i_zi_zi1 / (q_zi_zi1 * p_sig_zi_zi1));
+        alpha *= (f / (q * Psig));
 
+        // calculate G between new vertex and prev vertex
+        float r = inter->t;
+        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
+        float G_prev = cos_sampled_w * cos_intersected_w / (r*r);
 
         // record new vertex
-        vertices.emplace_back(Vertex(*zi_inter, zi_object->bsdf));
-        vertices.back().w_prev = -zi_zi1.d;
-        vertices.back().alpha = aE_i1;
-        vertices.back().qPsig_adj = 
+        vertices.emplace_back(Vertex(*inter));
+        vertices.back().bsdf = inter_obj->bsdf;
+        vertices.back().w_prev = -w;
+        vertices.back().alpha = alpha;
+        vertices.back().G_prev = G_prev;
 
-        /*
-        // record new vertex zi
-        intersections.push_back(InterSectionBsdf(*zi, zi_object->bsdf));
-        p_sig.push_back(p_sig_zi_zi1);
-        G.push_back(G_zi_zi1);
-        q.push_back(q_zi_zi1);
-        aE.push_back(aE.back() * f_z1i_zi_zi1 / (q_zi_zi1 * p_sig_zi_zi1));
-        */
-        
+        delete inter;
+        inter = NULL;
 
-        // if intersection is a light, then calculate contribution C_0t
-        if (zi_object->isLight) {
-            // C*_0t = aL_0 * c_0t * aE_t = 1 * Le(zi->z(i-1)) * aE_t
-            STColor3f Cs_0t = zi_object->Le() * aE.back();
 
-            // calculate w_0t = 1 / ((p1/p0)^2 + (p2/p0)^2 + .. + (pt/p0))
-            
-            float pi_over_p0 =
-        }
+        // ------------------------------------------------------------------------------------
 
-        // choose next direction for ray zi_zi1 by sampling BSDF at zi.
-        // wo_w = -zi_zi1.d,  reverse direction of the most recent zi_zi1 ray.
-        // wi_w will become the direction of the next zi_zi1 ray
-        STVector3 wi_w;
-        f_z1i_zi_zi1 = intersections.back().sample_f(-zi_zi1.d, &wi_w, &p_sig_zi_zi1, &cos_sampled_w);
-        
+
+        // choose next direction w
+        STVector3 w_old = w;
+        f = vertices.back().sample_f(-w_old, &w, &Psig, &cos_sampled_w);
+
         // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
-        // with some probability.
-        if (i >= MIN_SUBPATH_LENGTH) {
-            // probabilistically determine if eye subpath should terminate at zi
-            // use the max component of f_z1i_zi_zi1 in f/p_sig evaluation
-            q_zi_zi1 = (std::min)(f_z1i_zi_zi1.maxComponent() / p_sig_zi_zi1, 1.f);
-            if ((float)rand() / RAND_MAX >= q_zi_zi1) {
-                return i + 1;
+        // with some probability (1-q) where q = f / Psig for the next direction chosen.
+        if (vertices.size() >= MIN_SUBPATH_LENGTH + 1) {
+            q = std::min(f.maxComponent() / Psig, 1.f);
+            if ((float)rand() / RAND_MAX >= q) {
+                return;
             }
         }
-
-        // update zi_zi1 to start from current zi and shoot in direction wi_w
-        zi_zi1.at = zi_inter->point;
-        zi_zi1.d = wi_w;
     }
-
-    // go backwards through path and calculate Pa_next for all vertices
 
 }
 
 
+
 void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
+
+    STPoint3 point;
+    STVector3 w;
+    STColor3f alpha;
 
     // choose a light source to sample based on max component of emitted power
     float r = (float)rand() / RAND_MAX * powerTotal;
@@ -195,25 +156,21 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     float Pa_y0_multiplier = lightPowers[chosen_i] / powerTotal;
 
     // choose y0 by sampling selected light source
-    STPoint3 y0_point;
     STVector3 y0_n;
     const Bsdf* y0_bsdf;
     float Pa_y0_obj;
     STColor3f Le0_y0;
-    lightObjects[chosen_i]->sample_y0(&y0_point, &y0_n, &y0_bsdf, &Pa_y0_obj, &Le0_y0);
+    lightObjects[chosen_i]->sample_y0(&point, &y0_n, &y0_bsdf, &Pa_y0_obj, &Le0_y0);
     float Pa_y0 = Pa_y0_multiplier * Pa_y0_obj;
-    STColor3f alpha_1 = Le0_y0 / Pa_y0;
+    alpha = Le0_y0 / Pa_y0;
 
     // record y0
-    vertices.emplace_back(Vertex(Intersection(0.f, y0_point, y0_n)));
+    vertices.emplace_back(Vertex(Intersection(0.f, point, y0_n)));
     vertices.back().bsdf = y0_bsdf;
     //vertices.back().w_prev      // not defined for y0
-    vertices.back().alpha = alpha_1;
+    vertices.back().alpha = alpha;
     //vertices.back().G_prev      // not defined for y0
 
-    STVector3 w;
-    STPoint3 point = y0_point;
-    STColor3f alpha = alpha_1;
 
     while (true) {
 
@@ -241,6 +198,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
             // ray didn't hit anything; terminate path
             return;
         }
+        point = inter->point;
 
         // calculate qPsig_adj for previous vertex, now that we know the direction
         // from it to the new vertex
@@ -265,99 +223,6 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         inter = NULL;
     }
 }
-
-/*
-int Scene::generateLightSubpath(std::vector<InterSectionBsdf>& intersections,
-    std::vector<float>& p_sig, std::vector<float>& G, std::vector<STColor3f>& aL,
-    std::vector<float>& q) {
-
-    aL.push_back(STColor3f(1.f));         // aL_0 = 1
-
-    // choose a light source to sample based on max component of emitted power
-    float r = (float)rand() / RAND_MAX * powerTotal;
-    int chosen_i = 0;
-    while (true) {
-        r -= lightPowers[chosen_i];
-        if (r <= 0.f) break;
-        chosen_i++;
-    }
-    float p_a_y0_multiplier = lightPowers[chosen_i] / powerTotal;
-
-
-    // get y0 by sampling chosen light source
-    InterSectionBsdf y0_intersection;
-    float p_a_y0_object;
-    STColor3f Le0_y0;
-    lightObjects[chosen_i]->sample_y0(&y0_intersection, &p_a_y0_object, &Le0_y0);
-
-    float p_a_y0 = p_a_y0_multiplier * p_a_y0_object;
-
-    intersections.push_back(y0_intersection);
-    p_sig.push_back(p_a_y0);        // Pa(y0)
-    G.push_back(1.0f);              // G not really defined, but set it so that p_sig[0] * G[0] = Pa(y0)
-    q.push_back(1.0f);
-    aL.push_back(STColor3f(Le0_y0 / p_a_y0));   // aL_1 = Le0_y0 / Pa(y0)
-
-
-    Ray yi_yi1;
-    SceneObject* yi_object;
-    std::unique_ptr<Intersection> yi(new Intersection(y0_intersection.getIntersection()));
-    STColor3f f_y1i_yi_yi1;
-    float p_sig_yi_yi1;
-    float q_yi_yi1;
-
-    // cos of angle between w and normal, where w is the last direction
-    // chosen by sample_f
-    float cos_sampled_w;
-
-    int i = 0;      // current vertex
-    while (true) {
-
-        // choose next direction for ray yi_yi1 by sampling BSDF at yi.
-        // wo_w = -yi_yi1.d,  reverse direction of the most recent yi_yi1 ray.
-        // wi_w will become the direction of the next yi_yi1 ray
-        STVector3 wi_w;
-        f_y1i_yi_yi1 = intersections.back().sample_f(-yi_yi1.d, &wi_w, &p_sig_yi_yi1, &cos_sampled_w);
-
-        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
-        // with some probability.
-        if (i >= MIN_SUBPATH_LENGTH) {
-            // probabilistically determine if eye subpath should terminate at yi
-            // use the max component of f_y1i_yi_yi1 in f/p_sig evaluation
-            q_yi_yi1 = (std::min)(f_y1i_yi_yi1.maxComponent() / p_sig_yi_yi1, 1.f);
-            if ((float)rand() / RAND_MAX >= q_yi_yi1) {
-                return i + 1;
-            }
-        }
-
-        // update yi_yi1 to start from current yi and shoot in direction wi_w
-        yi_yi1.at = yi->point;
-        yi_yi1.d = wi_w;
-
-        // --------------------------------------------------------------------------------------
-
-        // intersect yi_yi1 with scene to find next vertex yi1
-        yi.reset(Intersect(yi_yi1, yi_object));
-        if (!yi) {
-            // yi_yi1 didn't hit anything; terminate path at current yi
-            return i + 1;
-        }
-
-        // calculate G(zi<->zi1)
-        float r = yi->t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-yi_yi1.d, yi->normal));
-        float G_zi_zi1 = cos_sampled_w * cos_intersected_w / (r*r);
-
-        // record new intersection, Psig, and aE
-        intersections.push_back(InterSectionBsdf(*yi, yi_object->bsdf));
-        p_sig.push_back(p_sig_yi_yi1);
-        G.push_back(G_zi_zi1);
-        q.push_back(q_yi_yi1);
-        aL.push_back(aL.back() * f_y1i_yi_yi1 / (q_yi_yi1 * p_sig_yi_yi1));
-
-        i++;
-    }
-}*/
 
 
 
