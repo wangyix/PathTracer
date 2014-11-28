@@ -105,21 +105,13 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
 
         // calculate S for prev prev vertex, now that qPsig_adj is known for prev vertex
         if (vertices.size() >= 2) {
-            if (vertices.size() == 2) {
-                vertices[0].S = 0.f;    // since z_(-1) is specular
-            } else {
-                int i = vertices.size() - 2;    // we're calculating S_i
-                bool zi_specular = vertices[i].bsdf->isSpecular();
-                bool z1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // z0 is not specular
-                float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
-
-                float pi_over_pi1 = qPsig_adj / vertices[i - 1].qPsig_adj;
-                vertices[i].S = pi_over_pi1 * pi_over_pi1 * (specularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
-            }
+            int i;
+            float Si = S_eye(vertices, qPsig_adj, &i);
+            vertices[i].S = Si;
         }
 
         // calculate new alpha
-        alpha *= (f / (q * Psig));
+        alpha *= (f / qPsig_adj);
 
         // calculate G between new vertex and prev vertex
         float r = inter->t;
@@ -141,61 +133,76 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         // if we hit a light, accumulate the contribution of the sample path from technique p_0t
         // where t is the number of vertices we have so far.
         // the sample from technique p_0t is only nonzero if the eye-subpath prefix ends on a light
+
         if (inter_obj->isLight) {
             // calculate unweighted contribution C*_0t
             STColor3f Cs_0t = alpha * inter_obj->Le();
 
-            // calculate weight w_st = 1 / (1 + (p1/p0)^2 + (p2/p0)^2 + .. + (pt/p0)^2)
 
-            float pi_over_p0 = 1.f;
-            float denom_sum = 1.f;
+            // note: we know vertices.size() >= 2 at this point
 
-            // vertices[i] is the vertex that's changing sides
-            for (int i = vertices.size() - 1; i >= 0; i--) {
-                float Pa_E;     // Pa of this vertex when chosen from the eye side
-                if (i > 0) {
-                    Pa_E = vertices[i - 1].qPsig_adj * vertices[i].G_prev;
-                } else {
-                    Pa_E = 1.f;     // Pa(z0) = delta()
-                }
+            // calculate S of second-to-last vertex
+            float qPsig_last = lightDistribution.Psig_y0_y1();
+            int i;
+            float S_second_last = S_eye(vertices, qPsig_last, &i);
 
-                float Pa_L;     // Pa of this vertex when chosen from the light side
-                if (i < vertices.size() - 1) {
-                    Pa_L = vertices[i + 1].qPsig_adj * vertices[i + 1].G_prev;
-                } else {
-                    Pa_L = lightDistribution.Pa_y0(inter_obj);  // Pa(y0)
-                }
+            // calculate S of last vertex (the one on the light)
+            float S_last;
+            {
+                int i = vertices.size() - 1;
+                bool zi_specular = false;       // y0 is not specular
+                bool z1i_specular = vertices[i - 1].bsdf->isSpecular();
+                float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
 
-                pi_over_p0 *= (Pa_L / Pa_E);
-
-                if (!vertices[i].bsdf->isSpecular() &&
-                    (i > 0 && !vertices[i - 1].bsdf->isSpecular())) {
-                    denom_sum += (pi_over_p0 * pi_over_p0);
-
-                }
-                float w_st = 1.f / denom_sum;
-
-                *C_0t_sum += (w_st * Cs_0t);
+                float pi_over_pi1 = lightDistribution.Pa_y0(inter_obj) / (qPsig_adj * vertices[i].G_prev);
+                S_last = (pi_over_pi1 * pi_over_pi1) * (specularGap + S_second_last);
             }
 
 
-            // ------------------------------------------------------------------------------------
+            // calculate weight w_st = 1 / (1 + (p1/p0)^2 + (p2/p0)^2 + .. + (pt/p0)^2) = 1 / (1 + S_last)
+            float w_0t = 1.f / (1.f + S_last);
 
-
-            // choose next direction w
-            STVector3 w_old = w;
-            f = vertices.back().sample_f(-w_old, &w, &Psig, &cos_sampled_w);
-
-            // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
-            // with some probability (1-q) where q = f / Psig for the next direction chosen.
-            if (vertices.size() >= MIN_SUBPATH_LENGTH + 1) {
-                q = std::min(f.maxComponent() / Psig, 1.f);
-                if ((float)rand() / RAND_MAX >= q) {
-                    return;
-                }
-            }
+            *C_0t_sum += (w_0t * Cs_0t);
         }
 
+
+        // ------------------------------------------------------------------------------------
+
+
+        // choose next direction w
+        STVector3 w_old = w;
+        f = vertices.back().sample_f(-w_old, &w, &Psig, &cos_sampled_w);
+
+        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
+        // with some probability (1-q) where q = f / Psig for the next direction chosen.
+        if (vertices.size() >= MIN_SUBPATH_LENGTH + 1) {
+            q = std::min(f.maxComponent() / Psig, 1.f);
+            if ((float)rand() / RAND_MAX >= q) {
+                return;
+            }
+        }
+    }
+
+}
+
+float Scene::S_eye(const std::vector<Vertex>& vertices, float qPsig_last, int* _i) {
+
+    // assumes vertices.size() >= 2 
+    // calculates Si where i = vertices.size() - 2, i.e. the second-to-last vertex
+
+    if (vertices.size() == 2) {
+        *_i = 0;
+        return 0.f;    // since z_(-1) is specular
+    } else {
+        int i = vertices.size() - 2;    // we're calculating S_i
+        *_i = i;
+
+        bool zi_specular = vertices[i].bsdf->isSpecular();
+        bool z1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // z0 is not specular
+        float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
+
+        float pi_over_pi1 = (qPsig_last * vertices[i + 1].G_prev) / (vertices[i - 1].qPsig_adj * vertices[i].G_prev);
+        return (pi_over_pi1 * pi_over_pi1) * (specularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
     }
 }
 
@@ -274,7 +281,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         }
 
         // calculate new alpha
-        alpha *= (f / (q * Psig));
+        alpha *= (f / qPsig_adj);
 
         // calculate G between new vertex and prev vertex
         float r = inter->t;
@@ -319,11 +326,11 @@ void Scene::Render() {
                     // those are the bounds for the (a,b) subpixel within pixel (x,y)
                     float xs = (float)x + (((float)a + (float)rand() / RAND_MAX) / sampleRate);
                     float ys = (float)y + (((float)b + (float)rand() / RAND_MAX) / sampleRate);
-                    
+
                     // convert to screen coords (u,v)
                     float u = xs / width;
                     float v = ys / height;
-                    
+
                     STColor3f C_sum(0.f);
 
                     // generate eye subpath thru (u,v), accumulate C0t contributions
@@ -335,10 +342,10 @@ void Scene::Render() {
                     // generate light subpath
                     std::vector<Vertex> vertices_L;
                     generateLightSubpath(vertices_L);
-                    
+
 
                     // calculate s=1 contributions: (light image paths)
-                    
+
                 }
             }
 
@@ -349,30 +356,30 @@ void Scene::Render() {
 
             int percent = 0, computed = 0;
             for (int w = 0; w < width; w++) {
-                for (int h = 0; h < height; h++) {
-                    if (use_subimage && (w<subimage_w0 || w>subimage_w1 || h<subimage_h0 || h>subimage_h1)){
-                        im->SetPixel(w, h, STColor4ub(0, 0, 255, 255));
-                        continue;
-                    }
-                    if (use_subimage)std::cout << "trace_ray: " << w << ", " << h << std::endl;
+            for (int h = 0; h < height; h++) {
+            if (use_subimage && (w<subimage_w0 || w>subimage_w1 || h<subimage_h0 || h>subimage_h1)){
+            im->SetPixel(w, h, STColor4ub(0, 0, 255, 255));
+            continue;
+            }
+            if (use_subimage)std::cout << "trace_ray: " << w << ", " << h << std::endl;
 
-                    std::vector<Ray *>* rays = imPlane.getRays(camera, w, h, sampleRate, focus, aperture);
-                    STColor3f avg = STColor3f(0.f, 0.f, 0.f);
-                    for (int i = 0; i < (int)rays->size(); i++) {
-                        STColor3f ray_color = TraceRay(*rays->at(i));
-                        if (use_subimage)std::cout << "ray_color: " << ray_color.r << ", " << ray_color.g << ", " << ray_color.b << std::endl;
-                        avg += ray_color;
-                        delete rays->at(i);
-                    }
-                    im->SetPixel(w, h, STColor4ub(avg / (float)rays->size()));
-                    delete rays;
+            std::vector<Ray *>* rays = imPlane.getRays(camera, w, h, sampleRate, focus, aperture);
+            STColor3f avg = STColor3f(0.f, 0.f, 0.f);
+            for (int i = 0; i < (int)rays->size(); i++) {
+            STColor3f ray_color = TraceRay(*rays->at(i));
+            if (use_subimage)std::cout << "ray_color: " << ray_color.r << ", " << ray_color.g << ", " << ray_color.b << std::endl;
+            avg += ray_color;
+            delete rays->at(i);
+            }
+            im->SetPixel(w, h, STColor4ub(avg / (float)rays->size()));
+            delete rays;
 
-                    computed++;
-                    if (100 * computed / (width * height) > percent) {
-                        percent++;
-                        std::cout << percent << "% ";
-                    }
-                }
+            computed++;
+            if (100 * computed / (width * height) > percent) {
+            percent++;
+            std::cout << percent << "% ";
+            }
+            }
             }*/
 
             im->Save(imageFilename);
