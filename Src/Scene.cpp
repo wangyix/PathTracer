@@ -63,11 +63,12 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
     float q;
     STColor3f f;
     float cos_sampled_w;
+    float S;
 
     // vertex z0 is eye
     point = camera->getEye();
     alpha = STColor3f(1.f);     // We0(z0)/Pa(z0) = C*delta()/delta() = C   (1 should be okay)
-    
+
     // generate direction w to z1
     Ray z0_z1;
     camera->generateRay(z0_z1, u, v);
@@ -77,14 +78,14 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
     f = STColor3f(1.f);                             // We1(z0->z1) = 1/C   (1 should be okay)
     Psig = camera->Psig_cosW(w, &cos_sampled_w);    // Psig(z0->z1) depends on camera properties
 
-
     // record vertex z0
     vertices.emplace_back(Vertex(Intersection(0.f, point, camera->getLook())));
     //vertices.back().bsdf      // We(z0->z1) = 1, will be handled specially
     //vertices.back().w_prev    // not defined for z0
     vertices.back().alpha = alpha;
     //vertices.back().G_prev    // not defined for z0
-
+    //vertices.back().qPsig_adj // calculated when next w is chosen
+    //vertices.back().S         // calculated when next vertex and w after is chosen
 
     while (true) {
         // find intersection between chosen direction and scene.
@@ -99,7 +100,23 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
 
         // calculate qPsig_adj for previous vertex, now that we know the direction
         // from it to the new vertex
-        vertices.back().qPsig_adj = q * Psig;
+        float qPsig_adj = q * Psig;
+        vertices.back().qPsig_adj = qPsig_adj;
+
+        // calculate S for prev prev vertex, now that qPsig_adj is known for prev vertex
+        if (vertices.size() >= 2) {
+            if (vertices.size() == 2) {
+                vertices[0].S = 0.f;    // since z_(-1) is specular
+            } else {
+                int i = vertices.size() - 2;    // we're calculating S_i
+                bool zi_specular = vertices[i].bsdf->isSpecular();
+                bool z1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // z0 is not specular
+                float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
+
+                float pi_over_pi1 = qPsig_adj / vertices[i - 1].qPsig_adj;
+                vertices[i].S = pi_over_pi1 * pi_over_pi1 * (specularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
+            }
+        }
 
         // calculate new alpha
         alpha *= (f / (q * Psig));
@@ -152,33 +169,34 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
                 pi_over_p0 *= (Pa_L / Pa_E);
 
                 if (!vertices[i].bsdf->isSpecular() &&
-                    (i > 0 && !vertices[i-1].bsdf->isSpecular())) {
+                    (i > 0 && !vertices[i - 1].bsdf->isSpecular())) {
                     denom_sum += (pi_over_p0 * pi_over_p0);
+
+                }
+                float w_st = 1.f / denom_sum;
+
+                *C_0t_sum += (w_st * Cs_0t);
+            }
+
+
+            // ------------------------------------------------------------------------------------
+
+
+            // choose next direction w
+            STVector3 w_old = w;
+            f = vertices.back().sample_f(-w_old, &w, &Psig, &cos_sampled_w);
+
+            // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
+            // with some probability (1-q) where q = f / Psig for the next direction chosen.
+            if (vertices.size() >= MIN_SUBPATH_LENGTH + 1) {
+                q = std::min(f.maxComponent() / Psig, 1.f);
+                if ((float)rand() / RAND_MAX >= q) {
+                    return;
                 }
             }
-            float w_st = 1.f / denom_sum;
-
-            *C_0t_sum += (w_st * Cs_0t);
         }
 
-
-        // ------------------------------------------------------------------------------------
-
-
-        // choose next direction w
-        STVector3 w_old = w;
-        f = vertices.back().sample_f(-w_old, &w, &Psig, &cos_sampled_w);
-
-        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
-        // with some probability (1-q) where q = f / Psig for the next direction chosen.
-        if (vertices.size() >= MIN_SUBPATH_LENGTH + 1) {
-            q = std::min(f.maxComponent() / Psig, 1.f);
-            if ((float)rand() / RAND_MAX >= q) {
-                return;
-            }
-        }
     }
-
 }
 
 
@@ -203,7 +221,8 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     //vertices.back().w_prev      // not defined for y0
     vertices.back().alpha = alpha;
     //vertices.back().G_prev      // not defined for y0
-
+    //vertices.back().qPsig_adj // calculated when next w is chosen
+    //vertices.back().S         // calculated when next vertex and w after is chosen
 
     while (true) {
 
@@ -235,7 +254,24 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
         // calculate qPsig_adj for previous vertex, now that we know the direction
         // from it to the new vertex
-        vertices.back().qPsig_adj = q * Psig;
+        float qPsig_adj = q * Psig;
+        vertices.back().qPsig_adj = qPsig_adj;
+
+        // calculate S for prev prev vertex, now that qPsig_adj is known for prev vertex
+        if (vertices.size() >= 2) {
+            if (vertices.size() == 2) {
+                float p0_over_p1 = qPsig_adj / lightDistribution.Pa_y0(inter_obj);  // y1.qPsig_adj / Pa(y0)
+                vertices[0].S = p0_over_p1 * p0_over_p1;
+            } else {
+                int i = vertices.size() - 2;    // we're calculating S_i
+                bool zi_specular = vertices[i].bsdf->isSpecular();
+                bool z1i_specular = vertices[i - 1].bsdf->isSpecular();
+                float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
+
+                float pi_over_pi1 = qPsig_adj / vertices[i - 1].qPsig_adj;
+                vertices[i].S = pi_over_pi1 * pi_over_pi1 * (specularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
+            }
+        }
 
         // calculate new alpha
         alpha *= (f / (q * Psig));

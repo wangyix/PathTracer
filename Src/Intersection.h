@@ -30,7 +30,8 @@ public:
         w_prev(0.f),
         alpha(-1.f),
         G_prev(-1.f),
-        qPsig_adj(-1.f)
+        qPsig_adj(-1.f),
+        S(-1.f)
     {
         intersection = inter;
         const STVector3& n = intersection.normal;
@@ -85,6 +86,8 @@ public:
     float G_prev;       // G(zi->z1i) 
 
     float qPsig_adj;    // q*Psig(zi->zi1) = q*Psig(zi->z_1i)
+
+    float S;            // (pi/pi1)^2 + ... + (p0/pi1)^2, terms corresponding to specular-gap are 0
 
 private:
     Intersection intersection;
