@@ -138,7 +138,6 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             // calculate unweighted contribution C*_0t
             STColor3f Cs_0t = alpha * inter_obj->Le();
 
-
             // note: we know vertices.size() >= 2 at this point
 
             // calculate S of second-to-last vertex
@@ -150,12 +149,12 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             float S_last;
             {
                 int i = vertices.size() - 1;
-                bool zi_specular = false;       // y0 is not specular
+                bool zi_specular = false;       // Le1(y0) is not specular
                 bool z1i_specular = vertices[i - 1].bsdf->isSpecular();
-                float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
+                float nonSpecularGap = (zi_specular || z1i_specular) ? 0.f : 1.f;
 
                 float pi_over_pi1 = lightDistribution.Pa_y0(inter_obj) / (qPsig_adj * vertices[i].G_prev);
-                S_last = (pi_over_pi1 * pi_over_pi1) * (specularGap + S_second_last);
+                S_last = (pi_over_pi1 * pi_over_pi1) * (nonSpecularGap + S_second_last);
             }
 
 
@@ -198,17 +197,42 @@ float Scene::S_eye(const std::vector<Vertex>& vertices, float qPsig_last, int* _
         *_i = i;
 
         bool zi_specular = vertices[i].bsdf->isSpecular();
-        bool z1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // z0 is not specular
-        float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
+        bool z1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // We1() is not specular
+        float nonSpecularGap = (zi_specular || z1i_specular) ? 0.f : 1.f;
 
         float pi_over_pi1 = (qPsig_last * vertices[i + 1].G_prev) / (vertices[i - 1].qPsig_adj * vertices[i].G_prev);
-        return (pi_over_pi1 * pi_over_pi1) * (specularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
+        return (pi_over_pi1 * pi_over_pi1) * (nonSpecularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
+    }
+}
+
+float Scene::S_light(const std::vector<Vertex>& vertices, float qPsig_last, const SceneObject* y0_obj, int* _i) {
+
+    // assumes vertices.size() >= 2 
+    // calculates Si where i = vertices.size() - 2, i.e. the second-to-last vertex
+
+    if (vertices.size() == 2) {
+        *_i = 0;
+        float p0_over_p1 = (qPsig_last * vertices[1].G_prev) 
+            / lightDistribution.Pa_y0(y0_obj);  // y1.qPsig_adj / Pa(y0)
+        return p0_over_p1 * p0_over_p1;
+    } else {
+        int i = vertices.size() - 2;    // we're calculating S_i
+        *_i = i;
+
+        bool yi_specular = vertices[i].bsdf->isSpecular();
+        bool y1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // Le1() is not specular
+        float nonSpecularGap = (yi_specular || y1i_specular) ? 0.f : 1.f;
+
+        float pi_over_pi1 = (qPsig_last * vertices[i + 1].G_prev) / (vertices[i - 1].qPsig_adj * vertices[i].G_prev);
+        return (pi_over_pi1 * pi_over_pi1) * (nonSpecularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
     }
 }
 
 
 
 void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
+
+    const SceneObject* light_obj = NULL;
 
     STPoint3 point;
     STVector3 w;
@@ -218,7 +242,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     const Bsdf* y0_bsdf;
     float Pa_y0;
     STColor3f Le0_y0;
-    lightDistribution.sample_y0(&point, &y0_n, &y0_bsdf, &Pa_y0, &Le0_y0);
+    lightDistribution.sample_y0(&light_obj, &point, &y0_n, &y0_bsdf, &Pa_y0, &Le0_y0);
 
     alpha = Le0_y0 / Pa_y0;
 
@@ -266,18 +290,9 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
         // calculate S for prev prev vertex, now that qPsig_adj is known for prev vertex
         if (vertices.size() >= 2) {
-            if (vertices.size() == 2) {
-                float p0_over_p1 = qPsig_adj / lightDistribution.Pa_y0(inter_obj);  // y1.qPsig_adj / Pa(y0)
-                vertices[0].S = p0_over_p1 * p0_over_p1;
-            } else {
-                int i = vertices.size() - 2;    // we're calculating S_i
-                bool zi_specular = vertices[i].bsdf->isSpecular();
-                bool z1i_specular = vertices[i - 1].bsdf->isSpecular();
-                float specularGap = (zi_specular || z1i_specular) ? 1.f : 0.f;
-
-                float pi_over_pi1 = qPsig_adj / vertices[i - 1].qPsig_adj;
-                vertices[i].S = pi_over_pi1 * pi_over_pi1 * (specularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
-            }
+            int i;
+            float Si = S_light(vertices, qPsig_adj, light_obj, &i);
+            vertices[i].S = Si;
         }
 
         // calculate new alpha
@@ -344,12 +359,63 @@ void Scene::Render() {
                     generateLightSubpath(vertices_L);
 
 
-                    // calculate s=1 contributions: (light image paths)
+                    // calculate non-special-case contributions:
+                    // s=[1, nL], t=[1, nE]
 
+                    for (int t = 1; t <= vertices_E.size(); t++) {
+                        for (int s = 1; s <= vertices_L.size(); s++) {
+
+                            const Vertex& gap_v_E = vertices_E[t - 1];
+                            const Vertex& gap_v_L = vertices_L[s - 1];
+
+                            // calculate visibility between gap vertices
+                            STPoint3 gap_point_E = gap_v_E.getIntersection().point;
+                            STPoint3 gap_point_L = gap_v_L.getIntersection().point;
+                            STVector3 gap_EL = gap_point_L - gap_point_E;
+
+                            STVector3 gap_normal_E = gap_v_E.getIntersection().normal;
+                            STVector3 gap_normal_L = gap_v_L.getIntersection().normal;
+                            float gap_cosw_E = STVector3::Dot(gap_EL, gap_normal_E);
+                            float gap_cosw_L = STVector3::Dot(-gap_EL, gap_normal_L);
+
+                            // check if gap vector goes out the backface of either vertex
+                            if (gap_cosw_E <= 0.f || gap_cosw_L <= 0.f) {
+                                continue;
+                            }
+
+                            // check if the gap vector intersects anything
+                            Ray gap_ray_EL(gap_point_E, gap_EL);
+                            SceneObject* gap_inter_obj = NULL;
+                            std::unique_ptr<Intersection> gap_inter(Intersect(gap_ray_EL, gap_inter_obj));
+                            if (gap_inter && gap_inter->t < 0.9999f) {
+                                continue;
+                            }
+
+                            // calculate c_st
+                            float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.LengthSq();
+                            STVector3 gap_EL_w = gap_EL;
+                            gap_EL_w.Normalize();
+                            STColor3f f_gap_E = gap_v_E.bsdf->f(gap_v_E.w_prev, gap_EL_w);
+                            STColor3f f_gap_L = gap_v_L.bsdf->f(gap_v_L.w_prev, -gap_EL_w);
+                            STColor3f c_st = f_gap_E * G_gap * f_gap_L;
+
+                            // calculate C*st = aEs * c_st * aL (unweighted contribution)
+                            STColor3f Cs_st = gap_v_E.alpha * c_st * gap_v_L.alpha;
+
+
+                            // calculate w_st
+
+
+
+
+
+                            // handle t=1 case (light image)
+                        }
+                    }
                 }
             }
 
-            /*
+            
             int subimage_w0 = 242; int subimage_w1 = 242;
             int subimage_h0 = 310; int subimage_h1 = 310;
             bool use_subimage = false;
@@ -380,7 +446,7 @@ void Scene::Render() {
             std::cout << percent << "% ";
             }
             }
-            }*/
+            }
 
             im->Save(imageFilename);
             delete im;
