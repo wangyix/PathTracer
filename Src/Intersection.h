@@ -27,10 +27,13 @@ public:
 
     Vertex(const Intersection& inter) :
         bsdf(NULL),
-        w_prev(0.f),
+        w_to_prev(0.f),
         alpha(-1.f),
         G_prev(-1.f),
         qPsig_adj(-1.f),
+        Pa_from_prev(-1.f),
+        Pa_from_next(-1.f),
+        prev_gap_nonspecular(-1.f),
         S(-1.f)
     {
         intersection = inter;
@@ -80,14 +83,18 @@ public:
     }
 
 public:
-    const Bsdf* bsdf;   // used for isSpecular, f( ), and Psig( )
-    STVector3 w_prev;   // direction to previous vertex
-    STColor3f alpha;    // alpha_i1
-    float G_prev;       // G(zi->z1i) 
+    const Bsdf* bsdf;       // used for isSpecular, f( ), and Psig( )
+    STVector3 w_to_prev;       // direction to previous vertex
+    STColor3f alpha;        // alpha_i1
+    float G_prev;           // G(zi->z1i) 
+    float qPsig_adj;        // q*Psig(zi->zi1) = q*Psig(zi->z_1i)
 
-    float qPsig_adj;    // q*Psig(zi->zi1) = q*Psig(zi->z_1i)
+    // these 3 members should eliminate special cases when calculating S values
+    float Pa_from_prev;          // Pa(z1i->zi)
+    float Pa_from_next;         // Pa(zi1->zi)
+    float prev_gap_nonspecular; // false if zi or z1i has specular Psig
 
-    float S;            // (pi/pi1)^2 + ... + (p0/pi1)^2, terms corresponding to specular-gap are 0
+    float S;                // (pi/pi1)^2 + ... + (p0/pi1)^2, terms corresponding to specular-gap are 0
 
 private:
     Intersection intersection;
