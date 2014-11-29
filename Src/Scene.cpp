@@ -66,8 +66,8 @@ float Scene::S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1
 
 
 float Scene::qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_ab, const STVector3& w_ac) {
-    STColor3f f_a_to_b = a.bsdf->f(w_ac, w_ab);
-    float Psig_a_to_b = a.bsdf->p_sig(w_ac, w_ab);
+    STColor3f f_a_to_b = a.f(w_ac, w_ab);
+    float Psig_a_to_b = a.p_sig(w_ac, w_ab);
     return std::min(f_a_to_b.maxComponent(), Psig_a_to_b);
 
     // old way: may cause divide-by-zero (Psig_a_to_b might be 0)
@@ -90,8 +90,7 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
     camera->sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
 
     // record z0
-    vertices.emplace_back(Vertex(Intersection(0.f, z0, z0_n), false));  // cameraBsdf will take wi,wo in world-space
-    vertices.back().bsdf = z0_bsdf;
+    vertices.emplace_back(Vertex(Intersection(0.f, z0, z0_n), z0_bsdf, false));  // cameraBsdf will take wi,wo in world-space
     //vertices.back().w_to_prev                    // not defined for z0
     vertices.back().alpha = We0_z0 / Pa_z0;
     //vertices.back().G_prev                    // not defined for y0
@@ -146,15 +145,14 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
 
         // record new vertex
-        vertices.emplace_back(Vertex(*inter));
+        vertices.emplace_back(Vertex(*inter, inter_obj->bsdf));
         i++;
-        vertices[i].bsdf = inter_obj->bsdf;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
         vertices[i].G_prev = cos_sampled_w * cos_intersected_w / (r*r);
         vertices[i].Pa_from_prev = vertices[i - 1].qPsig_adj * vertices[i].G_prev;
         vertices[i].prev_gap_nonspecular =
-            (vertices[i].bsdf->isSpecular() || vertices[i - 1].bsdf->isSpecular()) ? 0.f : 1.f;
+            (vertices[i].isSpecular() || vertices[i - 1].isSpecular()) ? 0.f : 1.f;
 
         delete inter;
         inter = NULL;
@@ -199,8 +197,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     lightDistribution.sample_y0(&y0, &y0_n, &y0_bsdf, &Pa_y0, &Le0_y0);
 
     // record y0
-    vertices.emplace_back(Vertex(Intersection(0.f, y0, y0_n)));
-    vertices.back().bsdf = y0_bsdf;
+    vertices.emplace_back(Vertex(Intersection(0.f, y0, y0_n), y0_bsdf));
     //vertices.back().w_to_prev                    // not defined for y0
     vertices.back().alpha = Le0_y0 / Pa_y0;
     //vertices.back().G_prev                    // not defined for y0
@@ -255,15 +252,14 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
 
         // record new vertex
-        vertices.emplace_back(Vertex(*inter));
+        vertices.emplace_back(Vertex(*inter, inter_obj->bsdf));
         i++;
-        vertices[i].bsdf = inter_obj->bsdf;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
         vertices[i].G_prev = cos_sampled_w * cos_intersected_w / (r*r);
         vertices[i].Pa_from_prev = vertices[i - 1].qPsig_adj * vertices[i].G_prev;
         vertices[i].prev_gap_nonspecular =
-            (vertices[i].bsdf->isSpecular() || vertices[i - 1].bsdf->isSpecular()) ? 0.f : 1.f;
+            (vertices[i].isSpecular() || vertices[i - 1].isSpecular()) ? 0.f : 1.f;
 
         delete inter;
         inter = NULL;
@@ -322,7 +318,7 @@ void Scene::Render() {
                             const Vertex& gap_v_L = vertices_L[s - 1];
 
                             // if either gap vertex is specular, this path will have 0 contribution
-                            if (gap_v_E.bsdf->isSpecular() || gap_v_L.bsdf->isSpecular()) {
+                            if (gap_v_E.isSpecular() || gap_v_L.isSpecular()) {
                                 continue;
                             }
 
@@ -353,8 +349,8 @@ void Scene::Render() {
                             float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.LengthSq();
                             STVector3 gap_EL_w = gap_EL;
                             gap_EL_w.Normalize();
-                            STColor3f f_gap_E = gap_v_E.bsdf->f(gap_v_E.w_to_prev, gap_EL_w);
-                            STColor3f f_gap_L = gap_v_L.bsdf->f(gap_v_L.w_to_prev, -gap_EL_w);
+                            STColor3f f_gap_E = gap_v_E.f(gap_v_E.w_to_prev, gap_EL_w);
+                            STColor3f f_gap_L = gap_v_L.f(gap_v_L.w_to_prev, -gap_EL_w);
                             STColor3f c_st = f_gap_E * G_gap * f_gap_L;
 
                             // calculate C*st = aEs * c_st * aL (unweighted contribution)

@@ -25,8 +25,7 @@ struct Intersection {
 struct Vertex {
 public:
 
-    Vertex(const Intersection& inter, bool transform_w = true) :
-        bsdf(NULL),
+    Vertex(const Intersection& inter, const Bsdf* bsdf, bool transform_w = true) :
         w_to_prev(0.f),
         alpha(-1.f),
         G_prev(-1.f),
@@ -34,10 +33,10 @@ public:
         Pa_from_prev(-1.f),
         Pa_from_next(-1.f),
         prev_gap_nonspecular(-1.f),
-        S(-1.f)
+        S(-1.f),
+        bsdf(bsdf),
+        intersection(inter)
     {
-        intersection = inter;
-
         // if transform_w is true, then it's assumed that bsdf->f() and bsdf->sample_f() takes
         // wi, wo in normal-space.  Otherwise, it's assumed they take wi, wo in world-space.
         // transform_w = false is used so the z0 intersection can be sampled.
@@ -88,9 +87,17 @@ public:
         *wi_w = normalToWorld * wi;
         return f;
     }
+    float p_sig(const STVector3& wo_w, const STVector3& wi_w) const {
+        STVector3 wo = worldToNormal * wo_w;
+        STVector3 wi = worldToNormal * wi_w;
+        return bsdf->p_sig(wo, wi);
+    }
+    bool isSpecular() const {
+        return bsdf->isSpecular();
+    }
+
 
 public:
-    const Bsdf* bsdf;       // used for isSpecular, f( ), and Psig( )
     STVector3 w_to_prev;       // direction to previous vertex
     STColor3f alpha;        // alpha_i1
     float G_prev;           // G(zi->z1i) 
@@ -104,6 +111,7 @@ public:
     float S;                // (pi/pi1)^2 + ... + (p0/pi1)^2, terms corresponding to specular-gap are 0
 
 private:
+    const Bsdf* bsdf;       // used for isSpecular, f( ), and Psig( )
     Intersection intersection;
     STTransform4 normalToWorld, worldToNormal;  // transforms between world-space and normal-space
 };
