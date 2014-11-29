@@ -741,32 +741,32 @@ void Scene::rtTranslate(float tx, float ty, float tz)
 
 void Scene::rtSphere(const STPoint3& center, float radius)
 {
-    objects.push_back(new SceneObject(new Sphere(center, radius), currMaterial, &matStack.back()));
+    objects.push_back(new SceneObject(new Sphere(center, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3)
 {
-    objects.push_back(new SceneObject(new Triangle(v1, v2, v3), currMaterial, &matStack.back()));
+    objects.push_back(new SceneObject(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3)
 {
-    objects.push_back(new SceneObject(new Triangle(v1, v2, v3, uv1, uv2, uv3), currMaterial, &matStack.back(), currTexIndex));
+    objects.push_back(new SceneObject(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z)
 {
-    objects.push_back(new SceneObject(new Box(o, x, y, z), currMaterial, &matStack.back()));
+    objects.push_back(new SceneObject(new Box(o, x, y, z), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtBox(const STPoint3& center, const STVector3& size)
 {
-    objects.push_back(new SceneObject(new Box(center, size), currMaterial, &matStack.back()));
+    objects.push_back(new SceneObject(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtCylinder(const STPoint3& A, const STPoint3 B, float radius)
 {
-    objects.push_back(new SceneObject(new Cylinder(A, B, radius), currMaterial, &matStack.back()));
+    objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 
@@ -783,7 +783,7 @@ void Scene::rtCompound(char c)
         objects.pop_back();
         SceneObject *one = objects.back();
         objects.pop_back();
-        objects.push_back(new SceneObject(new CompoundShape(one->shape, two->shape, c, shadowBias), &one->material, &one->transform));
+        objects.push_back(new SceneObject(new CompoundShape(one->shape, two->shape, c, shadowBias), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
         delete one;
         delete two;
     }
@@ -807,7 +807,7 @@ void Scene::rtTriangleMesh(const std::string& file_name, const bool& counter_clo
     std::vector<STTriangleMesh*> meshes;
     STTriangleMesh::LoadObj(meshes, file_name);
     for (int i = 0; i < (int)meshes.size(); i++) {
-        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), currMaterial, &matStack.back(), currTexIndex));
+        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
     }
     //objects.push_back(new SceneObject(new TriangleMesh(file_name,counter_clockwise,smoothed_normal), currMaterial, &matStack.back(), currTexIndex));
 }
@@ -824,7 +824,7 @@ void Scene::rtTriangleMeshWithMaterialAndTexture(const std::string& file_name, c
         STColor3f spec(st_mesh->mMaterialSpecular[0], st_mesh->mMaterialSpecular[1], st_mesh->mMaterialSpecular[2]);
         float shin = st_mesh->mShininess;
         Material* mat = new Material(amb, diff, spec, /*mirror*/STColor3f(), shin);
-        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), mat, &matStack.back(), tex_index));
+        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
     }
 }
 
@@ -1123,13 +1123,36 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             STColor3f col(r, g, b);
             rtAreaLight(v[0], v[1], v[2], col);
         } else if (command == "Material") {
-            float ra, ga, ba, rd, gd, bd, rs, gs, bs, rr, gr, br, shine;
+            /*float ra, ga, ba, rd, gd, bd, rs, gs, bs, rr, gr, br, shine;
             ss >> ra >> ga >> ba >> rd >> gd >> bd >> rs >> gs >> bs >> rr >> gr >> br >> shine;
             STColor3f amb(ra, ga, ba);
             STColor3f diff(rd, gd, bd);
             STColor3f spec(rs, gs, bs);
             STColor3f mirr(rr, gr, br);
-            rtMaterial(amb, diff, spec, mirr, shine);
+            rtMaterial(amb, diff, spec, mirr, shine);*/
+
+            ss >> currEmittedPower.r >> currEmittedPower.g >> currEmittedPower.b;
+            
+            std::string type;
+            ss >> type;
+            if (type == "L") {
+                STColor3f R;
+                ss >> R.r >> R.g >> R.b;
+                currBsdf.reset(new Lambertian(R));
+            } else if (type == "SC") {
+                STColor3f R, eta, k;
+                ss >> R.r >> R.g >> R.b;
+                ss >> eta.r >> eta.g >> eta.b;
+                ss >> k.r >> k.g >> k.b;
+                currBsdf.reset(new SpecularCond(R, eta, k));
+            } else if (type == "SD") {
+                STColor3f R, T;
+                float etai, etat;
+                ss >> R.r >> R.g >> R.b;
+                ss >> T.r >> T.g >> T.b;
+                ss >> etai >> etat;
+                currBsdf.reset(new SpecularDiel(R, T, etai, etat));
+            }
         } else if (command == "TMaterial") {
             float ra, ga, ba, rd, gd, bd, rs, gs, bs, rr, gr, br, shine, rf, gf, bf, snell;
             ss >> ra >> ga >> ba >> rd >> gd >> bd >> rs >> gs >> bs >> rr >> gr >> br >> shine >> rf >> gf >> bf >> snell;

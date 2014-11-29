@@ -22,7 +22,7 @@ public:
         texture_index(_texture_index),
         name("scene_object"),
         isLight(false),
-        bsdf(&grayLambertian),
+        bsdf(new Lambertian(grayLambertian)),
         emittedPower(0.f)
     {
         tInverse = transform.Inverse();
@@ -33,7 +33,7 @@ public:
     }
 
     // updated object that uses bsdf.
-    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf, STColor3f emittedPower=STColor3f(0.f)) :
+    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf=NULL, STColor3f emittedPower=STColor3f(0.f)) :
         shape(shape),
         aabb(NULL),
         material(),
@@ -41,7 +41,7 @@ public:
         texture_index(-1),
         name("scene_object"),
         isLight(emittedPower.maxComponent() > 0.f),
-        bsdf(bsdf),
+        bsdf(bsdf ? bsdf : new Lambertian(grayLambertian)),
         emittedPower(emittedPower)
     {
         tInverse = transform.Inverse();
@@ -55,6 +55,7 @@ public:
     {
         //if(shape!=NULL){delete shape;shape=NULL;} ////may cause memory leak here
         if(aabb!=NULL){delete aabb;aabb=NULL;}
+        if (bsdf) delete bsdf;
     }
 
     virtual bool doesIntersect(const Ray& ray) 

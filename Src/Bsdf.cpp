@@ -214,3 +214,23 @@ STColor3f ScaledBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_si
 float ScaledBsdf::p_sig(const STVector3& wo, const STVector3& wi) const {
     return bsdf->p_sig(wo, wi);
 }
+
+Bsdf* newCopyBsdf(const Bsdf* bsdf) {
+    switch (bsdf->type) {
+    case Bsdf::Type::L: {
+        const Lambertian* L_bsdf = dynamic_cast<const Lambertian*>(bsdf);
+        return new Lambertian(*L_bsdf);
+    }
+    case Bsdf::Type::SC: {
+        const SpecularCond* SC_bsdf = dynamic_cast<const SpecularCond*>(bsdf);
+        return new SpecularCond(*SC_bsdf);
+    }
+    case Bsdf::Type::SD: {
+        const SpecularDiel* SD_bsdf = dynamic_cast<const SpecularDiel*>(bsdf);
+        return new SpecularDiel(*SD_bsdf);
+    }
+    default: {
+        return NULL;
+    }
+    }
+}

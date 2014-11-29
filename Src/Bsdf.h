@@ -26,6 +26,9 @@ STColor3f fresnelDielEvaluate(float cosi, float etai, float etat);
 
 class Bsdf {
 public:
+    enum Type{L, SC, SD};
+
+public:
     virtual STColor3f f(const STVector3& wo, const STVector3& wi) const = 0;
     virtual STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const = 0;
 
@@ -33,11 +36,16 @@ public:
     virtual float p_sig(const STVector3& wo, const STVector3& wi) const = 0;
 
     virtual bool isSpecular() const = 0;
+
+public:
+    Type type;
 };
+
+
 
 class Lambertian : public Bsdf {
 public:
-    Lambertian(const STColor3f& R) : R(R) {};
+    Lambertian(const STColor3f& R) : R(R) { type = Type::L; }
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
@@ -50,7 +58,7 @@ private:
 // same as Lambertian except albedo is 1 and sample_f always gives wi in positive-z hemisphere
 class Y0Lambertian : public Bsdf {
 public:
-    Y0Lambertian() {}
+    Y0Lambertian() { type = Type::L; }
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
@@ -60,7 +68,7 @@ public:
 class SpecularDiel : public Bsdf {
 public:
     SpecularDiel(const STColor3f& R, const STColor3f& T, float etai, float etat) :
-        R(R), T(T), etai(etai), etat(etat) {}
+        R(R), T(T), etai(etai), etat(etat) { type = Type::SD; }
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
@@ -76,7 +84,7 @@ private:
 class SpecularCond : public Bsdf {
 public:
     SpecularCond(const STColor3f& R, STColor3f& eta, STColor3f& k) :
-        R(R), eta(eta), k(k) {}
+        R(R), eta(eta), k(k) { type = Type::SC; }
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
@@ -90,7 +98,7 @@ private:
 
 class ScaledBsdf : public Bsdf {
 public:
-    ScaledBsdf(const Bsdf *bsdf, const STColor3f& scale) : bsdf(bsdf), s(scale) {}
+    ScaledBsdf(const Bsdf *bsdf, const STColor3f& scale) : bsdf(bsdf), s(scale) { type = bsdf->type; }
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
@@ -107,3 +115,5 @@ static const Lambertian grayLambertian(STColor3f(0.5f));
 
 // used as the bsdf for the IntersectionBsdf returned for the chosen vertex y0 
 static const Y0Lambertian y0Lambertian;
+
+Bsdf* newCopyBsdf(const Bsdf* bsdf);

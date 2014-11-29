@@ -5,7 +5,7 @@
 #include "RayTrace.h"
 
 #include <iostream>
-
+#include <memory>
 
 
 class LightDistribution {
@@ -134,6 +134,9 @@ protected:
     bool use_transparent_shadow;
     std::vector<STImage*> textures;
     std::vector<VolumetricTexture*> volumetric_textures;
+
+    std::unique_ptr<Bsdf> currBsdf;
+    STColor3f currEmittedPower;
 
     int bounceDepth;
     float shadowBias;
