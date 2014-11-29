@@ -49,142 +49,6 @@ std::string Scene::info() {
 
 
 
-#define MIN_SUBPATH_LENGTH 3
-
-/*
-void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
-
-    *C_0t_sum = STColor3f(0.f);
-
-    STPoint3 point;
-    STVector3 w;
-    STColor3f alpha;
-    float Psig;
-    float q;
-    STColor3f f;
-    float cos_sampled_w;
-    float S;
-
-    // vertex z0 is eye
-    point = camera->getEye();
-    alpha = STColor3f(1.f);     // We0(z0)/Pa(z0) = C*delta()/delta() = C   (1 should be okay)
-
-    // generate direction w to z1
-    Ray z0_z1;
-    camera->generateRay(z0_z1, u, v);
-    z0_z1.d.Normalize();                            // generateRay does not normalize Ray::d for some reason
-    w = z0_z1.d;
-    q = 1.f;
-    f = STColor3f(1.f);                             // We1(z0->z1) = 1/C   (1 should be okay)
-    Psig = camera->Psig_cosW(w, &cos_sampled_w);    // Psig(z0->z1) depends on camera properties
-
-    // record vertex z0
-    vertices.emplace_back(Vertex(Intersection(0.f, point, camera->getLook())));
-    //vertices.back().bsdf      // We(z0->z1) = 1, will be handled specially
-    //vertices.back().w_to_prev    // not defined for z0
-    vertices.back().alpha = alpha;
-    //vertices.back().G_prev    // not defined for z0
-    //vertices.back().qPsig_adj // calculated when next w is chosen
-    //vertices.back().S         // calculated when next vertex and w after is chosen
-
-    while (true) {
-        // find intersection between chosen direction and scene.
-        Ray w_ray(point, w);
-        SceneObject* inter_obj;
-        Intersection* inter = Intersect(w_ray, inter_obj);
-        if (!inter) {
-            // ray didn't hit anything; terminate path
-            return;
-        }
-        point = inter->point;
-
-        // calculate qPsig_adj for previous vertex, now that we know the direction
-        // from it to the new vertex
-        float qPsig_adj = q * Psig;
-        vertices.back().qPsig_adj = qPsig_adj;
-
-        // calculate S for prev prev vertex, now that qPsig_adj is known for prev vertex
-        if (vertices.size() >= 2) {
-            int i;
-            float Si = S_eye(vertices, qPsig_adj, &i);
-            vertices[i].S = Si;
-        }
-
-        // calculate new alpha
-        alpha *= (f / qPsig_adj);
-
-        // calculate G between new vertex and prev vertex
-        float r = inter->t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
-        float G_prev = cos_sampled_w * cos_intersected_w / (r*r);
-
-        // record new vertex
-        vertices.emplace_back(Vertex(*inter));
-        vertices.back().bsdf = inter_obj->bsdf;
-        vertices.back().w_to_prev = -w;
-        vertices.back().alpha = alpha;
-        vertices.back().G_prev = G_prev;
-
-        delete inter;
-        inter = NULL;
-
-        // ------------------------------------------------------------------------------------
-
-        // if we hit a light, accumulate the contribution of the sample path from technique p_0t
-        // where t is the number of vertices we have so far.
-        // the sample from technique p_0t is only nonzero if the eye-subpath prefix ends on a light
-
-        if (inter_obj->isLight) {
-            // calculate unweighted contribution C*_0t
-            STColor3f Cs_0t = alpha * inter_obj->Le();
-
-            // note: we know vertices.size() >= 2 at this point
-
-            // calculate S of second-to-last vertex
-            float qPsig_last = lightDistribution.Psig_y0_y1();
-            int i;
-            float S_second_last = S_eye(vertices, qPsig_last, &i);
-
-            // calculate S of last vertex (the one on the light)
-            float S_last;
-            {
-                int i = vertices.size() - 1;
-                bool zi_specular = false;       // Le1(y0) is not specular
-                bool z1i_specular = vertices[i - 1].bsdf->isSpecular();
-                float nonSpecularGap = (zi_specular || z1i_specular) ? 0.f : 1.f;
-
-                float pi_over_pi1 = lightDistribution.Pa_y0(inter_obj) / (qPsig_adj * vertices[i].G_prev);
-                S_last = (pi_over_pi1 * pi_over_pi1) * (nonSpecularGap + S_second_last);
-            }
-
-
-            // calculate weight w_st = 1 / (1 + (p1/p0)^2 + (p2/p0)^2 + .. + (pt/p0)^2) = 1 / (1 + S_last)
-            float w_0t = 1.f / (1.f + S_last);
-
-            *C_0t_sum += (w_0t * Cs_0t);
-        }
-
-
-        // ------------------------------------------------------------------------------------
-
-
-        // choose next direction w
-        STVector3 w_old = w;
-        f = vertices.back().sample_f(-w_old, &w, &Psig, &cos_sampled_w);
-
-        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
-        // with some probability (1-q) where q = f / Psig for the next direction chosen.
-        if (vertices.size() >= MIN_SUBPATH_LENGTH + 1) {
-            q = std::min(f.maxComponent() / Psig, 1.f);
-            if ((float)rand() / RAND_MAX >= q) {
-                return;
-            }
-        }
-    }
-
-}
-*/
-
 float Scene::S_i_at(const std::vector<Vertex>& vertices, int i) {
     float Pa_from_i1 = vertices[i].Pa_from_next;
     return S_i_at(vertices, i, Pa_from_i1);
@@ -200,6 +64,17 @@ float Scene::S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1
     return (pi_over_pi1 * pi_over_pi1) * (vertices[i].prev_gap_nonspecular + S_1i);
 }
 
+
+float Scene::qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_ab, const STVector3& w_ac) {
+    STColor3f f_a_to_b = a.bsdf->f(w_ac, w_ab);
+    float Psig_a_to_b = a.bsdf->p_sig(w_ac, w_ab);
+    return std::min(f_a_to_b.maxComponent(), Psig_a_to_b);
+    //float q_a_to_b = std::min(f_a_to_b.maxComponent() / Psig_a_to_b, 1.f);
+    //return q_a_to_b * Psig_a_to_b;
+}
+
+
+#define MIN_SUBPATH_LENGTH 3
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
     
@@ -395,21 +270,20 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
 
 
-
-
 void Scene::Render() {
     lightDistribution.init(objects);
 
     std::cout << "------------------ray tracing started------------------" << std::endl;
-    STImage *im = new STImage(width, height);
-    STImage *im_L = new STImage(width, height);     // light image (for s=1 paths)
-    ImagePlane imPlane = ImagePlane(width, height);
+
+    std::vector<STColor3f> pixels(width * height, STColor3f(0.f));
+    float N = width * height * sampleRate * sampleRate;
 
     int percent = 0, computed = 0;
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
 
             // work on pixel (x, y)
+            STColor3f C_sum_this_pixel(0.f);
 
             // sampleRate^2 stratified estimates (sample-path groups) per pixel
             for (int a = 0; a < sampleRate; a++) {
@@ -423,19 +297,18 @@ void Scene::Render() {
                     // convert to screen coords (u,v)
                     float u = xs / width;
                     float v = ys / height;
-
-                    STColor3f C_sum(0.f);
-
-                    // generate eye subpath thru (u,v), accumulate C0t contributions
+                    
+                    // generate eye subpath thru (u,v)
                     std::vector<Vertex> vertices_E;
                     STColor3f C0t_sum;
                     generateEyeSubpath(u, v, vertices_E, &C0t_sum);
-                    C_sum += C0t_sum;
-
+                    
                     // generate light subpath
                     std::vector<Vertex> vertices_L;
                     generateLightSubpath(vertices_L);
 
+                    // accumulate C0t contributions
+                    C_sum_this_pixel += C0t_sum;
 
                     // calculate non-special-case contributions:
                     // s=[1, nL], t=[1, nE]
@@ -445,6 +318,11 @@ void Scene::Render() {
 
                             const Vertex& gap_v_E = vertices_E[t - 1];
                             const Vertex& gap_v_L = vertices_L[s - 1];
+
+                            // if either gap vertex is specular, this path will have 0 contribution
+                            if (gap_v_E.bsdf->isSpecular() || gap_v_L.bsdf->isSpecular()) {
+                                continue;
+                            }
 
                             // calculate visibility between gap vertices
                             STPoint3 gap_point_E = gap_v_E.getIntersection().point;
@@ -481,56 +359,86 @@ void Scene::Render() {
                             STColor3f Cs_st = gap_v_E.alpha * c_st * gap_v_L.alpha;
 
 
+                            // calculate S at gap vertex E
+                            float S_E;
+                            float Pa_gap_LtoE = qPsig_a_to_b(gap_v_L, gap_v_E, -gap_EL_w, gap_v_L.w_to_prev)
+                                * G_gap;
+                            if (t == 1) {
+                                S_E = S_i_at(vertices_E, 0, Pa_gap_LtoE);
+                            } else {
+                                float Pa_E_1E = qPsig_a_to_b(vertices_E[t - 1], vertices_E[t - 2],
+                                    vertices_E[t - 1].w_to_prev, gap_EL_w)
+                                    * vertices_E[t - 1].G_prev;
+
+                                float S_1E = S_i_at(vertices_E, t - 2, Pa_E_1E);
+                                S_E = S_i_at(vertices_E, t - 1, Pa_gap_LtoE, S_1E);
+                            }
+
+                            // calculate S at gap vertex L
+                            float S_L;
+                            float Pa_gap_EtoL = qPsig_a_to_b(gap_v_E, gap_v_L, gap_EL_w, gap_v_E.w_to_prev)
+                                * G_gap;
+                            if (s == 1) {
+                                S_L = S_i_at(vertices_L, 0, Pa_gap_EtoL);
+                            } else {
+                                float Pa_L_1L = qPsig_a_to_b(vertices_L[s - 1], vertices_L[s - 2],
+                                    vertices_L[s - 1].w_to_prev, -gap_EL_w)
+                                    * vertices_L[s - 1].G_prev;
+
+
+                                float S_1L = S_i_at(vertices_L, s - 2, Pa_L_1L);
+                                S_L = S_i_at(vertices_L, s - 1, Pa_gap_EtoL, S_1L);
+                            }
+
                             // calculate w_st
+                            float w_st = 1.f / (S_L + 1.f + S_E);
+                            
+                            // calculate weighted contribution Cst
+                            STColor3f C_st = w_st * Cs_st;
 
+                            // accumulate this sample
+                            if (t == 1) {
+                                // find where z0->y(s-1) intersects img plane
+                                // paths that don't go thru img plane don't contribute
+                                float u_w, v_w;
+                                camera->getUvOfDirection(gap_EL_w, &u_w, &v_w);
+                                if (u_w < 0.f || u_w >= 1.f || v_w < 0.f || v_w >= 1.f) {
+                                    continue;
+                                }
+                                // convert to x,y pixel coordinates, accumulate contribution
+                                int x_w = (int)(u_w * width);
+                                int y_w = (int)(v_w * height);
+                                pixels[(height - y_w) * width + x_w] += (C_st / N);
+                            } else {
+                                C_sum_this_pixel += C_st;
+                            }
 
+                        } // s loop
+                    } // t loop
+                }   // sample-rate loop
+            } // sample-rate loop
 
+            pixels[(height - y) * width + x] +=(C_sum_this_pixel / N);
 
-
-                            // handle t=1 case (light image)
-                        }
-                    }
-                }
-            }
-
-            
-            int subimage_w0 = 242; int subimage_w1 = 242;
-            int subimage_h0 = 310; int subimage_h1 = 310;
-            bool use_subimage = false;
-
-            int percent = 0, computed = 0;
-            for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-            if (use_subimage && (w<subimage_w0 || w>subimage_w1 || h<subimage_h0 || h>subimage_h1)){
-            im->SetPixel(w, h, STColor4ub(0, 0, 255, 255));
-            continue;
-            }
-            if (use_subimage)std::cout << "trace_ray: " << w << ", " << h << std::endl;
-
-            std::vector<Ray *>* rays = imPlane.getRays(camera, w, h, sampleRate, focus, aperture);
-            STColor3f avg = STColor3f(0.f, 0.f, 0.f);
-            for (int i = 0; i < (int)rays->size(); i++) {
-            STColor3f ray_color = TraceRay(*rays->at(i));
-            if (use_subimage)std::cout << "ray_color: " << ray_color.r << ", " << ray_color.g << ", " << ray_color.b << std::endl;
-            avg += ray_color;
-            delete rays->at(i);
-            }
-            im->SetPixel(w, h, STColor4ub(avg / (float)rays->size()));
-            delete rays;
 
             computed++;
             if (100 * computed / (width * height) > percent) {
-            percent++;
-            std::cout << percent << "% ";
+                percent++;
+                std::cout << percent << "% ";
             }
-            }
-            }
+        } // y loop
+    } // x loop
 
-            im->Save(imageFilename);
-            delete im;
-            std::cout << "------------------ray tracing finished------------------" << std::endl;
-        }
-    }
+    /*
+    STImage *im = new STImage(width, height);
+    STImage *im_L = new STImage(width, height);     // light image (for s=1 paths)
+    ImagePlane imPlane = ImagePlane(width, height);
+    */
+
+    STImage im(width, height, pixels);
+    im.Save(imageFilename);
+
+    std::cout << "------------------ray tracing finished------------------" << std::endl;
 }
 
 STColor3f Scene::TraceRay(const Ray &ray, int bounce) {

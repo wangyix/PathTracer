@@ -8,7 +8,7 @@
 static const double pi = 3.14159265358979;
 
 Camera::Camera(const STPoint3& _eye, const STVector3& _up, const STPoint3& _lookAt, float _fovy, float _aspect)
-: eye(_eye), up(_up), lookAt(_lookAt), fovy(_fovy), aspect(_aspect)
+    : eye(_eye), up(_up), lookAt(_lookAt), fovy(_fovy), aspect(_aspect), cameraBsdf(*this)
 {
     left = STVector3::Cross(up, lookAt - eye);
     up = STVector3::Cross(lookAt - eye, left);
@@ -21,7 +21,21 @@ Camera::Camera(const STPoint3& _eye, const STVector3& _up, const STPoint3& _look
     UR = STVector3(lookAt) - x * left + y * up;
     LL = STVector3(lookAt) + x * left - y * up;
     LR = STVector3(lookAt) - x * left - y * up;
-    
+    UL_half_dist = y;
+    LR_half_dist = x;
+
+    // calculate world-to-view matrix
+    const STVector3& I = left;
+    const STVector3& J = up;
+    STVector3 K = getLook();
+    const STPoint3& P = eye;
+    STTransform4 viewToWorld = STTransform4(
+        I.x, J.x, K.x, P.x,
+        I.y, J.y, K.y, P.y,
+        I.z, J.z, K.z, P.z,
+        0.f, 0.f, 0.f, 1.f
+        );
+    worldToView = viewToWorld.Inverse();
 }
 
 STPoint3 Camera::pointOnPlane(float u, float v) const {
@@ -68,6 +82,20 @@ float Camera::Psig_cosW(const STVector3& w, float* cos_w) const {
     return 1.0f / (4.0f * aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
 }
 */
+
+void Camera::getUvOfDirection(const STVector3 w, float* u, float* v) const {
+    STVector3 w_v = worldToView * w;
+    
+    // scale w_v so that it goes from the eye to a point on the camera plane
+    float target_z = (lookAt - eye).Length();
+    STVector3 w_v_scaled = w_v_scaled * (target_z / w_v_scaled.z);
+    float ndc_u = w_v_scaled.x / LR_half_dist;  // [-1, 1]
+    float ndc_v = w_v_scaled.y / UL_half_dist;  // [-1, 1]
+
+    *u = .5f * (1.f - ndc_u);
+    *v = .5f * (ndc_v + 1.f);
+}
+
 
 void Camera::setSampleUV(float u, float v) {
     cameraBsdf.setSampleUV(u, v);

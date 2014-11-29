@@ -116,6 +116,8 @@ protected:
     float S_i_at(const std::vector<Vertex>& vertices, int i);
     float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1);
     float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i);
+
+    float qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_ab, const STVector3& w_ac);
 };
 
 

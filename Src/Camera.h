@@ -52,6 +52,8 @@ public:
         return look;
     }
 
+    void getUvOfDirection(const STVector3 w, float* u, float* v) const;
+
     void setSampleUV(float u, float v);
     void sample_z0(STPoint3* z0, STVector3* z0_n, Bsdf const** bsdf, float* Pa, STColor3f* We0) const;
 
@@ -63,6 +65,10 @@ private:
     float aspect;
     
     STVector3 left, UL, UR, LL, LR;
+
+    STTransform4 worldToView;
+    float LR_half_dist;
+    float UL_half_dist;
 
     CameraBsdf cameraBsdf;
 };
