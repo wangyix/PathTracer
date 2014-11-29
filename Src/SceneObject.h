@@ -83,7 +83,7 @@ public:
     virtual STColor3f Le() const {
         return emittedPower / (shape->getSurfaceArea() * M_PI);
     }
-    // positional component of Le
+    // positional component of Le (irrandiance)
     virtual STColor3f Le0() const {
         return emittedPower / shape->getSurfaceArea();
     }

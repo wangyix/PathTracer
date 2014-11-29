@@ -26,7 +26,7 @@ STColor3f fresnelDielEvaluate(float cosi, float etai, float etat);
 class Bsdf {
 public:
     virtual STColor3f f(const STVector3& wo, const STVector3& wi) const = 0;
-    virtual STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const = 0;
+    virtual STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const = 0;
 
     // returns Psig(wi) given wo, wi
     virtual float p_sig(const STVector3& wo, const STVector3& wi) const = 0;
@@ -38,7 +38,7 @@ class Lambertian : public Bsdf {
 public:
     Lambertian(const STColor3f& R) : R(R) {};
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
-    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
+    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return false; }
 private:
@@ -50,7 +50,7 @@ private:
 class Y0Lambertian : public Bsdf {
     Y0Lambertian() {}
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
-    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
+    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return false; }
 };
@@ -60,7 +60,7 @@ public:
     SpecularDiel(const STColor3f& R, const STColor3f& T, float etai, float etat) :
         R(R), T(T), etai(etai), etat(etat) {}
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
-    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
+    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return true; }
 
@@ -76,7 +76,7 @@ public:
     SpecularCond(const STColor3f& R, STColor3f& eta, STColor3f& k) :
         R(R), eta(eta), k(k) {}
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
-    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
+    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return true; }
 
@@ -90,7 +90,7 @@ class ScaledBsdf : public Bsdf {
 public:
     ScaledBsdf(const Bsdf *bsdf, const STColor3f& scale) : bsdf(bsdf), s(scale) {}
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
-    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const;
+    STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return bsdf->isSpecular(); }
 private:

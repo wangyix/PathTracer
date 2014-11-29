@@ -113,12 +113,9 @@ protected:
     void generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum);
     void generateLightSubpath(std::vector<Vertex>& vertices);
 
-    float S_i(const std::vector<Vertex>& vertices, int i);
-    float S_i(const std::vector<Vertex>& vertices, int i, float Pa_from_i1);
-    float S_i(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i);
-
-    //float S_eye(const std::vector<Vertex>& vertices, float qPsig_i1, int* _i);
-    //float S_light(const std::vector<Vertex>& vertices, float qPsig_i1, const SceneObject* y0_obj, int* _i);
+    float S_i_at(const std::vector<Vertex>& vertices, int i);
+    float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1);
+    float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i);
 };
 
 
@@ -143,7 +140,7 @@ public:
         }
     }
 
-    void sample_y0(STPoint3* point, STVector3* normal, Bsdf const** bsdf, float* Pa, STColor3f* Le0) {
+    void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa, STColor3f* Le0) {
         // choose a light source to sample based on max component of emitted power
         float r = (float)rand() / RAND_MAX * powerTotal;
         int chosen_i = 0;
@@ -156,7 +153,7 @@ public:
 
         // choose y0 by sampling selected light source, scale the resulting Pa
         float Pa_y0_obj;
-        lightObjects[chosen_i]->sample_y0(point, normal, bsdf, &Pa_y0_obj, Le0);
+        lightObjects[chosen_i]->sample_y0(y0, y0_n, bsdf, &Pa_y0_obj, Le0);
         *Pa = Pa_y0_multiplier * Pa_y0_obj;
     }
 

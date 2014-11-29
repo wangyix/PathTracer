@@ -25,7 +25,7 @@ struct Intersection {
 struct Vertex {
 public:
 
-    Vertex(const Intersection& inter) :
+    Vertex(const Intersection& inter, bool transform_w = true) :
         bsdf(NULL),
         w_to_prev(0.f),
         alpha(-1.f),
@@ -37,30 +37,39 @@ public:
         S(-1.f)
     {
         intersection = inter;
-        const STVector3& n = intersection.normal;
-        const STPoint3& P = intersection.point;
 
-        // generate unit axes I,J,K  where K=normal;
-        // I,J will be set to some arbitrary orientation around K
-        STVector3 I, J;
-        STVector3 K = n;
-        if (K.x == 0.f & K.y == 0.f) {
-            I = STVector3(1.f, 0.f, 0.f);
-            J = STVector3(0.f, 1.f, 0.f);
+        // if transform_w is true, then it's assumed that bsdf->f() and bsdf->sample_f() takes
+        // wi, wo in normal-space.  Otherwise, it's assumed they take wi, wo in world-space.
+        // transform_w = false is used so the z0 intersection can be sampled.
+        if (transform_w) {
+            const STVector3& n = intersection.normal;
+            const STPoint3& P = intersection.point;
+
+            // generate unit axes I,J,K  where K=normal;
+            // I,J will be set to some arbitrary orientation around K
+            STVector3 I, J;
+            STVector3 K = n;
+            if (K.x == 0.f & K.y == 0.f) {
+                I = STVector3(1.f, 0.f, 0.f);
+                J = STVector3(0.f, 1.f, 0.f);
+            } else {
+                I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
+                I.Normalize();
+                J = STVector3::Cross(K, I);
+                J.Normalize();
+            }
+            // generate transform matrices between normal- and world-space from I,J,K axes
+            normalToWorld = STTransform4(
+                I.x, J.x, K.x, P.x,
+                I.y, J.y, K.y, P.y,
+                I.z, J.z, K.z, P.z,
+                0.f, 0.f, 0.f, 1.f
+                );
+            worldToNormal = normalToWorld.Inverse();
         } else {
-            I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
-            I.Normalize();
-            J = STVector3::Cross(K, I);
-            J.Normalize();
+            normalToWorld = STTransform4::Identity();
+            normalToWorld = STTransform4::Identity();
         }
-        // generate transform matrices between normal- and world-space from I,J,K axes
-        normalToWorld = STTransform4(
-            I.x, J.x, K.x, P.x,
-            I.y, J.y, K.y, P.y,
-            I.z, J.z, K.z, P.z,
-            0.f, 0.f, 0.f, 1.f
-            );
-        worldToNormal = normalToWorld.Inverse();
     }
 
     const Intersection& getIntersection() const { return intersection; }
@@ -72,12 +81,10 @@ public:
         STVector3 wi = worldToNormal * wi_w;
         return bsdf->f(wo, wi);
     }
-    STColor3f sample_f(const STVector3& wo_w, STVector3* wi_w, float* pdf_sig,
-        float* cos_wi) const {
+    STColor3f sample_f(const STVector3& wo_w, STVector3* wi_w, float* pdf_sig, float* cos_wi) const {
         STVector3 wo = worldToNormal * wo_w;
         STVector3 wi;
-        STColor3f f = bsdf->sample_f(wo, &wi, pdf_sig);
-        *cos_wi = AbsCosTheta(wi);
+        STColor3f f = bsdf->sample_f(wo, &wi, pdf_sig, cos_wi);
         *wi_w = normalToWorld * wi;
         return f;
     }

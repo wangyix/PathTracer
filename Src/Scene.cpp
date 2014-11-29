@@ -51,7 +51,7 @@ std::string Scene::info() {
 
 #define MIN_SUBPATH_LENGTH 3
 
-
+/*
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
     *C_0t_sum = STColor3f(0.f);
@@ -183,67 +183,134 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
     }
 
 }
+*/
 
-/*float Scene::S_eye(const std::vector<Vertex>& vertices, float qPsig_last, int* _i) {
-
-    // assumes vertices.size() >= 2 
-    // calculates Si where i = vertices.size() - 2, i.e. the second-to-last vertex
-
-    if (vertices.size() == 2) {
-        *_i = 0;
-        return 0.f;    // since z_(-1) is specular
-    } else {
-        int i = vertices.size() - 2;    // we're calculating S_i
-        *_i = i;
-
-        bool zi_specular = vertices[i].bsdf->isSpecular();
-        bool z1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // We1() is not specular
-        float nonSpecularGap = (zi_specular || z1i_specular) ? 0.f : 1.f;
-
-        float pi_over_pi1 = (qPsig_last * vertices[i + 1].G_prev) / (vertices[i - 1].qPsig_adj * vertices[i].G_prev);
-        return (pi_over_pi1 * pi_over_pi1) * (nonSpecularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
-    }
-}
-
-float Scene::S_light(const std::vector<Vertex>& vertices, float qPsig_last, const SceneObject* y0_obj, int* _i) {
-
-    // assumes vertices.size() >= 2 
-    // calculates Si where i = vertices.size() - 2, i.e. the second-to-last vertex
-
-    if (vertices.size() == 2) {
-        *_i = 0;
-        float p0_over_p1 = (qPsig_last * vertices[1].G_prev) 
-            / lightDistribution.Pa_y0(y0_obj);  // y1.qPsig_adj / Pa(y0)
-        return p0_over_p1 * p0_over_p1;
-    } else {
-        int i = vertices.size() - 2;    // we're calculating S_i
-        *_i = i;
-
-        bool yi_specular = vertices[i].bsdf->isSpecular();
-        bool y1i_specular = (i == 1) ? false : vertices[i - 1].bsdf->isSpecular();  // Le1() is not specular
-        float nonSpecularGap = (yi_specular || y1i_specular) ? 0.f : 1.f;
-
-        float pi_over_pi1 = (qPsig_last * vertices[i + 1].G_prev) / (vertices[i - 1].qPsig_adj * vertices[i].G_prev);
-        return (pi_over_pi1 * pi_over_pi1) * (nonSpecularGap + vertices[i - 1].S);  // Si = (pi/pi1)^2 * (1 or 0 + S1i)
-    }
-}*/
-
-
-
-float Scene::S_i(const std::vector<Vertex>& vertices, int i) {
+float Scene::S_i_at(const std::vector<Vertex>& vertices, int i) {
     float Pa_from_i1 = vertices[i].Pa_from_next;
-    return S_i(vertices, i, Pa_from_i1);
+    return S_i_at(vertices, i, Pa_from_i1);
 }
 
-float Scene::S_i(const std::vector<Vertex>& vertices, int i, float Pa_from_i1) {
+float Scene::S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1) {
     float S_1i = (i == 0) ? 0.f : vertices[i - 1].S;
-    return S_i(vertices, i, Pa_from_i1, S_1i);
+    return S_i_at(vertices, i, Pa_from_i1, S_1i);
 }
 
-float Scene::S_i(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i) {
+float Scene::S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i) {
     float pi_over_pi1 = Pa_from_i1 / vertices[i].Pa_from_prev;
     return (pi_over_pi1 * pi_over_pi1) * (vertices[i].prev_gap_nonspecular + S_1i);
 }
+
+
+void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
+    
+    camera->setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
+
+    STPoint3 z0;
+    STVector3 z0_n;
+    const Bsdf* z0_bsdf;
+    float Pa_z0;
+    STColor3f We0_z0;
+    camera->sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
+
+    // record z0
+    vertices.emplace_back(Vertex(Intersection(0.f, z0, z0_n), false));  // cameraBsdf will take wi,wo in world-space
+    vertices.back().bsdf = z0_bsdf;
+    //vertices.back().w_to_prev                    // not defined for z0
+    vertices.back().alpha = We0_z0 / Pa_z0;
+    //vertices.back().G_prev                    // not defined for y0
+    //vertices.back().qPsig_adj                 // calculated when next w is chosen
+    vertices.back().Pa_from_prev = Pa_z0;
+    //vertices.back().Pa_from_next              // calculated when next vertex and w after is chosen
+    vertices.back().prev_gap_nonspecular = 0.f; // z0 is nonspecular but z_(-1) is specular
+    //vertices.back().S                         // calculated when next vertex and w after is chosen
+
+
+    int i = 0;      // v_i is last inserted vertex
+    while (true) {
+        // choose next direction w
+        STVector3 w;
+        float Psig;
+        float cos_sampled_w;
+        STColor3f f = vertices[i].sample_f(vertices[i].w_to_prev, &w, &Psig, &cos_sampled_w);
+
+        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
+        // with some probability (1-q) where q = f / Psig for the next direction chosen.
+        float q = 1.f;
+        if (i >= MIN_SUBPATH_LENGTH) {
+            q = std::min(f.maxComponent() / Psig, 1.f);
+            if ((float)rand() / RAND_MAX >= q) {
+                return;
+            }
+        }
+
+        // find intersection between chosen direction and scene.
+        Ray w_ray(vertices[i].getIntersection().point, w);
+        SceneObject* inter_obj;
+        Intersection* inter = Intersect(w_ray, inter_obj);
+        if (!inter) {
+            // ray didn't hit anything; terminate path
+            return;
+        }
+
+        // calculate qPsig_adj for v_i, now that we know the direction
+        // from it to the next vertex
+        vertices[i].qPsig_adj = q * Psig;
+
+        if (i >= 1) {
+            // calculate Pa_from_next for vertex v[i-1]
+            vertices[i - 1].Pa_from_next = vertices[i].qPsig_adj * vertices[i].G_prev;
+
+            // calculate S for v[i-1]
+            vertices[i - 1].S = S_i_at(vertices, i - 1);
+        }
+
+        // calculate terms in G
+        float r = inter->t;
+        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
+
+        // record new vertex
+        vertices.emplace_back(Vertex(*inter));
+        i++;
+        vertices[i].bsdf = inter_obj->bsdf;
+        vertices[i].w_to_prev = -w;
+        vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
+        vertices[i].G_prev = cos_sampled_w * cos_intersected_w / (r*r);
+        vertices[i].Pa_from_prev = vertices[i - 1].qPsig_adj * vertices[i].G_prev;
+        vertices[i].prev_gap_nonspecular =
+            (vertices[i].bsdf->isSpecular() || vertices[i - 1].bsdf->isSpecular()) ? 0.f : 1.f;
+
+        delete inter;
+        inter = NULL;
+
+        // --------------------------------------------------------------------------------------------------------------------
+
+        // if we hit a light, accumulate the contribution of the sample path from technique p_0t
+        // where t is the number of vertices we have so far.
+        // the sample from technique p_0t is only nonzero if the eye-subpath prefix ends on a light
+
+        if (inter_obj->isLight) {
+            // calculate unweighted contribution C*_0t
+            STColor3f Cs_0t = vertices[i].alpha * inter_obj->Le();
+
+            // note: we know vertices.size()>=2 at this point, i.e. i>=1
+
+            // calculate S_1i (S at vertex before vi)
+            float qPsig_zi1_zi = lightDistribution.Psig_y0_y1();
+            float z1i_Pa_from_next = qPsig_zi1_zi * vertices[i].G_prev; // Pa(zi->z1i)
+            float S_1i = S_i_at(vertices, i - 1, z1i_Pa_from_next);
+
+            // calculate S_i
+            float zi_Pa_from_next = lightDistribution.Pa_y0(inter_obj); // Pa(zi)
+            float S_i = S_i_at(vertices, i, zi_Pa_from_next, S_1i);
+
+            // calculate weight w_0t knowing that S_i = (p1t/pt)^2 + ... + (p0/pt)^2
+            float w_0t = 1.f / (1.f + S_i);
+
+            *C_0t_sum += (w_0t * Cs_0t);
+        }
+    }
+}
+
 
 void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
@@ -303,7 +370,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
             vertices[i - 1].Pa_from_next = vertices[i].qPsig_adj * vertices[i].G_prev;
 
             // calculate S for v[i-1]
-            vertices[i - 1].S = S_i(vertices, i - 1);
+            vertices[i - 1].S = S_i_at(vertices, i - 1);
         }
 
         // calculate terms in G

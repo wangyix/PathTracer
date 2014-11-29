@@ -61,7 +61,7 @@ STColor3f Lambertian::f(const STVector3& wo, const STVector3& wi) const {
     return STColor3f(0.f);
 }
 
-STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const {
+STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // cosine-sample the hemisphere
     float r = (float)rand() / RAND_MAX;                     // [0, 1]
     float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
@@ -72,6 +72,7 @@ STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_si
     if (CosTheta(wo) < 0.f) wi->z = -wi->z;     // make sure wi, wo are in same hemisphere
 
     *pdf_sig = 1.0f / M_PI;
+    *cos_wi = AbsCosTheta(*wi);
     return f(wo, *wi);
 }
 
@@ -91,7 +92,7 @@ STColor3f Y0Lambertian::f(const STVector3& wo, const STVector3& wi) const {
     return STColor3f(0.f);
 }
 
-STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const {
+STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // cosine-sample the hemisphere
     float r = (float)rand() / RAND_MAX;                     // [0, 1]
     float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
@@ -99,7 +100,9 @@ STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     wi->x = sqrt_r * cosf(theta);
     wi->y = sqrt_r * sinf(theta);
     wi->z = sqrtf(std::max(0.f, 1.f - wi->x*wi->x - wi->y*wi->y));
+    // wi is always chosen to be in +z hemisphere on side of normal
 
+    *cos_wi = CosTheta(*wi);
     *pdf_sig = 1.0f / M_PI;
     return STColor3f(1.f / M_PI);
 }
@@ -117,7 +120,7 @@ STColor3f SpecularDiel::f(const STVector3& wo, const STVector3& wi) const {
     return STColor3f(0.f);
 }
 
-STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const {
+STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // based on dielectric reflectance, randomly select the transmitted ray 
     // or the reflected ray. Have q be probability of selecting reflected ray
     STColor3f F = fresnelDielEvaluate(CosTheta(wo), etai, etat);
@@ -135,6 +138,8 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
             wi->z = wo.z;
             //*pdf_sig = 1.0f;
 
+            *cos_wi = AbsCosTheta(*wi);
+            
             // bsdf is Fr * delta(w-wi) / cos(thetai)
             return R * F / AbsCosTheta(*wi);
         }
@@ -162,7 +167,10 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
             float sintOverSini = eta;
             *wi = STVector3(sintOverSini * -wo.x, sintOverSini * -wo.y, cost);
             //*pdf_sig = 1.f;
-            //STColor3f F = fresnelDielEvaluate(CosTheta(wo), etai, etat);
+
+            *cos_wi = AbsCosTheta(*wi);
+
+            //STColor3f F = fresnelDielEvaluate(CosTheta(wo), etai, etat); // already evaluated above
             return /*(ei*ei)/(et*et) * */ (STColor3f(1.) - F) * T /
                 AbsCosTheta(*wi);
         }
@@ -179,12 +187,14 @@ STColor3f SpecularCond::f(const STVector3& wo, const STVector3& wi) const {
     return STColor3f(0.f);
 }
 
-STColor3f SpecularCond::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const {
+STColor3f SpecularCond::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // wi will always be wo reflected
     wi->x = -wo.x;
     wi->y = -wo.y;
     wi->z = wo.z;
     *pdf_sig = 1.0f;     // 1*dirac
+
+    *cos_wi = AbsCosTheta(*wi);
 
     // bsdf is Fr * delta(w-wi) / cos(thetai)
     return FrCond(AbsCosTheta(wo), eta, k) * R / AbsCosTheta(*wi);
@@ -199,8 +209,8 @@ STColor3f ScaledBsdf::f(const STVector3& wo, const STVector3& wi) const {
     return s * bsdf->f(wo, wi);
 }
 
-STColor3f ScaledBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig) const {
-    return s * bsdf->sample_f(wo, wi, pdf_sig);
+STColor3f ScaledBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
+    return s * bsdf->sample_f(wo, wi, pdf_sig, cos_wi);
 }
 
 float ScaledBsdf::p_sig(const STVector3& wo, const STVector3& wi) const {

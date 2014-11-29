@@ -42,6 +42,7 @@ float Camera::getFocalRatio(const STPoint3 &f) {
     return STVector3::Dot(f - eye, lookAt - eye) / (lookAt - eye).LengthSq();
 }
 
+/*
 // calculates Psig(z0->z1) assuming pinhole camera.
 // Psig(z0->z1) = 0 when z1 not in img plane; this assumes (u,v) is in img plane
 // Psig(z0->z1) = 1 / (4 * a * tan(fovy/2)^2 * cos(theta)^4)
@@ -53,7 +54,7 @@ float Camera::Psig_cosW(const STVector3& w, float* cos_w) const {
     float tanHalfFovy_cosThetaSq = tanHalfFovy * *cos_w * *cos_w;
     return 1.0f / (4.0f * aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
 
-    /*
+    // old way:
     // convert (u,v) to half-NDC coordinates (s,t) which are [-0.5, 0.5]
     float s = u - 0.5f;
     float t = v - 0.5f;
@@ -65,5 +66,56 @@ float Camera::Psig_cosW(const STVector3& w, float* cos_w) const {
     *cos_w = sqrtf(cosThetaSq);
     float tanHalfFovy_cosThetaSq = tanHalfFovy * cosThetaSq;
     return 1.0f / (4.0f * aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
-    */
+}
+*/
+
+void Camera::setSampleUV(float u, float v) {
+    cameraBsdf.setSampleUV(u, v);
+}
+
+void Camera::sample_z0(STPoint3* z0, STVector3* z0_n, Bsdf const** bsdf, float* Pa, STColor3f* We0) const {
+    *z0 = eye;
+    *z0_n = getLook();
+    *bsdf = &cameraBsdf;
+    *Pa = 1.f;              // Pa(z0) = delta()
+    *We0 = STColor3f(1.f);  // should be C since We1 should be 1/C, but 1 should work
+}
+
+
+
+STColor3f CameraBsdf::f(const STVector3& wo, const STVector3& wi) const {
+    // f means We_1(z0, w).  We're not going to scale incoming radiance, so this is just 1
+    // (assuming w goes thru the image plane, which is verified externally).
+    // Should really be 1/C so We_1(z0, w) integrates to 1, but this should work
+    return STColor3f(1.f);
+}
+
+// Intersection::sample_f() for vertex z0 will call CameraBsdf::sample_f() with wo, wi in world-space.
+STColor3f CameraBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
+    // we'll choose w so that it goes thru (u_sample,v_sample), as we were told
+    Ray w_ray;
+    camera.generateRay(w_ray, u_sample, v_sample);
+    w_ray.d.Normalize();
+    *wi = w_ray.d;
+
+    STVector3 look = camera.getLook();
+    *cos_wi = STVector3::Dot(*wi, look);
+
+    *pdf_sig = p_sig(wo, *wi);
+    return f(wo, *wi);
+}
+
+// Intersection::p_sig() for vertex z0 will call CameraBsdf::p_sig() with wo, wi in world-space.
+float CameraBsdf::p_sig(const STVector3& wo, const STVector3& wi) const {
+    STVector3 look = camera.getLook();
+    float cos_wi = STVector3::Dot(wi, look);
+
+    float tanHalfFovy = tanf(0.5f * camera.fovy * (float)pi / 180.f);
+    float tanHalfFovy_cosThetaSq = tanHalfFovy * cos_wi * cos_wi;
+    return 1.f / (4.f * camera.aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
+}
+
+void CameraBsdf::setSampleUV(float u, float v) {
+    u_sample = u;
+    v_sample = v;
 }
