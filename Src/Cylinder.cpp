@@ -5,7 +5,7 @@
 
 #include "Cylinder.h"
 #include <iostream>
-#include <math.h>
+
 using namespace std;
 
 Intersection* Cylinder::getIntersect(const Ray &ray) {

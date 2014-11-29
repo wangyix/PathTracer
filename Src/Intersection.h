@@ -49,7 +49,7 @@ public:
             // I,J will be set to some arbitrary orientation around K
             STVector3 I, J;
             STVector3 K = n;
-            if (K.x == 0.f & K.y == 0.f) {
+            if (K.x == 0.f && K.y == 0.f) {
                 I = STVector3(1.f, 0.f, 0.f);
                 J = STVector3(0.f, 1.f, 0.f);
             } else {

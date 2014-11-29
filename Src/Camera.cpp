@@ -88,7 +88,7 @@ void Camera::getUvOfDirection(const STVector3 w, float* u, float* v) const {
     
     // scale w_v so that it goes from the eye to a point on the camera plane
     float target_z = (lookAt - eye).Length();
-    STVector3 w_v_scaled = w_v_scaled * (target_z / w_v_scaled.z);
+    STVector3 w_v_scaled = w_v * (target_z / w_v.z);
     float ndc_u = w_v_scaled.x / LR_half_dist;  // [-1, 1]
     float ndc_v = w_v_scaled.y / UL_half_dist;  // [-1, 1]
 

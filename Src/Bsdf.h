@@ -1,6 +1,7 @@
 #pragma once
 
 #include "STColor3f.h"
+#include"STVector3.h"
 
 inline float CosTheta(const STVector3 &w) { return w.z; }
 inline float AbsCosTheta(const STVector3 &w) { return fabsf(w.z); }
@@ -48,6 +49,7 @@ private:
 // used for describing Le1(y0, w); direction wo is unused
 // same as Lambertian except albedo is 1 and sample_f always gives wi in positive-z hemisphere
 class Y0Lambertian : public Bsdf {
+public:
     Y0Lambertian() {}
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;

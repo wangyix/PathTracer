@@ -6,7 +6,68 @@
 
 #include <iostream>
 
-class LightDistribution;
+
+
+class LightDistribution {
+public:
+    LightDistribution() {}
+
+    void init(std::vector<SceneObject*> objects) {
+        // build list of light objects and their powers (max component) to be used
+        // when picking the light object to sample y0 from.
+        lightObjects.clear();
+        lightPowers.clear();
+        powerTotal = 0.f;
+        for (SceneObject* o : objects) {
+            if (o->isLight) {
+                lightObjects.push_back(o);
+                float power = o->emittedPower.maxComponent();
+                lightPowers.push_back(power);
+                powerTotal += power;
+            }
+        }
+    }
+
+    void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa, STColor3f* Le0) {
+        // choose a light source to sample based on max component of emitted power
+        float r = (float)rand() / RAND_MAX * powerTotal;
+        size_t chosen_i = 0;
+        while (chosen_i < lightPowers.size() - 1) {
+            r -= lightPowers[chosen_i];
+            if (r < 0.f) break;
+            chosen_i++;
+        }
+        float Pa_y0_multiplier = lightPowers[chosen_i] / powerTotal;
+
+        // choose y0 by sampling selected light source, scale the resulting Pa
+        float Pa_y0_obj;
+        lightObjects[chosen_i]->sample_y0(y0, y0_n, bsdf, &Pa_y0_obj, Le0);
+        *Pa = Pa_y0_multiplier * Pa_y0_obj;
+    }
+
+    float Pa_y0(const SceneObject* light) {
+        float Pa_y0_multiplier = light->emittedPower.maxComponent() / powerTotal;
+        return Pa_y0_multiplier * light->Pa();
+    }
+
+    float Psig_y0_y1() {
+        return 1.f / M_PI;
+    }
+
+private:
+    // replaces lights and areaLights; is built from lights in render()
+    std::vector <SceneObject*> lightObjects;
+
+    // cached for randomly selecting a light based on power (max component)
+    std::vector<float> lightPowers;
+    float powerTotal;
+
+};
+
+
+
+
+
 
 class Scene
 {
@@ -121,62 +182,6 @@ protected:
 };
 
 
-
-class LightDistribution {
-public:
-    LightDistribution() {}
-
-    void init(std::vector<SceneObject*> objects) {
-        // build list of light objects and their powers (max component) to be used
-        // when picking the light object to sample y0 from.
-        lightObjects.clear();
-        lightPowers.clear();
-        powerTotal = 0.f;
-        for (SceneObject* o : objects) {
-            if (o->isLight) {
-                lightObjects.push_back(o);
-                float power = o->emittedPower.maxComponent();
-                lightPowers.push_back(power);
-                powerTotal += power;
-            }
-        }
-    }
-
-    void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa, STColor3f* Le0) {
-        // choose a light source to sample based on max component of emitted power
-        float r = (float)rand() / RAND_MAX * powerTotal;
-        int chosen_i = 0;
-        while (chosen_i < lightPowers.size() - 1) {
-            r -= lightPowers[chosen_i];
-            if (r < 0.f) break;
-            chosen_i++;
-        }
-        float Pa_y0_multiplier = lightPowers[chosen_i] / powerTotal;
-
-        // choose y0 by sampling selected light source, scale the resulting Pa
-        float Pa_y0_obj;
-        lightObjects[chosen_i]->sample_y0(y0, y0_n, bsdf, &Pa_y0_obj, Le0);
-        *Pa = Pa_y0_multiplier * Pa_y0_obj;
-    }
-
-    float Pa_y0(const SceneObject* light) {
-        float Pa_y0_multiplier = light->emittedPower.maxComponent() / powerTotal;
-        return Pa_y0_multiplier * light->Pa();
-    }
-
-    float Psig_y0_y1() {
-        return 1.f / M_PI;
-    }
-
-private:
-    // replaces lights and areaLights; is built from lights in render()
-    std::vector <SceneObject*> lightObjects;
-
-    // cached for randomly selecting a light based on power (max component)
-    std::vector<float> lightPowers;
-    float powerTotal;
-
-};
 
 #endif //SCENE_H
 

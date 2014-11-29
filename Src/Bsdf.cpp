@@ -2,8 +2,6 @@
 #include "STColor3f.h"
 #include "STVector3.inl"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 #include <cstdlib>
 

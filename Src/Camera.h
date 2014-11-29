@@ -37,8 +37,7 @@ private:
 class Camera {
     friend class CameraBsdf;
 public:
-    Camera(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect)
-        : cameraBsdf(*this) {}
+    Camera(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect);
     ~Camera(){}
     Ray* generateRay(float u, float v, float bias = 0.) const;
     void generateRay(Ray& ray, float u, float v, float bias = 0.) const;

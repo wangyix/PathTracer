@@ -40,7 +40,7 @@ Ray *Material::refracted(Ray into, Intersection *inter, float bias) {
 
 float Material::participatingMediaAttenuation(const STPoint3& p1, const STPoint3& p2, const AABB& aabb)
 {
-    float step=0.05;//TODO: adjust this parameter for your scene
+    float step=0.05f;//TODO: adjust this parameter for your scene
     float coef_density_to_alpha = .05f;//TODO: ajust this parameter for your scene
     STVector3 direction=(p2-p1);
     direction.Normalize();
@@ -51,7 +51,7 @@ float Material::participatingMediaAttenuation(const STPoint3& p1, const STPoint3
     for(int i=0; i<n; i++) {
         STPoint3 pos=p1 + i*step*direction;
         STPoint3 normalized_pos = STPoint3((pos.x-aabb_min.x)/range.x, (pos.y-aabb_min.y)/range.y, (pos.z-aabb_min.z)/range.z);
-        for(int d=0;d<3;d++){if(normalized_pos.Component(d)<0)normalized_pos.Component(d)=0.f;if(normalized_pos.Component(d)>1)normalized_pos.Component(d)=1.f-(1e-5);}
+        for(int d=0;d<3;d++){if(normalized_pos.Component(d)<0)normalized_pos.Component(d)=0.f;if(normalized_pos.Component(d)>1)normalized_pos.Component(d)=1.f-(1e-5f);}
         float density = volumetric_texture->Value(normalized_pos);
         float sampled_alpha = 1.f - exp(-coef_density_to_alpha * density);
 

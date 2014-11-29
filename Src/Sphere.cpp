@@ -5,9 +5,6 @@
 
 #include "Sphere.h"
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 Intersection* Sphere::getIntersect(const Ray &ray) {
 	float a = ray.d.LengthSq();
 	float b = 2 * STVector3::Dot(ray.d, ray.e - center);
@@ -97,7 +94,7 @@ AABB* Sphere::getAABB()
 
 
 float Sphere::getSurfaceArea() const {
-    return 4.0f * M_PI * radius * radius;
+    return 4.f * M_PI * radius * radius;
 }
 
 STPoint3 Sphere::uniformSampleSurface(STVector3* normal) const {

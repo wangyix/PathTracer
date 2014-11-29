@@ -69,6 +69,8 @@ float Scene::qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_a
     STColor3f f_a_to_b = a.bsdf->f(w_ac, w_ab);
     float Psig_a_to_b = a.bsdf->p_sig(w_ac, w_ab);
     return std::min(f_a_to_b.maxComponent(), Psig_a_to_b);
+
+    // old way: may cause divide-by-zero (Psig_a_to_b might be 0)
     //float q_a_to_b = std::min(f_a_to_b.maxComponent() / Psig_a_to_b, 1.f);
     //return q_a_to_b * Psig_a_to_b;
 }
@@ -276,7 +278,7 @@ void Scene::Render() {
     std::cout << "------------------ray tracing started------------------" << std::endl;
 
     std::vector<STColor3f> pixels(width * height, STColor3f(0.f));
-    float N = width * height * sampleRate * sampleRate;
+    float N = (float)(width * height * sampleRate * sampleRate);
 
     int percent = 0, computed = 0;
     for (int x = 0; x < width; x++) {
@@ -313,8 +315,8 @@ void Scene::Render() {
                     // calculate non-special-case contributions:
                     // s=[1, nL], t=[1, nE]
 
-                    for (int t = 1; t <= vertices_E.size(); t++) {
-                        for (int s = 1; s <= vertices_L.size(); s++) {
+                    for (size_t t = 1; t <= vertices_E.size(); t++) {
+                        for (size_t s = 1; s <= vertices_L.size(); s++) {
 
                             const Vertex& gap_v_E = vertices_E[t - 1];
                             const Vertex& gap_v_L = vertices_L[s - 1];
