@@ -101,12 +101,26 @@ void Camera::setSampleUV(float u, float v) {
     cameraBsdf.setSampleUV(u, v);
 }
 
+// technically, to achieve our target of We(x) = delta(x-xe)/cos(w)^3, we should have:
+// We0(x) = C*delta(x-xe)
+// We1(xe, w) =  1/C * 1/cos(w)^3, where C = integral of We1(xe, w)dsig(w) over the img plane
+// However, any C should work.
+
+// note that f/Psig = (4*a*tan(fovy/2)^2 / C) * cosw.  We would like to set C so that f/Psig
+// is close to or above 1 for directions w in the img plane to decrease the odds of the eye-subpath
+// terminating at z0. So we want C to be some small number.
+
+// 4*(16/9)*tan(45/2)^2 * cos(60) = 0.6100, so any C below that should result in f/Psig > 1
+// for most cases
+
+#define C 0.5f
+
 void Camera::sample_z0(STPoint3* z0, STVector3* z0_n, Bsdf const** bsdf, float* Pa, STColor3f* We0) const {
     *z0 = eye;
     *z0_n = getLook();
     *bsdf = &cameraBsdf;
     *Pa = 1.f;              // Pa(z0) = delta()
-    *We0 = STColor3f(1.f);  // should be C since We1 should be 1/C, but 1 should work
+    *We0 = STColor3f(C);  // should be C since We1 should be 1/C, but 1 should work
 }
 
 // The wrapper functions f(), sample_f(), p_sig() in class Vertex will be calling the next
@@ -117,7 +131,7 @@ STColor3f CameraBsdf::f(const STVector3& wo, const STVector3& wi) const {
     // subtended by pixels on the img plane.
     // Should really be scaled by 1/C so We_1(z0, w) integrates to 1, but this should work
     float cos_wi = STVector3::Dot(wi, camera.getLook());
-    return STColor3f(1.f) / (cos_wi * cos_wi * cos_wi);
+    return STColor3f(1.f) / (C * cos_wi * cos_wi * cos_wi);
 }
 
 STColor3f CameraBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {

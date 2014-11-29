@@ -76,7 +76,7 @@ float Scene::qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_a
 }
 
 
-#define MIN_SUBPATH_LENGTH 3
+//#define MIN_SUBPATH_LENGTH bounceDepth
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
     
@@ -109,18 +109,28 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         float cos_sampled_w;
         STColor3f f = vertices[i].sample_f(vertices[i].w_to_prev, &w, &Psig, &cos_sampled_w);
 
-        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
+        /*// after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
         // with some probability (1-q) where q = f / Psig for the next direction chosen.
         float q = 1.f;
         if (i >= MIN_SUBPATH_LENGTH) {
-            q = std::min(f.maxComponent() / Psig, 1.f);
+            float q = std::min(f.maxComponent() / Psig, 1.f);
             if ((float)rand() / RAND_MAX >= q) {
                 return;
             }
+        }*/
+
+        // if we do q=1 for all i<MIN_SUBPATH_LENGTH, then q will not have reciprocity.
+        // this leads to errors in our pi/pi1 ratios when calculating S sums since
+        // q_to_next may differ from q_to_prev depending on how many vertices are to
+        // either side of vi in a particular path sample.
+        // to prevent this, q will simply be min(f/Psig, 1) at all vertices.
+        float q = std::min(f.maxComponent() / Psig, 1.f);
+        if ((float)rand() / RAND_MAX >= q) {
+            return;
         }
 
         // find intersection between chosen direction and scene.
-        Ray w_ray(vertices[i].getIntersection().point, w);
+        Ray w_ray(vertices[i].getIntersection().point, w, shadowBias);
         SceneObject* inter_obj;
         Intersection* inter = Intersect(w_ray, inter_obj);
         if (!inter) {
@@ -216,7 +226,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         float cos_sampled_w;
         STColor3f f = vertices[i].sample_f(vertices[i].w_to_prev, &w, &Psig, &cos_sampled_w);
 
-        // after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
+        /*// after the path reaches MIN_SUBPATH_LENGTH + 1 vertices, terminate the path
         // with some probability (1-q) where q = f / Psig for the next direction chosen.
         float q = 1.f;
         if (i >= MIN_SUBPATH_LENGTH ) {
@@ -224,10 +234,20 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
             if ((float)rand() / RAND_MAX >= q) {
                 return;
             }
+        }*/
+
+        // if we do q=1 for all i<MIN_SUBPATH_LENGTH, then q will not have reciprocity.
+        // this leads to errors in our pi/pi1 ratios when calculating S sums since
+        // q_to_next may differ from q_to_prev depending on how many vertices are to
+        // either side of vi in a particular path sample.
+        // to prevent this, q will simply be min(f/Psig, 1) at all vertices.
+        float q = std::min(f.maxComponent() / Psig, 1.f);
+        if ((float)rand() / RAND_MAX >= q) {
+            return;
         }
 
         // find intersection between chosen direction and scene.
-        Ray w_ray(vertices[i].getIntersection().point, w);
+        Ray w_ray(vertices[i].getIntersection().point, w, shadowBias);
         SceneObject* inter_obj;
         Intersection* inter = Intersect(w_ray, inter_obj);
         if (!inter) {
@@ -338,10 +358,10 @@ void Scene::Render() {
                             }
 
                             // check if the gap vector intersects anything
-                            Ray gap_ray_EL(gap_point_E, gap_EL);
+                            Ray gap_ray_EL(gap_point_E, gap_EL, shadowBias);
                             SceneObject* gap_inter_obj = NULL;
                             std::unique_ptr<Intersection> gap_inter(Intersect(gap_ray_EL, gap_inter_obj));
-                            if (gap_inter && gap_inter->t < 0.9999f) {
+                            if (gap_inter && gap_inter->t < 1.f - shadowBias) {
                                 continue;
                             }
 
