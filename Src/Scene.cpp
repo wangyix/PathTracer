@@ -294,7 +294,7 @@ void Scene::Render() {
     std::cout << "------------------ray tracing started------------------" << std::endl;
 
     std::vector<STColor3f> pixels(width * height, STColor3f(0.f));
-    float N = (float)(width * height * sampleRate * sampleRate);
+    float N = (float)(/*width * height * */sampleRate * sampleRate);
 
     int percent = 0, computed = 0;
     for (int x = 0; x < width; x++) {
@@ -328,8 +328,9 @@ void Scene::Render() {
                     // accumulate C0t contributions
                     C_sum_this_pixel += C0t_sum;
 
-                    // calculate non-special-case contributions:
-                    // s=[1, nL], t=[1, nE]
+
+                    // calculate contributions for all samples created by linking
+                    // prefixes of eye and light subpaths
 
                     for (size_t t = 1; t <= vertices_E.size(); t++) {
                         for (size_t s = 1; s <= vertices_L.size(); s++) {
@@ -346,11 +347,13 @@ void Scene::Render() {
                             STPoint3 gap_point_E = gap_v_E.getIntersection().point;
                             STPoint3 gap_point_L = gap_v_L.getIntersection().point;
                             STVector3 gap_EL = gap_point_L - gap_point_E;
+                            STVector3 gap_EL_w = gap_EL;
+                            gap_EL_w.Normalize();
 
                             STVector3 gap_normal_E = gap_v_E.getIntersection().normal;
                             STVector3 gap_normal_L = gap_v_L.getIntersection().normal;
-                            float gap_cosw_E = STVector3::Dot(gap_EL, gap_normal_E);
-                            float gap_cosw_L = STVector3::Dot(-gap_EL, gap_normal_L);
+                            float gap_cosw_E = STVector3::Dot(gap_EL_w, gap_normal_E);
+                            float gap_cosw_L = STVector3::Dot(-gap_EL_w, gap_normal_L);
 
                             // check if gap vector goes out the backface of either vertex
                             if (gap_cosw_E <= 0.f || gap_cosw_L <= 0.f) {
@@ -367,8 +370,6 @@ void Scene::Render() {
 
                             // calculate c_st
                             float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.LengthSq();
-                            STVector3 gap_EL_w = gap_EL;
-                            gap_EL_w.Normalize();
                             STColor3f f_gap_E = gap_v_E.f(gap_v_E.w_to_prev, gap_EL_w);
                             STColor3f f_gap_L = gap_v_L.f(gap_v_L.w_to_prev, -gap_EL_w);
                             STColor3f c_st = f_gap_E * G_gap * f_gap_L;
@@ -426,7 +427,7 @@ void Scene::Render() {
                                 // convert to x,y pixel coordinates, accumulate contribution
                                 int x_w = (int)(u_w * width);
                                 int y_w = (int)(v_w * height);
-                                pixels[(height - y_w) * width + x_w] += (C_st / N);
+                                pixels[y_w * width + x_w] += (C_st / N);
                             } else {
                                 C_sum_this_pixel += C_st;
                             }
@@ -436,7 +437,7 @@ void Scene::Render() {
                 }   // sample-rate loop
             } // sample-rate loop
 
-            pixels[(height - y) * width + x] +=(C_sum_this_pixel / N);
+            pixels[y * width + x] +=(C_sum_this_pixel / N);
 
 
             computed++;
@@ -1041,6 +1042,10 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             float bias;
             ss >> bias;
             rtShadowBias(bias);
+        } else if (command == "SampleRate") {
+            int rate;
+            ss >> rate;
+            rtSampleRate(rate);
         } else if (command == "PushMatrix") {
             rtPushMatrix();
         } else if (command == "PopMatrix") {
@@ -1066,11 +1071,13 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             ss >> tx >> ty >> tz;
             rtTranslate(tx, ty, tz);
         } else if (command == "Sphere") {
+            std::cout << "Sphere" << std::endl;
             float cx, cy, cz, r;
             ss >> cx >> cy >> cz >> r;
             STPoint3 center(cx, cy, cz);
             rtSphere(center, r);
         } else if (command == "Triangle") {
+            std::cout << "Triangle" << std::endl;
             float x1, y1, z1, x2, y2, z2, x3, y3, z3;
             ss >> x1 >> y1 >> z1 >> x2 >> y2 >> z2 >> x3 >> y3 >> z3;
             STPoint3 v[3];

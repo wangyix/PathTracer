@@ -67,7 +67,7 @@ public:
             worldToNormal = normalToWorld.Inverse();
         } else {
             normalToWorld = STTransform4::Identity();
-            normalToWorld = STTransform4::Identity();
+            worldToNormal = STTransform4::Identity();
         }
     }
 

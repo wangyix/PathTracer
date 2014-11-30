@@ -10,6 +10,8 @@ using namespace std;
 int main(int argc, const char * argv[])
 {
     ExampleScene *scene = new ExampleScene();
+    scene->initializeSceneFromScript("./CornellBox.txt");
+
     //scene->initializeAs5NonUniformScene();
     //scene->initializeSceneFromScript("rtScene.txt");
     ////or set rendering scene from code
@@ -33,7 +35,7 @@ int main(int argc, const char * argv[])
 
     ////set rendering scene from script files
     //scene->initializeSceneFromScript("../Standard_Tests/RecursiveTest.txt");
-    scene->initializeSceneFromScript("../Standard_Tests/CornellBox.txt");
+    //scene->initializeSceneFromScript("../Standard_Tests/CornellBox.txt");
     //scene->initializeSceneFromScript("../Standard_Tests/DoF.txt");
     //scene->initializeSceneFromScript("../Standard_Tests/Glass.txt");
     //scene->initializeSceneFromScript("../Standard_Tests/Go.txt");
