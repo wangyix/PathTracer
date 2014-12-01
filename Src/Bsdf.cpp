@@ -25,7 +25,7 @@ STColor3f FrCond(float cosi, const STColor3f& eta, const STColor3f& k) {
     return (Rparl2 + Rperp2) / 2.f;
 }
 
-// code from FresnelDielectric::Evaluate()
+/*// code from FresnelDielectric::Evaluate()
 STColor3f fresnelDielEvaluate(float cosi, float etai, float etat) {
     // Compute Fresnel reflectance for dielectric
     cosi = std::min(std::max(cosi, -1.f), 1.f);
@@ -45,7 +45,7 @@ STColor3f fresnelDielEvaluate(float cosi, float etai, float etat) {
         float cost = sqrtf(std::max(0.f, 1.f - sint*sint));
         return FrDiel(fabsf(cosi), cost, STColor3f(ei), STColor3f(et));
     }
-}
+}*/
 
 
 
@@ -119,58 +119,46 @@ STColor3f SpecularDiel::f(const STVector3& wo, const STVector3& wi) const {
 }
 
 STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
-    // based on dielectric reflectance, randomly select the transmitted ray 
-    // or the reflected ray. Have q be probability of selecting reflected ray
-    STColor3f F = fresnelDielEvaluate(CosTheta(wo), etai, etat);
-    float q = (F.r + F.g + F.b) / 3.0f;
-    if (randFloat() <= q) {
-        // select reflected ray
-        *pdf_sig = q;
 
-        // similar code to SpecularCond::samle_f, except reflectance F
-        // is calculated using dielectric equation instead of conductor
-        {
-            // wi will be wo reflected
+    // figure out which eta is incident and which is transmitted
+    bool entering = CosTheta(wo) > 0.f;
+    float ei = etai, et = etat;
+    if (!entering)
+        std::swap(ei, et);
+
+    // compute transmitted ray direction
+    float sini2 = SinTheta2(wo);
+    float eta = ei / et;
+    float sint2 = eta * eta * sini2;
+
+    // Handle total internal reflection for transmission
+    if (sint2 >= 1.) {
+        *pdf_sig = 1.f;
+        wi->x = -wo.x;
+        wi->y = -wo.y;
+        wi->z = wo.z;
+        *cos_wi = AbsCosTheta(*wi);
+        return R;
+    } else {
+        // choose either to reflect or transmit with probability proprotional to Fr
+        float cost = sqrtf(std::max(0.f, 1.f - sint2));
+        STColor3f Fr = FrDiel(AbsCosTheta(wo), cost, STColor3f(ei), STColor3f(et));
+
+        float q = (Fr.r + Fr.g + Fr.b) / 3.f;
+        if (randFloat() < q) {
+            *pdf_sig = q;
             wi->x = -wo.x;
             wi->y = -wo.y;
             wi->z = wo.z;
-            //*pdf_sig = 1.0f;
-
             *cos_wi = AbsCosTheta(*wi);
-            
-            // bsdf is Fr * delta(w-wi) / cos(thetai)
-            return R * F / AbsCosTheta(*wi);
-        }
-    } else {
-        // select transmitted ray
-        *pdf_sig = 1.f - q;
-        
-        // code from pbrt SpecularTransmission::Samle_f
-        {
-            // figure out which eta is incident and which is transmitted
-            bool entering = CosTheta(wo) > 0.f;
-            float ei = etai, et = etat;
-            if (!entering)
-                std::swap(ei, et);
-
-            // compute transmitted ray direction
-            float sini2 = SinTheta2(wo);
-            float eta = ei / et;
-            float sint2 = eta * eta * sini2;
-
-            // Handle total internal reflection for transmission
-            if (sint2 >= 1.) return STColor3f(0.f);
-            float cost = sqrtf(std::max(0.f, 1.f - sint2));
+            return Fr * R;
+        } else {
+            *pdf_sig = 1.f - q;
             if (entering) cost = -cost;
             float sintOverSini = eta;
             *wi = STVector3(sintOverSini * -wo.x, sintOverSini * -wo.y, cost);
-            //*pdf_sig = 1.f;
-
             *cos_wi = AbsCosTheta(*wi);
-
-            //STColor3f F = fresnelDielEvaluate(CosTheta(wo), etai, etat); // already evaluated above
-            return /*(ei*ei)/(et*et) * */ (STColor3f(1.) - F) * T /
-                AbsCosTheta(*wi);
+            return (STColor3f(1.f) - Fr) * T;
         }
     }
 }

@@ -18,7 +18,7 @@ inline float SinTheta(const STVector3 &w) {
 STColor3f FrDiel(float cosi, float cost, const STColor3f& etai, const STColor3f& etat);
 STColor3f FrCond(float cosi, const STColor3f& eta, const STColor3f& k);
 
-STColor3f fresnelDielEvaluate(float cosi, float etai, float etat);
+//STColor3f fresnelDielEvaluate(float cosi, float etai, float etat);
 
 
 
