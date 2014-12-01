@@ -50,8 +50,13 @@ public:
         return Pa_y0_multiplier * light->Pa();
     }
 
-    float Psig_y0_y1() {
-        return 1.f / M_PI;
+    float qPsig_y0_y1(const SceneObject* light, const STVector3& y0_y1_w, const STVector3& y0_n) {
+        // q = min(f/Psig, 1), so qPsig = min(f, Psig)
+        // For Y0Lambertian, we have f = Psig = 1/pi for +z hemisphere
+        if (STVector3::Dot(y0_y1_w, y0_n) >= 0.f) {
+            return 1.f / M_PI;
+        }
+        return 0.f;
     }
 
 private:

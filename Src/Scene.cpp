@@ -179,9 +179,9 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
 
             // note: we know vertices.size()>=2 at this point, i.e. i>=1
 
-            // calculate S_1i (S at vertex before vi)
-            float qPsig_zi1_zi = lightDistribution.Psig_y0_y1();
-            float z1i_Pa_from_next = qPsig_zi1_zi * vertices[i].G_prev; // Pa(zi->z1i)
+            float qPsig_zi_z1i = lightDistribution.qPsig_y0_y1(inter_obj, vertices[i].w_to_prev,
+                vertices[i].getIntersection().normal);
+            float z1i_Pa_from_next = qPsig_zi_z1i * vertices[i].G_prev;
             float S_1i = S_i_at(vertices, i - 1, z1i_Pa_from_next);
 
             // calculate S_i
@@ -315,7 +315,7 @@ void Scene::Render() {
                     // convert to screen coords (u,v)
                     float u = xs / width;
                     float v = ys / height;
-                    
+
                     // generate eye subpath thru (u,v)
                     std::vector<Vertex> vertices_E;
                     STColor3f C0t_sum;
@@ -331,7 +331,7 @@ void Scene::Render() {
 
                     // calculate contributions for all samples created by linking
                     // prefixes of eye and light subpaths
-
+                    
                     for (size_t t = 1; t <= vertices_E.size(); t++) {
                         for (size_t s = 1; s <= vertices_L.size(); s++) {
 
@@ -427,6 +427,7 @@ void Scene::Render() {
                                 // convert to x,y pixel coordinates, accumulate contribution
                                 int x_w = (int)(u_w * width);
                                 int y_w = (int)(v_w * height);
+
                                 pixels[y_w * width + x_w] += (C_st / N);
                             } else {
                                 C_sum_this_pixel += C_st;
@@ -434,6 +435,7 @@ void Scene::Render() {
 
                         } // s loop
                     } // t loop
+
                 }   // sample-rate loop
             } // sample-rate loop
             
