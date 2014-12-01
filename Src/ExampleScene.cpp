@@ -137,9 +137,9 @@ void ExampleScene::initializeSceneAccelerationStructureGrid()
     for(int i=0;i<counts[0];i++){
         for(int j=0;j<counts[1];j++){
             for(int k=0;k<counts[2];k++){
-                STColor3f color((float)rand()/RAND_MAX,(float)rand()/RAND_MAX,(float)rand()/RAND_MAX);
+                STColor3f color(randFloat(),randFloat(),randFloat());
                 Material mat(color,color,STColor3f(),STColor3f(),40.f);
-                STVector3 perturb((float)rand()/RAND_MAX,(float)rand()/RAND_MAX,(float)rand()/RAND_MAX);
+                STVector3 perturb(randFloat(),randFloat(),randFloat());
                 STPoint3 center=min_corner+STVector3(dx.Component(0)*(float)(i+.5f+(perturb.Component(0)-.5f)*.2f),dx.Component(1)*(float)(j+.5f+(perturb.Component(1)-.5f)*.2f),dx.Component(2)*(float)(k+.5f+(perturb.Component(2)-.5f)*.2f));
                 rtMaterial(mat);
                 int mode=rand()%2;
@@ -203,11 +203,11 @@ void ExampleScene::initializeSceneAccelerationStructureBVH()
 		for(int i=0;i<counts[0];i++){
 			for(int j=0;j<counts[1];j++){
 				for(int k=0;k<counts[2];k++){
-					STVector3 perturb((float)rand()/RAND_MAX,(float)rand()/RAND_MAX,(float)rand()/RAND_MAX);
+					STVector3 perturb(randFloat(),randFloat(),randFloat());
 					STPoint3 pos=min_corner+STVector3(dx.Component(0)*(float)(i+.5f+(perturb.Component(0)-.5f)*.2f),dx.Component(1)*(float)(j+.5f+(perturb.Component(1)-.5f)*.2f),dx.Component(2)*(float)(k+.5f+(perturb.Component(2)-.5f)*.2f));
 					if((pos-center).Length()>5.f){continue;}
 					
-					STColor3f color((float)rand()/RAND_MAX,(float)rand()/RAND_MAX,(float)rand()/RAND_MAX);
+					STColor3f color(randFloat(),randFloat(),randFloat());
 					Material mat(color,color,STColor3f(),STColor3f(),40.f);
 					rtMaterial(mat);
 					int mode=rand()%2;
@@ -630,9 +630,9 @@ void ExampleScene::initializeAs5UniformScene()
     for (int i = 0; i<counts[0]; i++){
         for (int j = 0; j<counts[1]; j++){
             for (int k = 0; k<counts[2]; k++){
-                STColor3f color((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+                STColor3f color(randFloat(), randFloat(), randFloat());
                 Material mat(color, color, STColor3f(), STColor3f(), 40.f);
-                STVector3 perturb((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+                STVector3 perturb(randFloat(), randFloat(), randFloat());
                 //STPoint3 center = min_corner + STVector3(dx.Component(0)*(float)(i + .5f + (perturb.Component(0) - .5f)*.2f), dx.Component(1)*(float)(j + .5f + (perturb.Component(1) - .5f)*.2f), dx.Component(2)*(float)(k + .5f + (perturb.Component(2) - .5f)*.2f));
                 STPoint3 center = min_corner + STVector3(perturb.Component(0) * size[0],
                                                          perturb.Component(1) * size[1],
@@ -698,9 +698,9 @@ void ExampleScene::initializeAs5NonUniformScene() {
     for (int i = 0; i<counts[0]; i++){
         for (int j = 0; j<counts[1]; j++){
             for (int k = 0; k<counts[2]; k++){
-                STColor3f color((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+                STColor3f color(randFloat(), randFloat(), randFloat());
                 Material mat(color, color, STColor3f(), STColor3f(), 40.f);
-                STVector3 perturb((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+                STVector3 perturb(randFloat(), randFloat(), randFloat());
                 for (int i = 0; i < 3; i++) {
                     float c = cos(perturb.Component(i) * 100.f);
                     int sign = c > 0.f ? 1 : -1;

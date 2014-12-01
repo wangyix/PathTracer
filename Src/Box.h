@@ -110,7 +110,7 @@ public:
         // generate random in [0,total] and see if it's in [0,Acutoff], [Acutoff,Bcutoff],
         // or [Bcutoff,total] to choose a triangle group.
         // generate an int in [0,3] to pick a triangle within that group to sample from.
-        float r = (float)rand() / RAND_MAX * total;
+        float r = randFloat() * total;
         int k = rand() % 4;
         if (r < A_cutoff) {
             return sides[k]->uniformSampleSurface(normal);

@@ -67,8 +67,8 @@ float Triangle::getSurfaceArea() const {
 STPoint3 Triangle::uniformSampleSurface(STVector3* normal) const {
     // sample triangle: P=(1-sqrt(r1))A + sqrt(r1)(1-r2)B + sqrt(r1)r2C
     // where r1, r2 are uniform randoms in [0, 1]
-    float r1 = (float)rand() / RAND_MAX;
-    float r2 = (float)rand() / RAND_MAX;
+    float r1 = randFloat();
+    float r2 = randFloat();
     float sqrt_r1 = sqrtf(r1);
 
     // barycentric coordinates for chosen point

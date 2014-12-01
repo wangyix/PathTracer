@@ -14,7 +14,7 @@ public:
     void refresh() {
         index = 0;
         rands.clear();
-        for (int i = 0; i < size * size * 2; i++) rands.push_back((float)rand() / RAND_MAX);
+        for (int i = 0; i < size * size * 2; i++) rands.push_back(randFloat());
     }
     float get(int x, int y, bool which) { return rands[y * size * 2 + x * 2 + which]; }
     float get(int r, bool which) { return rands[r * 2 + which]; }

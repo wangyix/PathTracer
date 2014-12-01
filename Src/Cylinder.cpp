@@ -253,11 +253,11 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
     float bottomCapCutoff = topCapCutoff + topCapCutoff;
     float total = bottomCapCutoff + (2.0f * M_PI * radius * (A - B).Length());
 
-    float r = (float)rand() / RAND_MAX * total;
+    float r = randFloat() * total;
     if (total < bottomCapCutoff) {
         // uniform-sample a unit disk
-        float r = (float)rand() / RAND_MAX;                     // [0, 1]
-        float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
+        float r = randFloat();                     // [0, 1]
+        float theta = randFloat() * 2.0f * M_PI;   // [0, 2pi]
         float sqrt_r = sqrtf(r);
         float x = sqrt_r * cosf(theta);
         float y = sqrt_r * sinf(theta);
@@ -275,8 +275,8 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
         }
     } else {
         // sample the cylinder side (theta in [0,2pi], h in [0,1])
-        float theta = (float)rand() / RAND_MAX * 2.f * M_PI;
-        float h = (float)rand() / RAND_MAX;
+        float theta = randFloat() * 2.f * M_PI;
+        float h = randFloat();
 
         *normal = cosf(theta)*I + sinf(theta)*J;
         normal->Normalize();

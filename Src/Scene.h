@@ -30,7 +30,7 @@ public:
 
     void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa, STColor3f* Le0) {
         // choose a light source to sample based on max component of emitted power
-        float r = (float)rand() / RAND_MAX * powerTotal;
+        float r = randFloat() * powerTotal;
         size_t chosen_i = 0;
         while (chosen_i < lightPowers.size() - 1) {
             r -= lightPowers[chosen_i];

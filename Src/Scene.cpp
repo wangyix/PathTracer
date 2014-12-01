@@ -114,7 +114,7 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         float q = 1.f;
         if (i >= MIN_SUBPATH_LENGTH) {
             float q = std::min(f.maxComponent() / Psig, 1.f);
-            if ((float)rand() / RAND_MAX >= q) {
+            if (randFloat() >= q) {
                 return;
             }
         }*/
@@ -125,7 +125,7 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         // either side of vi in a particular path sample.
         // to prevent this, q will simply be min(f/Psig, 1) at all vertices.
         float q = std::min(f.maxComponent() / Psig, 1.f);
-        if ((float)rand() / RAND_MAX >= q) {
+        if (randFloat() >= q) {
             return;
         }
 
@@ -231,7 +231,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         float q = 1.f;
         if (i >= MIN_SUBPATH_LENGTH ) {
             q = std::min(f.maxComponent() / Psig, 1.f);
-            if ((float)rand() / RAND_MAX >= q) {
+            if (randFloat() >= q) {
                 return;
             }
         }*/
@@ -242,7 +242,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         // either side of vi in a particular path sample.
         // to prevent this, q will simply be min(f/Psig, 1) at all vertices.
         float q = std::min(f.maxComponent() / Psig, 1.f);
-        if ((float)rand() / RAND_MAX >= q) {
+        if (randFloat() >= q) {
             return;
         }
 
@@ -309,8 +309,8 @@ void Scene::Render() {
 
                     // offset (x,y) by between [a/sampleRate, b/sampleRate] and [(a+1)/sampleRate, (b+1)/sampleRate)]
                     // those are the bounds for the (a,b) subpixel within pixel (x,y)
-                    float xs = (float)x + (((float)a + (float)rand() / RAND_MAX) / sampleRate);
-                    float ys = (float)y + (((float)b + (float)rand() / RAND_MAX) / sampleRate);
+                    float xs = (float)x + (((float)a + randFloat()) / sampleRate);
+                    float ys = (float)y + (((float)b + randFloat()) / sampleRate);
 
                     // convert to screen coords (u,v)
                     float u = xs / width;
@@ -436,9 +436,8 @@ void Scene::Render() {
                     } // t loop
                 }   // sample-rate loop
             } // sample-rate loop
-
+            
             pixels[y * width + x] +=(C_sum_this_pixel / N);
-
 
             computed++;
             if (100 * computed / (width * height) > percent) {
@@ -447,12 +446,6 @@ void Scene::Render() {
             }
         } // y loop
     } // x loop
-
-    /*
-    STImage *im = new STImage(width, height);
-    STImage *im_L = new STImage(width, height);     // light image (for s=1 paths)
-    ImagePlane imPlane = ImagePlane(width, height);
-    */
 
     STImage im(width, height, pixels);
     im.Save(imageFilename);

@@ -61,8 +61,8 @@ STColor3f Lambertian::f(const STVector3& wo, const STVector3& wi) const {
 
 STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // cosine-sample the hemisphere
-    float r = (float)rand() / RAND_MAX;                     // [0, 1]
-    float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
+    float r = randFloat();                     // [0, 1]
+    float theta = randFloat() * 2.0f * M_PI;   // [0, 2pi]
     float sqrt_r = sqrtf(r);
     wi->x = sqrt_r * cosf(theta);
     wi->y = sqrt_r * sinf(theta);
@@ -92,8 +92,8 @@ STColor3f Y0Lambertian::f(const STVector3& wo, const STVector3& wi) const {
 
 STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // cosine-sample the hemisphere
-    float r = (float)rand() / RAND_MAX;                     // [0, 1]
-    float theta = (float)rand() / RAND_MAX * 2.0f * M_PI;   // [0, 2pi]
+    float r = randFloat();                     // [0, 1]
+    float theta = randFloat() * 2.0f * M_PI;   // [0, 2pi]
     float sqrt_r = sqrtf(r);
     wi->x = sqrt_r * cosf(theta);
     wi->y = sqrt_r * sinf(theta);
@@ -123,7 +123,7 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     // or the reflected ray. Have q be probability of selecting reflected ray
     STColor3f F = fresnelDielEvaluate(CosTheta(wo), etai, etat);
     float q = (F.r + F.g + F.b) / 3.0f;
-    if ((float)rand() / RAND_MAX <= q) {
+    if (randFloat() <= q) {
         // select reflected ray
         *pdf_sig = q;
 

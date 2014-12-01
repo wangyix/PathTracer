@@ -99,8 +99,8 @@ float Sphere::getSurfaceArea() const {
 
 STPoint3 Sphere::uniformSampleSurface(STVector3* normal) const {
     // theta = 2*pi*u, phi = acos(2v-1)  where u,v uniform randoms in [0, 1]
-    float u = (float)rand() / RAND_MAX;
-    float v = (float)rand() / RAND_MAX;
+    float u = randFloat();
+    float v = randFloat();
     float theta = 2.f * M_PI * u;
     float phi = acosf(2.f*v - 1.f);
 

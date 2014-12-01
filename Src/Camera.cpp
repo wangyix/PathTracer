@@ -113,7 +113,7 @@ void Camera::setSampleUV(float u, float v) {
 // 4*(16/9)*tan(45/2)^2 * cos(60) = 0.6100, so any C below that should result in f/Psig > 1
 // for most cases
 
-#define C 0.5f
+#define C 0.1f
 
 void Camera::sample_z0(STPoint3* z0, STVector3* z0_n, Bsdf const** bsdf, float* Pa, STColor3f* We0) const {
     *z0 = eye;
