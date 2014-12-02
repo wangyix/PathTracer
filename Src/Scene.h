@@ -3,6 +3,7 @@
 
 #include "st.h"
 #include "RayTrace.h"
+#include "quaternionJuliaSet.h"
 
 #include <iostream>
 #include <memory>
@@ -128,6 +129,8 @@ public:
     void rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z);
     void rtBox(const STPoint3& center, const STVector3& size);
     void rtCylinder(const STPoint3& A, const STPoint3 B, float radius);
+    void rtQJulia(const float4& mu, const float epsilon, const STPoint3& center);
+
     void rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name);
     void rtCompound(char c);
     void rtGroupObjects(int num);

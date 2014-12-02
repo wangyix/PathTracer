@@ -827,6 +827,10 @@ void Scene::rtCylinder(const STPoint3& A, const STPoint3 B, float radius)
     objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
+void Scene::rtQJulia(const float4& mu, const float epsilon, const STPoint3& center)
+{
+    objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon, center), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+}
 
 void Scene::rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name)
 {
@@ -1140,6 +1144,12 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             STPoint3 A(a1, a2, a3);
             STPoint3 B(b1, b2, b3);
             rtCylinder(A, B, r);
+        } else if (command == "QJulia") {
+            float4 mu;
+            float epsilon;
+            STPoint3 center;
+            ss >> mu.x >> mu.y >> mu.z >> mu.w >> epsilon >> center.x >> center.y >> center.z;
+            rtQJulia(mu, epsilon, center);
         } else if (command == "ParticipatingMedia") {
             float c1, c2, c3, s1, s2, s3;
             std::string file_name;
