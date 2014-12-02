@@ -28,7 +28,7 @@ public:
         }
     }
 
-    void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa, STColor3f* Le0) {
+    void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa_y0, STColor3f* Le0_y0) {
         // choose a light source to sample based on max component of emitted power
         float r = randFloat() * powerTotal;
         size_t chosen_i = 0;
@@ -39,15 +39,28 @@ public:
         }
         float Pa_y0_multiplier = lightPowers[chosen_i] / powerTotal;
 
-        // choose y0 by sampling selected light source, scale the resulting Pa
-        float Pa_y0_obj;
-        lightObjects[chosen_i]->sample_y0(y0, y0_n, bsdf, &Pa_y0_obj, Le0);
-        *Pa = Pa_y0_multiplier * Pa_y0_obj;
+        const SceneObject* light = lightObjects[chosen_i];
+        const Shape* lightShape = light->shape;
+
+        // choose point y0 uniformly on chosen light 
+        STVector3 y0_n_obj; 
+        STPoint3 y0_obj = lightShape->uniformSampleSurface(&y0_n_obj);
+
+        // transform y0_obj and y0_n_obj from object-space to world-space
+        *y0 = light->transform * y0_obj;
+        *y0_n = light->tInverseTranspose * y0_n_obj;
+        y0_n->Normalize();
+
+        *bsdf = &y0Lambertian;  // this bsdf will choose the y0_y1 direction in generateLightSubpath
+
+        float lightSurfaceArea = lightShape->getSurfaceArea();
+        *Pa_y0 = Pa_y0_multiplier * (1.f / lightSurfaceArea);
+        *Le0_y0 = light->emittedPower / lightSurfaceArea;
     }
 
     float Pa_y0(const SceneObject* light) {
         float Pa_y0_multiplier = light->emittedPower.maxComponent() / powerTotal;
-        return Pa_y0_multiplier * light->Pa();
+        return Pa_y0_multiplier * (1.f / light->shape->getSurfaceArea());
     }
 
     float qPsig_y0_y1(const SceneObject* light, const STVector3& y0_y1_w, const STVector3& y0_n) {
@@ -57,6 +70,13 @@ public:
             return 1.f / M_PI;
         }
         return 0.f;
+    }
+
+    STColor3f Le(const SceneObject* light, const STVector3& y0_y1_w, const STVector3& y0_n) {
+        if (STVector3::Dot(y0_y1_w, y0_n) >= 0.f) {
+            return light->emittedPower / (light->shape->getSurfaceArea() * M_PI);
+        }
+        return STColor3f(0.f);
     }
 
 private:
@@ -131,6 +151,8 @@ public:
     void rtBindTexture(const int tex_id){ currTexIndex = tex_id; }
     void rtUnbindTexture(){ currTexIndex = -1; }
 
+    void setRenderSubimage(int blocks_x, int blocks_y, int block_i, int block_j);
+
 protected:
     std::vector<STTransform4> matStack;
     Material* currMaterial;
@@ -158,6 +180,9 @@ protected:
     std::vector<AreaLight *> areaLights;
 
     LightDistribution lightDistribution;
+
+    int blocks_x, blocks_y;
+    int block_i, block_j;
 
     ////texture
     STColor3f textureColor(const int texture_index, const STPoint2& uv);

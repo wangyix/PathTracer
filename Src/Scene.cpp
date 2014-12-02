@@ -11,7 +11,8 @@
 
 
 Scene::Scene()
-    :currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f), camera(NULL), accel_structure(NONE), uniform_grid(NULL)
+    :currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f), camera(NULL), accel_structure(NONE), uniform_grid(NULL),
+    blocks_x(1), blocks_y(1), block_i(0), block_j(0)
 {
     rtSampleRate(1);
 }
@@ -174,13 +175,15 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         // the sample from technique p_0t is only nonzero if the eye-subpath prefix ends on a light
 
         if (inter_obj->isLight) {
+            const STVector3& zi_z1i_w = vertices[i].w_to_prev;
+            const STVector3& zi_n = vertices[i].getIntersection().normal;
+
             // calculate unweighted contribution C*_0t
-            STColor3f Cs_0t = vertices[i].alpha * inter_obj->Le();
+            STColor3f Cs_0t = vertices[i].alpha * lightDistribution.Le(inter_obj, zi_z1i_w, zi_n);
 
             // note: we know vertices.size()>=2 at this point, i.e. i>=1
 
-            float qPsig_zi_z1i = lightDistribution.qPsig_y0_y1(inter_obj, vertices[i].w_to_prev,
-                vertices[i].getIntersection().normal);
+            float qPsig_zi_z1i = lightDistribution.qPsig_y0_y1(inter_obj, zi_z1i_w, zi_n);
             float z1i_Pa_from_next = qPsig_zi_z1i * vertices[i].G_prev;
             float S_1i = S_i_at(vertices, i - 1, z1i_Pa_from_next);
 
@@ -286,10 +289,32 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     }
 }
 
+void calculateFromTo(int length, int blocks, int block_i, int* from, int* to) {
+    // remainder will be allocated to lower blocks, i.e. if width=100 and blocks_x=6, then
+    // blocks will have width 17, 17, 17, 17, 16, 16
+    int block_width_nominal = length / blocks;
+    int block_width_remainder = length % blocks;
 
+    if (block_i < block_width_remainder) {
+        *from = block_i * (block_width_nominal + 1);
+        *to = *from + (block_width_nominal + 1);
+    } else {
+        *from = block_i * block_width_nominal + block_width_remainder;
+        *to = *from + block_width_nominal;
+    }
+}
 
 void Scene::Render() {
+    
+    int x_from, x_to, y_from, y_to;
+    calculateFromTo(width, blocks_x, block_i, &x_from, &x_to);
+    calculateFromTo(height, blocks_y, block_j, &y_from, &y_to);
+
+    int pixelsToRender = (x_to - x_from) * (y_to - y_from);
+
+    
     lightDistribution.init(objects);
+
 
     std::cout << "------------------ray tracing started------------------" << std::endl;
 
@@ -297,8 +322,12 @@ void Scene::Render() {
     float N = (float)(/*width * height * */sampleRate * sampleRate);
 
     int percent = 0, computed = 0;
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
+
+    //for (int y = 0; y < height; y++) {
+        //for (int x = 0; x < width; x++) {
+
+    for (int y = y_from; y < y_to; y++) {
+        for (int x = x_from; x < x_to; x++) {
 
             // work on pixel (x, y)
             STColor3f C_sum_this_pixel(0.f);
@@ -328,7 +357,7 @@ void Scene::Render() {
                     // accumulate C0t contributions
                     C_sum_this_pixel += C0t_sum;
 
-
+                    
                     // calculate contributions for all samples created by linking
                     // prefixes of eye and light subpaths
                     
@@ -429,20 +458,21 @@ void Scene::Render() {
                                 int y_w = (int)(v_w * height);
 
                                 pixels[y_w * width + x_w] += (C_st / N);
+
                             } else {
                                 C_sum_this_pixel += C_st;
                             }
 
                         } // s loop
                     } // t loop
-
-                }   // sample-rate loop
+                    
+                } // sample-rate loop
             } // sample-rate loop
             
             pixels[y * width + x] +=(C_sum_this_pixel / N);
 
             computed++;
-            if (100 * computed / (width * height) > percent) {
+            if (100 * computed / pixelsToRender > percent) {
                 percent++;
                 std::cout << percent << "% ";
             }
@@ -450,7 +480,23 @@ void Scene::Render() {
     } // x loop
 
     STImage im(width, height, pixels);
-    im.Save(imageFilename);
+    std::string subImageFileName = imageFilename;
+    if (!(blocks_x == 1 && blocks_y == 1)) {
+
+        size_t dot_pos = imageFilename.find_last_of('.');
+        std::string extension = imageFilename.substr(dot_pos);
+
+        subImageFileName = imageFilename.substr(0, dot_pos);
+        subImageFileName.append(std::to_string(blocks_x))
+            .append("x")
+            .append(std::to_string(blocks_y))
+            .append("_")
+            .append(std::to_string(block_i))
+            .append("_")
+            .append(std::to_string(block_j));
+        subImageFileName.append(extension);
+    }
+    im.Save(subImageFileName);
 
     std::cout << "------------------ray tracing finished------------------" << std::endl;
 }
@@ -1217,4 +1263,11 @@ STColor3f Scene::textureColor(const int texture_index, const STPoint2& uv)
     if (j<0)j = 0; if (j>tex_img->GetHeight() - 1)j = tex_img->GetHeight() - 1;
     STColor3f color(tex_img->GetPixel(i, j));
     return color;
+}
+
+void Scene::setRenderSubimage(int blocks_x, int blocks_y, int block_i, int block_j) {
+    this->blocks_x = blocks_x;
+    this->blocks_y = blocks_y;
+    this->block_i = block_i;
+    this->block_j = block_j;
 }

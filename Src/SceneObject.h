@@ -74,43 +74,8 @@ public:
     virtual Intersection* getIntersectionWithObject(const Ray& ray, /*result*/SceneObject*& intersected_object)
     {
         Intersection* inter = getIntersect(ray);
-        if(inter){intersected_object=this;}
+        if (inter){ intersected_object = this; }
         return inter;
-    }
-
-
-    // Assuming power is emitted in perfecly diffuse manner evenly across
-    // surface area, so Le doesn't depend on x or w.
-    virtual STColor3f Le() const {
-        return emittedPower / (shape->getSurfaceArea() * M_PI);
-    }
-    // positional component of Le (irrandiance)
-    virtual STColor3f Le0() const {
-        return emittedPower / shape->getSurfaceArea();
-    }
-
-    virtual float Pa() const {
-        return 1.f / shape->getSurfaceArea();
-    }
-
-    // chooses point y0 on surface and calculates an IntersectionBsdf for it.
-    // y1 can then be chosen by sampling the bsdf in y0_intersection (which
-    // really represents Le_1(y0, w))
-    virtual void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf,
-        float* pdf_a_y0, STColor3f* Le0_y0) {
-
-        // uniform-randomly choose a point y0 on surface, record its normal
-        *y0 = shape->uniformSampleSurface(y0_n);
-
-        // transform y0 and y0_n from object-space to world-space
-        *y0 = transform * *y0;
-        *y0_n = tInverseTranspose * *y0_n;
-        y0_n->Normalize();
-
-        *bsdf = &y0Lambertian;
-
-        *pdf_a_y0 = 1.f / shape->getSurfaceArea();
-        *Le0_y0 = Le0();
     }
 
 
