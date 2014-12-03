@@ -91,7 +91,7 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
     camera->sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
 
     // record z0
-    vertices.emplace_back(Vertex(Intersection(0.f, z0, z0_n), z0_bsdf, false));  // cameraBsdf will take wi,wo in world-space
+    vertices.emplace_back(Vertex(Intersection(0.f, z0, z0_n), z0_bsdf));
     //vertices.back().w_to_prev                    // not defined for z0
     vertices.back().alpha = We0_z0 / Pa_z0;
     //vertices.back().G_prev                    // not defined for y0

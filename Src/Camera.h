@@ -22,6 +22,7 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return false; }
+    bool worldSpaceParams() const { return true; }
 
     void setSampleUV(float u, float v);
 

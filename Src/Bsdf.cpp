@@ -182,9 +182,9 @@ STColor3f SpecularCond::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
 
     *cos_wi = AbsCosTheta(*wi);
 
-    // bsdf is Fr * delta(w-wi) / cos(thetai)
+    // bsdf is Fr * delta(w-wi)
     if (wo.z > 0.f) {
-        return FrCond(CosTheta(wo), eta, k) * R; // AbsCosTheta(*wi);
+        return FrCond(CosTheta(wo), eta, k) * R;
     }
     return STColor3f(0.f);
 }

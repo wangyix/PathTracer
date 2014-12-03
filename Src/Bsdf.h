@@ -31,12 +31,10 @@ public:
 public:
     virtual STColor3f f(const STVector3& wo, const STVector3& wi) const = 0;
     virtual STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const = 0;
-
-    // returns Psig(wi) given wo, wi
     virtual float p_sig(const STVector3& wo, const STVector3& wi) const = 0;
 
     virtual bool isSpecular() const = 0;
-
+    virtual bool worldSpaceParams() const { return false; }
 public:
     Type type;
 };

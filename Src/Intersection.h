@@ -25,7 +25,7 @@ struct Intersection {
 struct Vertex {
 public:
 
-    Vertex(const Intersection& inter, const Bsdf* bsdf, bool transform_w = true) :
+    Vertex(const Intersection& inter, const Bsdf* bsdf) :
         w_to_prev(0.f),
         alpha(-1.f),
         G_prev(-1.f),
@@ -37,10 +37,10 @@ public:
         bsdf(bsdf),
         intersection(inter)
     {
-        // if transform_w is true, then it's assumed that bsdf->f() and bsdf->sample_f() takes
-        // wi, wo in normal-space.  Otherwise, it's assumed they take wi, wo in world-space.
-        // transform_w = false is used so the z0 intersection can be sampled.
-        if (transform_w) {
+        // if the specified bsdf is expecting its params wi, wo in normal-space, construct
+        // axes IJK with K aligned with the intersection normal and I,J in some arbitrary rotated
+        // configuration around K.  calculate world-to-normal and normal-to-world transforms using IJK.
+        if (!bsdf->worldSpaceParams()) {
             const STVector3& n = intersection.normal;
             const STPoint3& P = intersection.point;
 
