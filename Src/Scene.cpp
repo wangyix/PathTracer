@@ -357,7 +357,6 @@ void Scene::Render() {
                     // accumulate C0t contributions
                     C_sum_this_pixel += C0t_sum;
 
-                    
                     // calculate contributions for all samples created by linking
                     // prefixes of eye and light subpaths
                     

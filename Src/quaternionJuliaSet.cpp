@@ -9,7 +9,7 @@
 #include "quaternionJuliaSet.h"
 
 #define DELTA (1e-5f)
-#define ITERATIONS (10)
+#define ITERATIONS (12)
 #define ESCAPE_COEFFICIENT (2)
 #define RADIUS (2)
 
@@ -51,11 +51,7 @@ float length4(float4 f)
 	return sqrt(f.x*f.x + f.y*f.y + f.z*f.z + f.w*f.w);
 }
 
-STVector3
-EstimateNormalQJulia(
-					 STPoint3 p,
-					 float4 c,
-					 int iterations )
+STVector3 EstimateNormalQJulia(STPoint3 p, float4 c, int iterations)
 {
 	float4 qp = float4( p.x, p.y, p.z, 0.0f );
 	float4 gx1 = qp - float4( DELTA, 0.0f, 0.0f, 0.0f );
@@ -85,11 +81,7 @@ EstimateNormalQJulia(
 	return normal;
 }
 
-float
-IntersectSphere(
-    STVector3 rO,
-    STVector3 rD,
-    float radius )
+float IntersectSphere(STVector3 rO, STVector3 rD, float radius)
 {
 	float fB = 2.0f * STVector3::Dot( rO, rD );
 	float fB2 = fB * fB;
@@ -106,13 +98,7 @@ IntersectSphere(
 
 float4 reverse_raytrace(STVector3 rO, STVector3 rD, Ray ray, float4 mu, float epsilon);
 
-float4
-IntersectQJulia(
-    STVector3 rO,
-    STVector3 rD,
-    float4 c,
-    float epsilon,
-    float escape)
+float4 IntersectQJulia(STVector3 rO, STVector3 rD, float4 c, float epsilon, float escape)
 {
 	float rd = 0.0f;
 	float dist = epsilon;
@@ -144,9 +130,7 @@ IntersectQJulia(
 }
 // end of code from "OpenCL RayTraced Quaternion Julia-Set Example" in Mac Developer Library
 
-float IntersectSphere2(STVector3 rO,
-					   STVector3 rD,
-						Ray ray)
+float IntersectSphere2(STVector3 rO, STVector3 rD, Ray ray)
 {
 	float a = rD.LengthSq();
 	float b = 2 * STVector3::Dot(rD, rO);
@@ -161,9 +145,10 @@ float IntersectSphere2(STVector3 rO,
 }
 
 Intersection* quaternionJuliaSet::getIntersect(const Ray &ray){
-	
+    float ray_d_length = ray.d.Length();
+
 	STVector3 rD = ray.d;
-	rD.Normalize();
+    rD /= ray_d_length; //.Normalize();
 	STVector3 rO = ray.e - center;
 	float t = IntersectSphere2(rO, rD, ray);
 	if (t<= 0) return NULL;
@@ -178,10 +163,7 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray){
 	// this code reverses the direction of the ray if it is moving out of the bouding sphere
 	STPoint3 sphere_point;// = ray.at(t);
 	sphere_point.x = rO.x; sphere_point.y = rO.y; sphere_point.z = rO.z;
-	STVector3 sphere_normal = sphere_point - center;
-	sphere_normal.Normalize();
-	float cos_theta = STVector3::Dot(rD, sphere_normal);
-	if (cos_theta > 0)
+    if (STVector3::Dot(rD, sphere_point - center) > 0)
 	{
 		rD = -rD;
 	}
@@ -189,14 +171,36 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray){
 	float escape_threshold = ESCAPE_COEFFICIENT*RADIUS;
 	float4 hit = IntersectQJulia( rO, rD, mu, epsilon, escape_threshold);
 	float dist = hit.w;
-	if (dist >= epsilon) return NULL;
+    if (dist >= epsilon){
+        // ray-marched past the escape threshold instead of unbounding sphere radius
+        // falling below epsilon; this ray does not intersect the julia set
+        return NULL;
+    }
 	
 	
 	STPoint3 point;
 	point.x = hit.x; point.y = hit.y; point.z = hit.z;
 	STVector3 normal = EstimateNormalQJulia( point, mu, ITERATIONS);
 	
-	t = (STVector3 (ray.e - point)).Length()/ray.d.Length(); //Hopefully this is the right t
+	//t = (ray.e - point).Length()/ray.d.Length(); //Hopefully this is the right t
+
+    // if ray intersected the bounding sphere from the inside, then the ray-march
+    // back from that intersection may produce a hit point less than shadowBias
+    // from the ray start or even slightly behind the ray start.
+    
+    // This comes up when checking for intersection with a ray that originates
+    // on the surface of the julia set and heads outwards (i.e. reflected rays
+    // off the surface of the julia set)
+
+    // Since the hit point returned by IntersectQJulia() has an error proportional
+    // to epsilon, we will only count this as an intersection if the hit point 
+    // is more than 2 epsilons + shadowbias away from the ray start (assuming
+    // ray.d is already normalized
+
+    t = STVector3::Dot(point - ray.e, ray.d) / (ray_d_length*ray_d_length);//ray.d.LengthSq();
+    if (t < ray.t_min + 2.f * epsilon / ray_d_length || t > ray.t_max) {//!ray.inRange(t)) {
+        return NULL;
+    }
 	
 	return new Intersection(t, point, normal);
 	
