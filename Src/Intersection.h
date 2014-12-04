@@ -96,6 +96,9 @@ public:
         return bsdf->isSpecular();
     }
 
+    std::string getBsdfDescriptionString() const {
+        return bsdf->getDescriptionString();
+    }
 
 public:
     STVector3 w_to_prev;       // direction to previous vertex

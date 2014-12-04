@@ -2,7 +2,7 @@
 #include "STColor3f.h"
 #include "STVector3.inl"
 
-
+#include <sstream>
 #include <cstdlib>
 
 
@@ -81,6 +81,11 @@ float Lambertian::p_sig(const STVector3& wo, const STVector3& wi) const {
     return 0.f;
 }
 
+std::string Lambertian::getDescriptionString() const {
+    std::stringstream ss;
+    ss << "Lambertian  " << R.r << " " << R.g << " " << R.b;
+    return ss.str();
+}
 
 
 STColor3f Y0Lambertian::f(const STVector3& wo, const STVector3& wi) const {
@@ -112,6 +117,9 @@ float Y0Lambertian::p_sig(const STVector3& wo, const STVector3& wi) const {
     return 0.f;
 }
 
+std::string Y0Lambertian::getDescriptionString() const {
+    return "Y0Lambertian";
+}
 
 
 STColor3f SpecularDiel::f(const STVector3& wo, const STVector3& wi) const {
@@ -167,6 +175,14 @@ float SpecularDiel::p_sig(const STVector3& wo, const STVector3& wi) const {
     return 0.f;
 }
 
+std::string SpecularDiel::getDescriptionString() const {
+    std::stringstream ss;
+    ss << "SpecularDiel  " << R.r << " " << R.g << " " << R.b
+        << " " << T.r << " " << T.g << " " << T.b
+        << " " << etai << " " << etat;
+    return ss.str();
+}
+
 
 
 STColor3f SpecularCond::f(const STVector3& wo, const STVector3& wi) const {
@@ -193,6 +209,14 @@ float SpecularCond::p_sig(const STVector3& wo, const STVector3& wi) const {
     return 0.f;
 }
 
+std::string SpecularCond::getDescriptionString() const {
+    std::stringstream ss;
+    ss << "SpecularCond  " << R.r << " " << R.g << " " << R.b
+        << " " << eta.r << " " << eta.g << " " << eta.b
+        << " " << k.r << " " << k.g << " " << k.b;
+    return ss.str();
+}
+
 
 STColor3f ScaledBsdf::f(const STVector3& wo, const STVector3& wi) const {
     return s * bsdf->f(wo, wi);
@@ -205,6 +229,13 @@ STColor3f ScaledBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_si
 float ScaledBsdf::p_sig(const STVector3& wo, const STVector3& wi) const {
     return bsdf->p_sig(wo, wi);
 }
+
+std::string ScaledBsdf::getDescriptionString() const {
+    std::stringstream ss;
+    ss << "ScaledBsdf  " << bsdf->getDescriptionString();
+    return ss.str();
+}
+
 
 Bsdf* newCopyBsdf(const Bsdf* bsdf) {
     switch (bsdf->type) {

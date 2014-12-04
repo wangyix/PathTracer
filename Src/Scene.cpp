@@ -304,6 +304,63 @@ void calculateFromTo(int length, int blocks, int block_i, int* from, int* to) {
     }
 }
 
+/*
+// struct for storing paths of interest for debugging
+struct Path {
+    int x, y;
+    int a, b;
+    int s, t;
+    std::vector<Vertex> vertices_L;
+    std::vector<Vertex> vertices_E;
+    STColor3f Cs_st, C_st;
+    float w_st;
+
+    Path(int x, int y, int a, int b, int s, int t, const std::vector<Vertex>& vertices_L, const std::vector<Vertex>& vertices_E, float w_st, STColor3f Cs_st, STColor3f C_st)
+        : x(x), y(y), a(a), b(b), s(s), t(t), vertices_L(vertices_L), vertices_E(vertices_E), w_st(w_st), Cs_st(Cs_st), C_st(C_st) {
+    }
+
+    void write(std::ostream& os) const {
+        os << std::endl << std::endl;
+        os << "=================================================================================================" << std::endl << std::endl;
+
+        os << "pixel (" << x << ", " << y << ")  sub-pixel (" << a << ", " << b << ")" << std::endl;
+        os << "t: " << t << "  s : " << s << std::endl;
+        os << "w_st: " << w_st << std::endl;
+        os << "Cs_st: " << Cs_st.r << " " << Cs_st.g << " " << Cs_st.b << std::endl;
+        os << "C_st: " << C_st.r << " " << C_st.g << " " << C_st.b << std::endl;
+       
+        for (int i = 0; i < t; i++) {
+            os << std::endl;
+            os << "z" << i << std::endl;
+            writeVertex(os, vertices_E[i]);
+        }
+
+        for (int i = 0; i < s; i++) {
+            os << std::endl;
+            os << "y" << i << std::endl;
+            writeVertex(os, vertices_L[i]);
+        }
+    }
+
+    void writeVertex(std::ostream& os, const Vertex& v) const {
+        const Intersection& in = v.getIntersection();
+        os << "p: (" << in.point.x << ", " << in.point.y << ", " << in.point.z << ")" << std::endl;
+        //os << "n: (" << in.normal.x << ", " << in.normal.y << ", " << in.normal.z << ")" << std::endl;
+        //os << "t_prev: " << in.t << std::endl;
+        os << "w_to_prev dot n: " << STVector3::Dot(v.w_to_prev, v.getIntersection().normal) << std::endl;
+        os << "----------------" << std::endl;
+        os << v.getBsdfDescriptionString() << std::endl;
+        os << "prev_gap_nonspecular: " << v.prev_gap_nonspecular << std::endl;
+        os << "----------------" << std::endl;
+        os << "alpha: " << v.alpha.r << " " << v.alpha.g << " " << v.alpha.b << std::endl;
+        //os << "G_prev: " << v.G_prev << std::endl;
+        //os << "qPsig_adj: " << v.qPsig_adj << std::endl;
+        os << "Pa_from_prev: " << v.Pa_from_prev << "  Pa_from_next: " << v.Pa_from_next << std::endl;
+        os << "S: " << v.S << std::endl;
+    }
+};*/
+
+
 void Scene::Render() {
     
     int x_from, x_to, y_from, y_to;

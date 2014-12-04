@@ -23,6 +23,7 @@ public:
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return false; }
     bool worldSpaceParams() const { return true; }
+    std::string getDescriptionString() const { return "CameraBsdf"; }
 
     void setSampleUV(float u, float v);
 

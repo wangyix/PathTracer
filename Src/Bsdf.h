@@ -35,6 +35,8 @@ public:
 
     virtual bool isSpecular() const = 0;
     virtual bool worldSpaceParams() const { return false; }
+
+    virtual std::string getDescriptionString() const { return ""; }
 public:
     Type type;
 };
@@ -48,6 +50,7 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return false; }
+    std::string getDescriptionString() const;
 private:
     STColor3f R;    // albedo
 };
@@ -61,6 +64,7 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return false; }
+    std::string getDescriptionString() const;
 };
 
 class SpecularDiel : public Bsdf {
@@ -71,6 +75,7 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return true; }
+    std::string getDescriptionString() const;
 
 private:
     STColor3f R;
@@ -87,6 +92,7 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return true; }
+    std::string getDescriptionString() const;
 
 private:
     STColor3f R;
@@ -101,6 +107,7 @@ public:
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
     float p_sig(const STVector3& wo, const STVector3& wi) const;
     bool isSpecular() const { return bsdf->isSpecular(); }
+    std::string getDescriptionString() const;
 private:
     const Bsdf* bsdf;
     STColor3f s;

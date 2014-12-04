@@ -56,32 +56,6 @@ float Camera::getFocalRatio(const STPoint3 &f) {
     return STVector3::Dot(f - eye, lookAt - eye) / (lookAt - eye).LengthSq();
 }
 
-/*
-// calculates Psig(z0->z1) assuming pinhole camera.
-// Psig(z0->z1) = 0 when z1 not in img plane; this assumes (u,v) is in img plane
-// Psig(z0->z1) = 1 / (4 * a * tan(fovy/2)^2 * cos(theta)^4)
-float Camera::Psig_cosW(const STVector3& w, float* cos_w) const {
-    STVector3 look = getLook();
-    *cos_w = STVector3::Dot(w, look);
-
-    float tanHalfFovy = tanf(0.5f * fovy * (float)pi / 180.f);
-    float tanHalfFovy_cosThetaSq = tanHalfFovy * *cos_w * *cos_w;
-    return 1.0f / (4.0f * aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
-
-    // old way:
-    // convert (u,v) to half-NDC coordinates (s,t) which are [-0.5, 0.5]
-    float s = u - 0.5f;
-    float t = v - 0.5f;
-
-    float tanHalfFovy = tanf(0.5f * fovy * (float)pi / 180.f);
-    float d = 0.5f / tanHalfFovy;   // eye distance to img plane if height=1
-    float as = aspect * s;
-    float cosThetaSq = d*d / (as*as + t*t + d*d);
-    *cos_w = sqrtf(cosThetaSq);
-    float tanHalfFovy_cosThetaSq = tanHalfFovy * cosThetaSq;
-    return 1.0f / (4.0f * aspect * tanHalfFovy_cosThetaSq * tanHalfFovy_cosThetaSq);
-}
-*/
 
 void Camera::getUvOfDirection(const STVector3 w, float* u, float* v) const {
     STVector3 w_v = worldToView * w;
