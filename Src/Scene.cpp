@@ -77,10 +77,100 @@ float Scene::qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_a
 }
 
 
+
+
+
+// struct for storing paths of interest for debugging
+struct Path {
+    int x, y;
+    int a, b;
+    int s, t;
+    std::vector<Vertex> vertices_L;
+    std::vector<Vertex> vertices_E;
+    STColor3f Cs_st, C_st;
+    float w_st;
+
+    Path(int x, int y, int a, int b, int s, int t, const std::vector<Vertex>& vertices_L, const std::vector<Vertex>& vertices_E, float w_st, STColor3f Cs_st, STColor3f C_st)
+        : x(x), y(y), a(a), b(b), s(s), t(t), vertices_L(vertices_L), vertices_E(vertices_E), w_st(w_st), Cs_st(Cs_st), C_st(C_st) {
+    }
+
+    void writeContributionOnly(std::ostream& os) const {
+        os << x << ", " << y << ",  " << a << ", " << b << ",  " << s << ", " << t
+            << ",   " << C_st.r << ", " << C_st.g << ", " << C_st.b << std::endl;
+    }
+
+    void writeAbridged(std::ostream& os) const {
+        os << std::endl;
+        os << x << ", " << y << ",  " << a << ", " << b << ",  " << s << ", " << t << std::endl;
+        os << "C_st: (" << C_st.r << ", " << C_st.g << ", " << C_st.b << ") = " 
+            << w_st << " * ("
+            << Cs_st.r << ", " << Cs_st.g << ", " << Cs_st.b << ")" << std::endl;
+
+        os << "(S)";
+        for (int i = 0; i < t; i++) {
+            os << (vertices_E[i].isSpecular() ? "S" : "D");
+        }
+        if (s > 0) {
+            os << "--";
+            for (int i = s - 1; i >= 0; i--) {
+                os << (vertices_L[i].isSpecular() ? "S" : "D");
+            }
+        }
+        os << "(D)" << std::endl;
+    }
+
+    void write(std::ostream& os) const {
+        os << std::endl << std::endl;
+        os << "=================================================================================================" << std::endl << std::endl;
+
+        os << x << ", " << y << ",  " << a << ", " << b << ",  " << s << ", " << t << std::endl;
+        os << "C_st: (" << C_st.r << ", " << C_st.g << ", " << C_st.b << ") = "
+            << w_st << " * ("
+            << Cs_st.r << ", " << Cs_st.g << ", " << Cs_st.b << ")" << std::endl;
+
+        for (int i = 0; i < t; i++) {
+            os << std::endl;
+            os << "z" << i << std::endl;
+            writeVertex(os, vertices_E[i]);
+        }
+
+        for (int i = s-1; i >= 0; i--) {
+            os << std::endl;
+            os << "y" << i << std::endl;
+            writeVertex(os, vertices_L[i]);
+        }
+    }
+
+    void writeVertex(std::ostream& os, const Vertex& v) const {
+        const Intersection& in = v.getIntersection();
+        os << "p: (" << in.point.x << ", " << in.point.y << ", " << in.point.z << ")" << std::endl;
+        os << "n: (" << in.normal.x << ", " << in.normal.y << ", " << in.normal.z << ")" << std::endl;
+        os << "t_prev: " << in.t << std::endl;
+        os << "w_to_prev dot n: " << STVector3::Dot(v.w_to_prev, v.getIntersection().normal) << std::endl;
+        os << "----------------" << std::endl;
+        os << v.getBsdfDescriptionString() << std::endl;
+        os << "prev_gap_nonspecular: " << v.prev_gap_nonspecular << std::endl;
+        os << "----------------" << std::endl;
+        os << "alpha: " << v.alpha.r << " " << v.alpha.g << " " << v.alpha.b << std::endl;
+        os << "G_prev: " << v.G_prev << std::endl;
+        os << "qPsig_adj: " << v.qPsig_adj << std::endl;
+        os << "Pa_from_prev: " << v.Pa_from_prev << "  Pa_from_next: " << v.Pa_from_next << std::endl;
+        os << "S: " << v.S << std::endl;
+    }
+};
+
+const int target_x = 175;
+const int target_y = 359 - 162;
+
+int curr_x, curr_y, curr_a, curr_b;
+std::vector<Path> paths;
+
+
+
 //#define MIN_SUBPATH_LENGTH bounceDepth
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
-    
+
     camera->setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
 
     STPoint3 z0;
@@ -191,10 +281,23 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             float zi_Pa_from_next = lightDistribution.Pa_y0(inter_obj); // Pa(zi)
             float S_i = S_i_at(vertices, i, zi_Pa_from_next, S_1i);
 
+            if (S_i == 0.f && i > 2) {
+                continue;
+            }
+
             // calculate weight w_0t knowing that S_i = (p1t/pt)^2 + ... + (p0/pt)^2
             float w_0t = 1.f / (1.f + S_i);
 
+            /*if (S_i == 0.f && i > 3) {
+                paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t)));
+                continue;
+            }*/
+
             *C_0t_sum += (w_0t * Cs_0t);
+
+            /*if (curr_x == target_x && curr_y == target_y) {
+                paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t)));
+            }*/
         }
     }
 }
@@ -304,72 +407,16 @@ void calculateFromTo(int length, int blocks, int block_i, int* from, int* to) {
     }
 }
 
-/*
-// struct for storing paths of interest for debugging
-struct Path {
-    int x, y;
-    int a, b;
-    int s, t;
-    std::vector<Vertex> vertices_L;
-    std::vector<Vertex> vertices_E;
-    STColor3f Cs_st, C_st;
-    float w_st;
-
-    Path(int x, int y, int a, int b, int s, int t, const std::vector<Vertex>& vertices_L, const std::vector<Vertex>& vertices_E, float w_st, STColor3f Cs_st, STColor3f C_st)
-        : x(x), y(y), a(a), b(b), s(s), t(t), vertices_L(vertices_L), vertices_E(vertices_E), w_st(w_st), Cs_st(Cs_st), C_st(C_st) {
-    }
-
-    void write(std::ostream& os) const {
-        os << std::endl << std::endl;
-        os << "=================================================================================================" << std::endl << std::endl;
-
-        os << "pixel (" << x << ", " << y << ")  sub-pixel (" << a << ", " << b << ")" << std::endl;
-        os << "t: " << t << "  s : " << s << std::endl;
-        os << "w_st: " << w_st << std::endl;
-        os << "Cs_st: " << Cs_st.r << " " << Cs_st.g << " " << Cs_st.b << std::endl;
-        os << "C_st: " << C_st.r << " " << C_st.g << " " << C_st.b << std::endl;
-       
-        for (int i = 0; i < t; i++) {
-            os << std::endl;
-            os << "z" << i << std::endl;
-            writeVertex(os, vertices_E[i]);
-        }
-
-        for (int i = 0; i < s; i++) {
-            os << std::endl;
-            os << "y" << i << std::endl;
-            writeVertex(os, vertices_L[i]);
-        }
-    }
-
-    void writeVertex(std::ostream& os, const Vertex& v) const {
-        const Intersection& in = v.getIntersection();
-        os << "p: (" << in.point.x << ", " << in.point.y << ", " << in.point.z << ")" << std::endl;
-        //os << "n: (" << in.normal.x << ", " << in.normal.y << ", " << in.normal.z << ")" << std::endl;
-        //os << "t_prev: " << in.t << std::endl;
-        os << "w_to_prev dot n: " << STVector3::Dot(v.w_to_prev, v.getIntersection().normal) << std::endl;
-        os << "----------------" << std::endl;
-        os << v.getBsdfDescriptionString() << std::endl;
-        os << "prev_gap_nonspecular: " << v.prev_gap_nonspecular << std::endl;
-        os << "----------------" << std::endl;
-        os << "alpha: " << v.alpha.r << " " << v.alpha.g << " " << v.alpha.b << std::endl;
-        //os << "G_prev: " << v.G_prev << std::endl;
-        //os << "qPsig_adj: " << v.qPsig_adj << std::endl;
-        os << "Pa_from_prev: " << v.Pa_from_prev << "  Pa_from_next: " << v.Pa_from_next << std::endl;
-        os << "S: " << v.S << std::endl;
-    }
-};*/
-
 
 void Scene::Render() {
-    
+
     int x_from, x_to, y_from, y_to;
     calculateFromTo(width, blocks_x, block_i, &x_from, &x_to);
     calculateFromTo(height, blocks_y, block_j, &y_from, &y_to);
 
     int pixelsToRender = (x_to - x_from) * (y_to - y_from);
 
-    
+
     lightDistribution.init(objects);
 
 
@@ -380,18 +427,18 @@ void Scene::Render() {
 
     int percent = 0, computed = 0;
 
-    //for (int y = 0; y < height; y++) {
-        //for (int x = 0; x < width; x++) {
-
     for (int y = y_from; y < y_to; y++) {
         for (int x = x_from; x < x_to; x++) {
-
+            curr_x = x;
+            curr_y = y;
             // work on pixel (x, y)
             STColor3f C_sum_this_pixel(0.f);
 
             // sampleRate^2 stratified estimates (sample-path groups) per pixel
             for (int a = 0; a < sampleRate; a++) {
                 for (int b = 0; b < sampleRate; b++) {
+                    curr_a = a;
+                    curr_b = b;
 
                     // offset (x,y) by between [a/sampleRate, b/sampleRate] and [(a+1)/sampleRate, (b+1)/sampleRate)]
                     // those are the bounds for the (a,b) subpixel within pixel (x,y)
@@ -406,7 +453,7 @@ void Scene::Render() {
                     std::vector<Vertex> vertices_E;
                     STColor3f C0t_sum;
                     generateEyeSubpath(u, v, vertices_E, &C0t_sum);
-                    
+
                     // generate light subpath
                     std::vector<Vertex> vertices_L;
                     generateLightSubpath(vertices_L);
@@ -416,7 +463,7 @@ void Scene::Render() {
 
                     // calculate contributions for all samples created by linking
                     // prefixes of eye and light subpaths
-                    
+
                     for (size_t t = 1; t <= vertices_E.size(); t++) {
                         for (size_t s = 1; s <= vertices_L.size(); s++) {
 
@@ -496,7 +543,7 @@ void Scene::Render() {
 
                             // calculate w_st
                             float w_st = 1.f / (S_L + 1.f + S_E);
-                            
+
                             // calculate weighted contribution Cst
                             STColor3f C_st = w_st * Cs_st;
 
@@ -515,17 +562,25 @@ void Scene::Render() {
 
                                 pixels[y_w * width + x_w] += (C_st / N);
 
+                                /*if (x_w == target_x && y_w == target_y) {
+                                    paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st));
+                                }*/
+
                             } else {
                                 C_sum_this_pixel += C_st;
+
+                                /*if (curr_x == target_x && curr_y == target_y) {
+                                    paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st));
+                                }*/
                             }
 
                         } // s loop
                     } // t loop
-                    
+
                 } // sample-rate loop
             } // sample-rate loop
-            
-            pixels[y * width + x] +=(C_sum_this_pixel / N);
+
+            pixels[y * width + x] += (C_sum_this_pixel / N);
 
             computed++;
             if (100 * computed / pixelsToRender > percent) {
@@ -555,6 +610,22 @@ void Scene::Render() {
     im.Save(subImageFileName);
 
     std::cout << "------------------ray tracing finished------------------" << std::endl;
+
+    if (!paths.empty()) {
+        // sort paths by contribution
+        std::sort(paths.begin(), paths.end(), [](const Path& a, const Path& b)->bool {
+            return a.C_st.maxComponent() > b.C_st.maxComponent();
+        });
+
+        std::string basename = "paths_" + std::to_string(block_i) + "_" + std::to_string(block_j);
+        std::ofstream ofs(basename + ".txt", std::ofstream::out);
+        std::ofstream ofs_ab(basename + "_abr.txt", std::ofstream::out);
+        for (const Path& p : paths) {
+            //p.writeContributionOnly(ofs_c);
+            p.write(ofs);
+            p.writeAbridged(ofs_ab);
+        }
+    }
 }
 
 STColor3f Scene::TraceRay(const Ray &ray, int bounce) {
@@ -1262,7 +1333,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             rtMaterial(amb, diff, spec, mirr, shine);*/
 
             ss >> currEmittedPower.r >> currEmittedPower.g >> currEmittedPower.b;
-            
+
             std::string type;
             ss >> type;
             if (type == "L") {
