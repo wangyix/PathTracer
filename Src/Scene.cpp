@@ -493,10 +493,11 @@ void Scene::Render() {
                             }
 
                             // check if the gap vector intersects anything
-                            Ray gap_ray_EL(gap_point_E, gap_EL, shadowBias);
+                            // TODO: should use doesIntersect() instead of getIntersection() on shapes which should be faster
+                            Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias);
                             SceneObject* gap_inter_obj = NULL;
                             std::unique_ptr<Intersection> gap_inter(Intersect(gap_ray_EL, gap_inter_obj));
-                            if (gap_inter && gap_inter->t < 1.f - shadowBias) {
+                            if (gap_inter && gap_inter->t < gap_EL.Length() - shadowBias) {
                                 continue;
                             }
 
@@ -954,9 +955,9 @@ void Scene::rtCylinder(const STPoint3& A, const STPoint3 B, float radius)
     objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
-void Scene::rtQJulia(const float4& mu, const float epsilon, const STPoint3& center)
+void Scene::rtQJulia(const float4& mu, const float epsilon)
 {
-    objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon, center), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name)
@@ -1243,13 +1244,11 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             ss >> tx >> ty >> tz;
             rtTranslate(tx, ty, tz);
         } else if (command == "Sphere") {
-            std::cout << "Sphere" << std::endl;
             float cx, cy, cz, r;
             ss >> cx >> cy >> cz >> r;
             STPoint3 center(cx, cy, cz);
             rtSphere(center, r);
         } else if (command == "Triangle") {
-            std::cout << "Triangle" << std::endl;
             float x1, y1, z1, x2, y2, z2, x3, y3, z3;
             ss >> x1 >> y1 >> z1 >> x2 >> y2 >> z2 >> x3 >> y3 >> z3;
             STPoint3 v[3];
@@ -1274,9 +1273,8 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
         } else if (command == "QJulia") {
             float4 mu;
             float epsilon;
-            STPoint3 center;
-            ss >> mu.x >> mu.y >> mu.z >> mu.w >> epsilon >> center.x >> center.y >> center.z;
-            rtQJulia(mu, epsilon, center);
+            ss >> mu.x >> mu.y >> mu.z >> mu.w >> epsilon;
+            rtQJulia(mu, epsilon);
         } else if (command == "ParticipatingMedia") {
             float c1, c2, c3, s1, s2, s3;
             std::string file_name;
