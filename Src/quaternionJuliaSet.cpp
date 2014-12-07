@@ -207,16 +207,16 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
         // falling below epsilon; this ray does not intersect the julia set
         return false;
     }
-
-    // estimate the normal at the intersection with the julia set
     STPoint3 point(hit.x, hit.y, hit.z);
-    STVector3 normal = EstimateNormalQJulia(point, mu, ITERATIONS);
-
+    
     // calculate t from the perspective of the original ray given to us
     float t = STVector3::Dot(point - ray.e, ray.d) / ray.d.LengthSq();
     if (!ray.inRange(t)) {
         return false;
     }
+
+    // estimate the normal at the intersection with the julia set
+    STVector3 normal = EstimateNormalQJulia(point, mu, ITERATIONS);
 
     intersection->t = t;
     intersection->point = point;
