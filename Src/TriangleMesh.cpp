@@ -1,6 +1,6 @@
 #include "TriangleMesh.h"
 
-Intersection* TriangleMesh::getIntersect(const Ray& ray)
+/*Intersection* TriangleMesh::getIntersect(const Ray& ray)
 {
 	if(use_accel_structure) return aabb_tree->getIntersect(ray);
 	else{
@@ -52,4 +52,29 @@ AABB* TriangleMesh::getAABB()
 		if(v.z>max_corner.z)max_corner.z=v.z;
 	}
 	return new AABB(min_corner.x,max_corner.x,min_corner.y,max_corner.y,min_corner.z,max_corner.z);
+}*/
+
+bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) const {
+    Intersection min_int(FLT_MAX, STPoint3(), STVector3());
+    for (const Triangle& triangle : triangles) {
+        Intersection inter;
+        if (triangle.getIntersect(ray, &inter) && inter.t < min_int.t) {
+            min_int = inter;
+        }
+    }
+    if (min_int.t != FLT_MAX) {
+        *intersection = min_int;
+        return true;
+    }
+    return false;
 }
+
+bool TriangleMesh::doesIntersect(const Ray& ray) const {
+    for (const Triangle& triangle : triangles) {
+        if (triangle.doesIntersect(ray)) {
+            return true;
+        }
+    }
+    return false;
+}
+

@@ -81,7 +81,7 @@ STVector3 EstimateNormalQJulia(STPoint3 p, float4 c, int iterations)
 	return normal;
 }
 
-float IntersectSphere(STVector3 rO, STVector3 rD, float radius)
+/*float IntersectSphere(STVector3 rO, STVector3 rD, float radius)
 {
 	float fB = 2.0f * STVector3::Dot( rO, rD );
 	float fB2 = fB * fB;
@@ -94,9 +94,8 @@ float IntersectSphere(STVector3 rO, STVector3 rD, float radius)
 	float fT1 = ( -fB - fD ) * 0.5f;
 	fT = fmin(fT0, fT1);
 	return fT;
-}
+}*/
 
-float4 reverse_raytrace(STVector3 rO, STVector3 rD, Ray ray, float4 mu, float epsilon);
 
 float4 IntersectQJulia(STVector3 rO, STVector3 rD, float4 c, float epsilon, float escape)
 {
@@ -130,19 +129,14 @@ float4 IntersectQJulia(STVector3 rO, STVector3 rD, float4 c, float epsilon, floa
 }
 // end of code from "OpenCL RayTraced Quaternion Julia-Set Example" in Mac Developer Library
 
-float IntersectSphere2(STVector3 rO, STVector3 rD, Ray ray)
-{
-	float a = rD.LengthSq();
-	float b = 2 * STVector3::Dot(rD, rO);
-	float c = (rO).LengthSq() - RADIUS * RADIUS;
-	float disc = b * b - 4 * a * c;
-	if (disc < 0.) return 0.0f;
-	float t1 = (-b - sqrt(disc)) / (2 * a);
-	float t2 = (-b + sqrt(disc)) / (2 * a);
-	//return fmin(t1, t2);
-	if (!(ray.inRange(t1) || ray.inRange(t2))) return 0.0f;
-	return (ray.inRange(t1) ? t1 : t2);
-}
+
+
+
+
+
+
+
+Intersection quaternionJuliaSet::lastIntersection(-1.f, STPoint3(FLT_MAX, FLT_MAX, FLT_MAX), STVector3(0.f, 0.f, 0.f));
 
 
 bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, float* t1, float* t2) {
@@ -153,25 +147,24 @@ bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, f
     float c = c_to_e.LengthSq() - RADIUS * RADIUS;
     float disc = b * b - 4.f  * c;    // a = 1
     if (disc < 0.f) return false;    // ray misses bounding sphere
-    float neg_half_b_over_2a = -0.5f * b;                        // a = 1
+    float neg_half_b_over_2a = -0.5f * b;                   // a = 1
     float half_sqrt_4ac_over_2a = 0.5f * sqrtf(disc);       // a = 1
     *t1 = neg_half_b_over_2a - half_sqrt_4ac_over_2a;
-    *t2 = neg_half_b_over_2a + half_sqrt_4ac_over_2a;
+    *t2 = neg_half_b_over_2a + half_sqrt_4ac_over_2a;       // we know t1 <= t2
     return (*t2 >= 0.f);
 }
 
-#if 1
-Intersection* quaternionJuliaSet::getIntersect(const Ray &ray) {
 
+bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection) const {
+
+    // check if this ray is meant to be a ray starting from the intersection
+    // point of the last ray that we intersected with this julia set
     bool rayLeavingSurface = false;
     bool rayEnteringSurface = false;
-
-    // check if this ray is meant to be a reflected/refracted ray starting from the intersection
-    // point of the last ray that we intersected with this julia set
     const float same_point_threshold = 0.0001f;
     if ((ray.e - lastIntersection.point).LengthSq() < same_point_threshold * same_point_threshold) {
-        // compare ray direction to the normal of the last intersection point to see if this is
-        // a reflected or refracted ray
+        // compare ray direction to the normal of the last intersection point to see if this ray
+        // is entering or leaving the surface
         rayLeavingSurface = (STVector3::Dot(ray.d, lastIntersection.normal) >= 0.f);
         rayEnteringSurface = !rayLeavingSurface;
     }
@@ -182,7 +175,7 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray) {
     Ray ray_adj(ray.e + ray.t_min * ray.d, ray.d, 0.f);
     ray_adj.d.Normalize();
 
-    
+
     if (rayEnteringSurface) {
         // intersect this ray with the bounding sphere, and then reverse its direction
         // so it marches back into the bounding sphere to intersect with the julia set.
@@ -201,7 +194,7 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray) {
         if (STVector3(ray_adj.e.x, ray_adj.e.y, ray_adj.e.z).LengthSq() > RADIUS * RADIUS) {
             float t1, t2;
             if (!intersectBoundingSphere(ray_adj.e, ray_adj.d, &t1, &t2)) {
-                return NULL;            // ray does not intersect bounding sphere
+                return false;            // ray does not intersect bounding sphere
             }
             ray_adj.e += t1 * ray_adj.d;
         }
@@ -216,7 +209,7 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray) {
     if (dist >= epsilon) {
         // ray-marched past the escape threshold instead of unbounding sphere radius
         // falling below epsilon; this ray does not intersect the julia set
-        return NULL;
+        return false;
     }
 
     // estimate the normal at the intersection with the julia set
@@ -225,16 +218,72 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray) {
 
     // calculate t from the perspective of the original ray given to us
     float t = STVector3::Dot(point - ray.e, ray.d) / ray.d.LengthSq();
+    if (!ray.inRange(t)) {
+        return false;
+    }
 
-    //if (t < ray.t_min) {
-        //printf("qjulia intersect error! t = %f while t_min = %f\n", t, ray.t_min);
-    //}
-
-    Intersection* intersection = new Intersection(t, point, normal);
+    intersection->point = point;
+    intersection->normal = normal;
+    intersection->t = t;
     lastIntersection = *intersection;
-    return intersection;
+    return true;
 }
-#else
+
+
+bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
+
+    // Adjust the start of the ray to e + tmin*d, and set its tmin to 0, and 
+    // also normalize the d vector.  with tmin being 0, we don't have to worry about
+    // scaling it when d is scaled.
+    Ray ray_adj(ray.e + ray.t_min * ray.d, ray.d, 0.f);
+    ray_adj.d.Normalize();
+
+    // check if the ray starts outside the bounding sphere.  If so, move its start
+    // position to where it first intersects the bounding sphere
+    if (STVector3(ray_adj.e.x, ray_adj.e.y, ray_adj.e.z).LengthSq() > RADIUS * RADIUS) {
+        float t1, t2;
+        if (!intersectBoundingSphere(ray_adj.e, ray_adj.d, &t1, &t2)) {
+            return false;            // ray does not intersect bounding sphere
+        }
+        ray_adj.e += t1 * ray_adj.d;
+    } else {
+        // ray starts inside the bounding sphere.
+        // intersect this ray with the bounding sphere, and then reverse its direction
+        // so it marches back into the bounding sphere to intersect with the julia set.
+        
+        // Why not just let the ray start marching from where it is?  If the ray starts on the surface
+        // of this julia set, then starting the march there causes weird things to happen sometimes (it may be
+        // hard to distinguish between a close-by re-intersection or being marched back into the same intersection)
+        // By doing a backwards march from the bounding sphere, we should avoid some of these problems.
+        float t1, t2;
+        intersectBoundingSphere(ray_adj.e, ray_adj.d, &t1, &t2);
+        ray_adj.e += t2 * ray_adj.d;
+        ray_adj.d = -ray_adj.d;
+    }
+
+    // intersect the ray with the julia set
+    float escape_threshold = ESCAPE_COEFFICIENT*RADIUS;
+    float4 hit = IntersectQJulia(STVector3(ray_adj.e.x, ray_adj.e.y, ray_adj.e.z),
+        ray_adj.d, mu, epsilon, escape_threshold);
+    float dist = hit.w;
+    if (dist >= epsilon) {
+        // ray-marched past the escape threshold instead of unbounding sphere radius
+        // falling below epsilon; this ray does not intersect the julia set
+        return false;
+    }
+    STPoint3 point(hit.x, hit.y, hit.z);
+
+    // calculate t from the perspective of the original ray given to us
+    float t = STVector3::Dot(point - ray.e, ray.d) / ray.d.LengthSq();
+
+    return ray.inRange(t);
+}
+
+
+
+
+
+#if 0
 Intersection* quaternionJuliaSet::getIntersect(const Ray &ray){
     float ray_d_length = ray.d.Length();
 
@@ -296,7 +345,6 @@ Intersection* quaternionJuliaSet::getIntersect(const Ray &ray){
 	return new Intersection(t, point, normal);
 	
 }
-#endif
 
 bool quaternionJuliaSet::doesIntersect(const Ray& ray)
 {
@@ -320,3 +368,4 @@ AABB* quaternionJuliaSet::getAABB()
 	float radius = RADIUS;
 	return new AABB(-radius, radius, -radius, radius, -radius, radius);
 }
+#endif

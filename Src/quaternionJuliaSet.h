@@ -61,7 +61,7 @@ inline float3 cross(const float3& left, const float3& right)
 class quaternionJuliaSet : public Shape {
 public:
 	quaternionJuliaSet(float4 _mu, const float _epsilon)
-        : mu(_mu), epsilon(_epsilon), lastIntersection(-1.f, STPoint3(FLT_MAX, FLT_MAX, FLT_MAX), STVector3(0.f, 0.f, 0.f))
+        : mu(_mu), epsilon(_epsilon)
 	{
 		this->name = "qjulia";
         //this->maxInt = 2;
@@ -83,7 +83,7 @@ private:
 	float4 mu;
 	float epsilon;
 
-    Intersection lastIntersection;
+    static Intersection lastIntersection;
 };
 
 #endif /* defined(__RayTracer__quaternionJuliaSet__) */
