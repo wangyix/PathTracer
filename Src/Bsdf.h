@@ -45,6 +45,7 @@ public:
 
 class Lambertian : public Bsdf {
 public:
+    Lambertian() : R(0.9f, 0.f, 0.9f) {}    // default to purple so it's obvious you forgot to specify a bsdf
     Lambertian(const STColor3f& R) : R(R) { type = Type::L; }
     STColor3f f(const STVector3& wo, const STVector3& wi) const;
     STColor3f sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const;
@@ -112,11 +113,6 @@ private:
     const Bsdf* bsdf;
     STColor3f s;
 };
-
-
-// used as the bsdf for SceneObjects that are constructed with the old constructor
-static const Lambertian grayLambertian(STColor3f(0.5f));
-
 
 // used as the bsdf for the IntersectionBsdf returned for the chosen vertex y0 
 static const Y0Lambertian y0Lambertian;

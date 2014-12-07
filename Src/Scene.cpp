@@ -11,13 +11,14 @@
 
 
 Scene::Scene()
-    :currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f), camera(NULL), accel_structure(NONE), uniform_grid(NULL),
+    : currBsdf(new Lambertian()), currEmittedPower(0.f),
+    /*currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f),*/ camera(), /*accel_structure(NONE), uniform_grid(NULL),*/
     blocks_x(1), blocks_y(1), block_i(0), block_j(0)
 {
     rtSampleRate(1);
 }
 
-Scene::~Scene()
+/*Scene::~Scene()
 {
     if (currMaterial != NULL)delete currMaterial;
     if ((int)textures.size() > 0)for (int i = 0; i < (int)textures.size(); i++)delete textures[i];
@@ -28,9 +29,9 @@ Scene::~Scene()
     if ((int)areaLights.size() > 0)for (int i = 0; i < (int)areaLights.size(); i++)delete areaLights[i];
     if ((int)aabb_trees.size() > 0)for (int i = 0; i < (int)aabb_trees.size(); i++)delete aabb_trees[i];
     if (uniform_grid != NULL)delete uniform_grid;
-}
+}*/
 
-std::string Scene::info() {
+/*std::string Scene::info() {
     std::stringstream out;
     out << "\nobject number: " << objects.size() << std::endl;
     for (int i = 0; i < (int)objects.size(); i++) {
@@ -46,7 +47,7 @@ std::string Scene::info() {
         out << "area light " << i << ": " << areaLights[i]->name << std::endl;
     }
     return out.str();
-}
+}*/
 
 
 
@@ -167,21 +168,20 @@ std::vector<Path> paths;
 
 
 
-//#define MIN_SUBPATH_LENGTH bounceDepth
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
-    camera->setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
+    camera.setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
 
     STPoint3 z0;
     STVector3 z0_n;
     const Bsdf* z0_bsdf;
     float Pa_z0;
     STColor3f We0_z0;
-    camera->sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
+    camera.sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
 
     // record z0
-    vertices.emplace_back(Vertex(Intersection(0.f, z0, z0_n), z0_bsdf));
+    vertices.emplace_back(Intersection(0.f, z0, z0_n), z0_bsdf);
     //vertices.back().w_to_prev                    // not defined for z0
     vertices.back().alpha = We0_z0 / Pa_z0;
     //vertices.back().G_prev                    // not defined for y0
@@ -222,9 +222,9 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
 
         // find intersection between chosen direction and scene.
         Ray w_ray(vertices[i].getIntersection().point, w, shadowBias);
-        SceneObject* inter_obj;
-        Intersection* inter = Intersect(w_ray, inter_obj);
-        if (!inter) {
+        const SceneObject* inter_obj = NULL;
+        Intersection inter;
+        if (!Intersect(w_ray, &inter_obj, &inter)) {
             // ray didn't hit anything; terminate path
             return;
         }
@@ -242,11 +242,11 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         }
 
         // calculate terms in G
-        float r = inter->t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
+        float r = inter.t;
+        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter.normal));
 
         // record new vertex
-        vertices.emplace_back(Vertex(*inter, inter_obj->bsdf));
+        vertices.emplace_back(inter, inter_obj->getBsdf());
         i++;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
@@ -255,16 +255,13 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
         vertices[i].prev_gap_nonspecular =
             (vertices[i].isSpecular() || vertices[i - 1].isSpecular()) ? 0.f : 1.f;
 
-        delete inter;
-        inter = NULL;
-
         // --------------------------------------------------------------------------------------------------------------------
 
         // if we hit a light, accumulate the contribution of the sample path from technique p_0t
         // where t is the number of vertices we have so far.
         // the sample from technique p_0t is only nonzero if the eye-subpath prefix ends on a light
 
-        if (inter_obj->isLight) {
+        if (inter_obj->emitsLight()) {
             const STVector3& zi_z1i_w = vertices[i].w_to_prev;
             const STVector3& zi_n = vertices[i].getIntersection().normal;
 
@@ -289,14 +286,14 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             float w_0t = 1.f / (1.f + S_i);
 
             /*if (S_i == 0.f && i > 3) {
-                paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t)));
+                paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
                 continue;
             }*/
 
             *C_0t_sum += (w_0t * Cs_0t);
 
             /*if (curr_x == target_x && curr_y == target_y) {
-                paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t)));
+                paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
             }*/
         }
     }
@@ -313,7 +310,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     lightDistribution.sample_y0(&y0, &y0_n, &y0_bsdf, &Pa_y0, &Le0_y0);
 
     // record y0
-    vertices.emplace_back(Vertex(Intersection(0.f, y0, y0_n), y0_bsdf));
+    vertices.emplace_back(Intersection(0.f, y0, y0_n), y0_bsdf);
     //vertices.back().w_to_prev                    // not defined for y0
     vertices.back().alpha = Le0_y0 / Pa_y0;
     //vertices.back().G_prev                    // not defined for y0
@@ -354,9 +351,9 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
         // find intersection between chosen direction and scene.
         Ray w_ray(vertices[i].getIntersection().point, w, shadowBias);
-        SceneObject* inter_obj;
-        Intersection* inter = Intersect(w_ray, inter_obj);
-        if (!inter) {
+        const SceneObject* inter_obj = NULL;
+        Intersection inter;
+        if (!Intersect(w_ray, &inter_obj, &inter)) {
             // ray didn't hit anything; terminate path
             return;
         }
@@ -374,11 +371,11 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         }
 
         // calculate terms in G
-        float r = inter->t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter->normal));
+        float r = inter.t;
+        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter.normal));
 
         // record new vertex
-        vertices.emplace_back(Vertex(*inter, inter_obj->bsdf));
+        vertices.emplace_back(inter, inter_obj->getBsdf());
         i++;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
@@ -386,9 +383,6 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         vertices[i].Pa_from_prev = vertices[i - 1].qPsig_adj * vertices[i].G_prev;
         vertices[i].prev_gap_nonspecular =
             (vertices[i].isSpecular() || vertices[i - 1].isSpecular()) ? 0.f : 1.f;
-
-        delete inter;
-        inter = NULL;
     }
 }
 
@@ -494,10 +488,10 @@ void Scene::Render() {
 
                             // check if the gap vector intersects anything
                             // TODO: should use doesIntersect() instead of getIntersection() on shapes which should be faster
-                            Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias);
-                            SceneObject* gap_inter_obj = NULL;
-                            std::unique_ptr<Intersection> gap_inter(Intersect(gap_ray_EL, gap_inter_obj));
-                            if (gap_inter && gap_inter->t < gap_EL.Length() - shadowBias) {
+                            Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias, gap_EL.Length() - shadowBias);
+                            const SceneObject* gap_inter_obj = NULL;
+                            Intersection gap_inter;
+                            if (Intersect(gap_ray_EL, &gap_inter_obj, &gap_inter)) {
                                 continue;
                             }
 
@@ -553,7 +547,7 @@ void Scene::Render() {
                                 // find where z0->y(s-1) intersects img plane
                                 // paths that don't go thru img plane don't contribute
                                 float u_w, v_w;
-                                camera->getUvOfDirection(gap_EL_w, &u_w, &v_w);
+                                camera.getUvOfDirection(gap_EL_w, &u_w, &v_w);
                                 if (u_w < 0.f || u_w >= 1.f || v_w < 0.f || v_w >= 1.f) {
                                     continue;
                                 }
@@ -564,14 +558,14 @@ void Scene::Render() {
                                 pixels[y_w * width + x_w] += (C_st / N);
 
                                 /*if (x_w == target_x && y_w == target_y) {
-                                    paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st));
+                                    paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
                                 }*/
 
                             } else {
                                 C_sum_this_pixel += C_st;
 
                                 /*if (curr_x == target_x && curr_y == target_y) {
-                                    paths.emplace_back(Path(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st));
+                                    paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
                                 }*/
                             }
 
@@ -629,7 +623,7 @@ void Scene::Render() {
     }
 }
 
-STColor3f Scene::TraceRay(const Ray &ray, int bounce) {
+/*STColor3f Scene::TraceRay(const Ray &ray, int bounce) {
     if (bounce == bounceDepth){
         return STColor3f();
     }
@@ -743,8 +737,9 @@ STColor3f Scene::TraceRay(const Ray &ray, int bounce) {
     delete reflected;
     if (refracted) delete refracted;
     return result;
-}
+}*/
 
+/*
 ////find the visible lights from the intersection
 void Scene::fillLights(std::vector<Light *> &visibleLights, Intersection* inter) {
     if (!use_shadow){
@@ -776,7 +771,9 @@ void Scene::fillLights(std::vector<Light *> &visibleLights, Intersection* inter)
         delete lightInt;
     }
 }
+*/
 
+/*
 void Scene::fillLightsWithAttenuation(std::vector<Light *>& visibleLights, std::vector<STColor3f>& attenuations, Intersection* inter)
 {
     if (!use_shadow){
@@ -812,7 +809,9 @@ void Scene::fillLightsWithAttenuation(std::vector<Light *>& visibleLights, std::
         delete shadow_ray;
     }
 }
+*/
 
+/*
 STColor3f Scene::traceShadowRay(const Ray& ray, const Light& light)
 {
     SceneObject *object = NULL;
@@ -844,19 +843,22 @@ STColor3f Scene::traceShadowRay(const Ray& ray, const Light& light)
         delete inter;
         return STColor3f(1, 1, 1);
     }
-}
+}*/
 
 void Scene::rtClear()
 {
-    currMaterial = NULL;
+    //currMaterial = NULL;
     matStack.clear();
     matStack.push_back(STTransform4::Identity());
-    focus = 0.;
+    //focus = 0.;
+
+    currBsdf.reset(new Lambertian());
+    currEmittedPower = STColor3f(0.f);
 }
 
 void Scene::rtCamera(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect)
 {
-    camera = new Camera(eye, up, lookAt, fovy, aspect);
+    camera.setAttributes(eye, up, lookAt, fovy, aspect);
 }
 
 void Scene::rtOutput(int imgWidth, int imgHeight, const std::string& outputFilename)
@@ -866,10 +868,10 @@ void Scene::rtOutput(int imgWidth, int imgHeight, const std::string& outputFilen
     imageFilename = outputFilename;
 }
 
-void Scene::rtBounceDepth(int depth)
+/*void Scene::rtBounceDepth(int depth)
 {
     bounceDepth = depth;
-}
+}*/
 
 void Scene::rtShadowBias(float bias)
 {
@@ -879,7 +881,7 @@ void Scene::rtShadowBias(float bias)
 void Scene::rtSampleRate(int r)
 {
     sampleRate = r;
-    for (int i = 0; i < (int)areaLights.size(); i++) areaLights[i]->setSampleRate(r);
+    //for (int i = 0; i < (int)areaLights.size(); i++) areaLights[i]->setSampleRate(r);
 }
 
 void Scene::rtPushMatrix()
@@ -900,17 +902,17 @@ void Scene::rtLoadMatrix(const STTransform4& mat)
 void Scene::rtRotate(float rx, float ry, float rz)
 {
     if (!matStack.empty()) {
-        float conv = 3.14159265358979f / 180.f;
+        float conv = M_PI / 180.f;
         STTransform4 M = matStack.back() * STTransform4::Rotation(rx * conv, ry * conv, rz * conv);
         matStack.pop_back();
         matStack.push_back(M);
     }
 }
 
-void Scene::rtScale(float sx, float sy, float sz)
+void Scene::rtScale(float s)
 {
     if (!matStack.empty()) {
-        STTransform4 M = matStack.back() * STTransform4::Scaling(sx, sy, sz);
+        STTransform4 M = matStack.back() * STTransform4::Scaling(s, s, s);
         matStack.pop_back();
         matStack.push_back(M);
     }
@@ -927,40 +929,40 @@ void Scene::rtTranslate(float tx, float ty, float tz)
 
 void Scene::rtSphere(const STPoint3& center, float radius)
 {
-    objects.push_back(new SceneObject(new Sphere(center, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new Sphere(center, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3)
 {
-    objects.push_back(new SceneObject(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3)
 {
-    objects.push_back(new SceneObject(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
 void Scene::rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z)
 {
-    objects.push_back(new SceneObject(new Box(o, x, y, z), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new Box(o, x, y, z), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
 void Scene::rtBox(const STPoint3& center, const STVector3& size)
 {
-    objects.push_back(new SceneObject(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
 void Scene::rtCylinder(const STPoint3& A, const STPoint3 B, float radius)
 {
-    objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
 void Scene::rtQJulia(const float4& mu, const float epsilon)
 {
-    objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    objects.emplace_back(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
 }
 
-void Scene::rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name)
+/*void Scene::rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name)
 {
     Material* participating_media_material = new Material();
     objects.push_back(new SceneObject(new Box(center, size), currMaterial, &matStack.back()));
@@ -990,19 +992,19 @@ void Scene::rtGroupObjects(int num) {
         objects.pop_back();
     }
     objects.push_back(boundVol);
-}
+}*/
 
 void Scene::rtTriangleMesh(const std::string& file_name, const bool& counter_clockwise, const bool& smoothed_normal)
 {
     std::vector<STTriangleMesh*> meshes;
     STTriangleMesh::LoadObj(meshes, file_name);
     for (int i = 0; i < (int)meshes.size(); i++) {
-        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+        objects.emplace_back(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
     }
     //objects.push_back(new SceneObject(new TriangleMesh(file_name,counter_clockwise,smoothed_normal), currMaterial, &matStack.back(), currTexIndex));
 }
 
-void Scene::rtTriangleMeshWithMaterialAndTexture(const std::string& file_name, const bool& counter_clockwise, const bool& smoothed_normal)
+/*void Scene::rtTriangleMeshWithMaterialAndTexture(const std::string& file_name, const bool& counter_clockwise, const bool& smoothed_normal)
 {
     std::vector<STTriangleMesh*> meshes;
     STTriangleMesh::LoadObj(meshes, file_name);
@@ -1013,7 +1015,7 @@ void Scene::rtTriangleMeshWithMaterialAndTexture(const std::string& file_name, c
         STColor3f diff(st_mesh->mMaterialDiffuse[0], st_mesh->mMaterialDiffuse[1], st_mesh->mMaterialDiffuse[2]);
         STColor3f spec(st_mesh->mMaterialSpecular[0], st_mesh->mMaterialSpecular[1], st_mesh->mMaterialSpecular[2]);
         float shin = st_mesh->mShininess;
-        Material* mat = new Material(amb, diff, spec, /*mirror*/STColor3f(), shin);
+        Material* mat = new Material(amb, diff, spec, STColor3f(), shin);
         objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
     }
 }
@@ -1112,37 +1114,36 @@ void Scene::buildUniformGrids()
     for (int d = 0; d < 3; d++)scene_subdivision[d] = (int)ceil(edge_length.Component(d) / dx);
 
     uniform_grid = new UniformGrid(objects, scene_bounding_box, scene_subdivision);
-}
+}*/
 
-Intersection* Scene::Intersect(const Ray& ray, /*result*/SceneObject *& object)
+bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
-    switch (accel_structure){
+    /*switch (accel_structure){
     case AABB_TREE:return IntersectAABBTree(ray, object);
     case UNIFORM_GRID:return IntersectUniformGrid(ray, object);
     default:return IntersectionNoAccelStructure(ray, object);
-    }
+    }*/
+    return IntersectionNoAccelStructure(ray, object, inter);
 }
 
-Intersection* Scene::IntersectionNoAccelStructure(const Ray& ray, /*result*/SceneObject*& object)
+bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
-    Intersection* min_inter = NULL;
-    SceneObject* current_object = NULL;
-    SceneObject* min_object = NULL;
-    for (int i = 0; i < (int)objects.size(); i++) {
-        SceneObject* obj = objects[i];
-        Intersection *inter = obj->getIntersectionWithObject(ray, current_object);
-
-        if (inter && (!min_inter || inter->t < min_inter->t) && ray.inRange(inter->t)) {
-            if (min_inter) delete min_inter;
-            min_inter = inter;
-            min_object = current_object;
-        } else delete inter;
+    Intersection min_inter(FLT_MAX, STPoint3(), STVector3());
+    const SceneObject* min_object = NULL;
+    for (const SceneObject& obj : objects) {
+        Intersection inter;
+        if (obj.getIntersect(ray, &inter)) {
+            if (inter.t < min_inter.t && ray.inRange(inter.t)) {    // inRange should be checked already by obj.getIntersect()
+                min_inter = inter;
+                min_object = &obj;
+            }
+        }
     }
-    object = min_object;
-    return min_inter;
+    *object = min_object;
+    return (min_object);
 }
 
-Intersection* Scene::IntersectAABBTree(const Ray& ray, /*result*/SceneObject*& object)
+/*Intersection* Scene::IntersectAABBTree(const Ray& ray, SceneObject*& object)
 {
     Intersection* min_inter = NULL;
     SceneObject* current_object = NULL;
@@ -1161,12 +1162,12 @@ Intersection* Scene::IntersectAABBTree(const Ray& ray, /*result*/SceneObject*& o
     return min_inter;
 }
 
-Intersection* Scene::IntersectUniformGrid(const Ray& ray, /*result*/SceneObject*& object)
+Intersection* Scene::IntersectUniformGrid(const Ray& ray, SceneObject*& object)
 {
     return uniform_grid->getIntersectionWithObject(ray, object);
 }
 
-void Scene::getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb)
+void Scene::getObjectsAABB(const std::vector<SceneObject*>& objs, AABB& aabb)
 {
     aabb.xmin = FLT_MAX; aabb.xmax = -FLT_MAX; aabb.ymin = FLT_MAX; aabb.ymax = -FLT_MAX; aabb.zmin = FLT_MAX; aabb.zmax = -FLT_MAX;
     for (int i = 0; i < (int)objects.size(); i++){
@@ -1174,7 +1175,7 @@ void Scene::getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB
     }
     float offset = aabb.maxEdgeLength()*.001f;
     aabb.enlarge(offset);
-}
+}*/
 
 void Scene::initializeSceneFromScript(std::string sceneFilename)
 {
@@ -1207,11 +1208,11 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             std::string fname;
             ss >> w >> h >> fname;
             rtOutput(w, h, fname);
-        } else if (command == "BounceDepth") {
+        } /*else if (command == "BounceDepth") {
             int depth;
             ss >> depth;
             rtBounceDepth(depth);
-        } else if (command == "ShadowBias") {
+        }*/ else if (command == "ShadowBias") {
             float bias;
             ss >> bias;
             rtShadowBias(bias);
@@ -1236,9 +1237,9 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             ss >> rx >> ry >> rz;
             rtRotate(rx, ry, rz);
         } else if (command == "Scale") {
-            float sx, sy, sz;
-            ss >> sx >> sy >> sz;
-            rtScale(sx, sy, sz);
+            float s;
+            ss >> s;
+            rtScale(s);
         } else if (command == "Translate") {
             float tx, ty, tz;
             ss >> tx >> ty >> tz;
@@ -1275,7 +1276,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             float epsilon;
             ss >> mu.x >> mu.y >> mu.z >> mu.w >> epsilon;
             rtQJulia(mu, epsilon);
-        } else if (command == "ParticipatingMedia") {
+        } /*else if (command == "ParticipatingMedia") {
             float c1, c2, c3, s1, s2, s3;
             std::string file_name;
             ss >> c1 >> c2 >> c3 >> s1 >> s2 >> s3 >> file_name;
@@ -1290,11 +1291,12 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             int num;
             ss >> num;
             rtGroupObjects(num);
-        } else if (command == "TriangleMesh") {
+        }*/
+        else if (command == "TriangleMesh") {
             std::string file_name; int counter_clockwise; int smoothed_normal;
             ss >> file_name >> counter_clockwise >> smoothed_normal;
             rtTriangleMesh(file_name, (counter_clockwise != 0), (smoothed_normal != 0));
-        } else if (command == "AmbientLight") {
+        } /*else if (command == "AmbientLight") {
             float r, g, b;
             ss >> r >> g >> b;
             STColor3f col(r, g, b);
@@ -1321,7 +1323,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             v[2] = STPoint3(x3, y3, z3);
             STColor3f col(r, g, b);
             rtAreaLight(v[0], v[1], v[2], col);
-        } else if (command == "Material") {
+        }*/ else if (command == "Material") {
             /*float ra, ga, ba, rd, gd, bd, rs, gs, bs, rr, gr, br, shine;
             ss >> ra >> ga >> ba >> rd >> gd >> bd >> rs >> gs >> bs >> rr >> gr >> br >> shine;
             STColor3f amb(ra, ga, ba);
@@ -1352,7 +1354,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
                 ss >> etai >> etat;
                 currBsdf.reset(new SpecularDiel(R, T, etai, etat));
             }
-        } else if (command == "TMaterial") {
+        }/* else if (command == "TMaterial") {
             float ra, ga, ba, rd, gd, bd, rs, gs, bs, rr, gr, br, shine, rf, gf, bf, snell;
             ss >> ra >> ga >> ba >> rd >> gd >> bd >> rs >> gs >> bs >> rr >> gr >> br >> shine >> rf >> gf >> bf >> snell;
             STColor3f amb(ra, ga, ba);
@@ -1369,12 +1371,12 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             float x, y, z;
             ss >> x >> y >> z;
             rtSetFocus(STPoint3(x, y, z));
-        }
+        }*/
     }
     sceneFile.close();
 }
 
-void Scene::rtLoadTexture(const std::string image_name, int& tex_index)
+/*void Scene::rtLoadTexture(const std::string image_name, int& tex_index)
 {
     textures.push_back(new STImage(image_name)); tex_index = textures.size() - 1;
 }
@@ -1398,7 +1400,7 @@ STColor3f Scene::textureColor(const int texture_index, const STPoint2& uv)
     if (j<0)j = 0; if (j>tex_img->GetHeight() - 1)j = tex_img->GetHeight() - 1;
     STColor3f color(tex_img->GetPixel(i, j));
     return color;
-}
+}*/
 
 void Scene::setRenderSubimage(int blocks_x, int blocks_y, int block_i, int block_j) {
     this->blocks_x = blocks_x;

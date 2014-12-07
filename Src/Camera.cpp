@@ -7,14 +7,29 @@
 
 static const double pi = 3.14159265358979;
 
-Camera::Camera(const STPoint3& _eye, const STVector3& _up, const STPoint3& _lookAt, float _fovy, float _aspect)
-    : eye(_eye), up(_up), lookAt(_lookAt), fovy(_fovy), aspect(_aspect), cameraBsdf(*this)
+Camera::Camera()
+    : eye(STPoint3(0.f, 0.f, 0.f)), up(STVector3(0.f, 1.f, 0.f)), lookAt(0.f, 0.f, -1.f), fovy(45.f), aspect(1.f), cameraBsdf(*this)
 {
+}
+
+Camera::Camera(const STPoint3& _eye, const STVector3& _up, const STPoint3& _lookAt, float _fovy, float _aspect)
+    : cameraBsdf(*this)
+{
+    setAttributes(_eye, _up, _lookAt, _fovy, _aspect);
+}
+
+void Camera::setAttributes(const STPoint3& _eye, const STVector3& _up, const STPoint3& _lookAt, float _fovy, float _aspect) {
+    eye = _eye;
+    up = _up;
+    lookAt = _lookAt;
+    fovy = _fovy;
+    aspect = _aspect;
+
     left = STVector3::Cross(up, lookAt - eye);
     up = STVector3::Cross(lookAt - eye, left);
     left.Normalize();
     up.Normalize();
-    
+
     float y = (lookAt - eye).Length() * tan(.5f * (fovy * (float)pi / 180.f));
     float x = y * aspect;
     UL = STVector3(lookAt) + x * left + y * up;
@@ -96,6 +111,11 @@ void Camera::sample_z0(STPoint3* z0, STVector3* z0_n, Bsdf const** bsdf, float* 
     *Pa = 1.f;              // Pa(z0) = delta()
     *We0 = STColor3f(C);  // should be C since We1 should be 1/C, but 1 should work
 }
+
+
+
+
+
 
 // The wrapper functions f(), sample_f(), p_sig() in class Vertex will be calling the next
 // three functions with the expectation that wo,wi are in world-space
