@@ -135,10 +135,6 @@ float4 IntersectQJulia(STVector3 rO, STVector3 rD, float4 c, float epsilon, floa
 
 
 
-
-Intersection quaternionJuliaSet::lastIntersection(-1.f, STPoint3(FLT_MAX, FLT_MAX, FLT_MAX), STVector3(0.f, 0.f, 0.f));
-
-
 bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, float* t1, float* t2) {
     STVector3 c_to_e(e.x, e.y, e.z);
     
@@ -222,10 +218,15 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
         return false;
     }
 
+    intersection->t = t;
     intersection->point = point;
     intersection->normal = normal;
-    intersection->t = t;
-    lastIntersection = *intersection;
+    
+    //lastIntersection = *intersection;
+    // dirty way to modify member inside const member function
+    Intersection* lastInterPtr = const_cast<Intersection*>(&lastIntersection);
+    *lastInterPtr = *intersection;
+
     return true;
 }
 

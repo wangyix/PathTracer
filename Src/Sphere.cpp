@@ -103,7 +103,8 @@ bool Sphere::getIntersect(const Ray& ray, Intersection* intersection) const {
     float t2 = (-b + sqrt(disc)) / (2 * a);     // we know t1 <= t2 since a > 0
     if (t2 < ray.t_min || t1 > ray.t_max) return false;
     // (!(ray.inRange(t1) || ray.inRange(t2))) return false;
-    float t = (t1 < ray.t_min ? t1 : t2);
+    float t = (t1 >= ray.t_min ? t1 : t2);
+    intersection->t = t;
     intersection->point = ray.at(t);
     intersection->normal = (intersection->point - center);
     //intersection->normal.Normalize();     // sceneObject will normalize this later

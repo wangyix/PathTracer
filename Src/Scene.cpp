@@ -487,11 +487,13 @@ void Scene::Render() {
                             }
 
                             // check if the gap vector intersects anything
-                            // TODO: should use doesIntersect() instead of getIntersection() on shapes which should be faster
                             Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias, gap_EL.Length() - shadowBias);
-                            const SceneObject* gap_inter_obj = NULL;
+                            /*const SceneObject* gap_inter_obj = NULL;
                             Intersection gap_inter;
                             if (Intersect(gap_ray_EL, &gap_inter_obj, &gap_inter)) {
+                                continue;
+                            }*/
+                            if (DoesIntersect(gap_ray_EL)) {
                                 continue;
                             }
 
@@ -1140,7 +1142,21 @@ bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** obj
         }
     }
     *object = min_object;
+    *inter = min_inter;
     return (min_object != NULL);
+}
+
+bool Scene::DoesIntersect(const Ray& ray) {
+    return DoesIntersectNoAccelStructure(ray);
+}
+
+bool Scene::DoesIntersectNoAccelStructure(const Ray& ray) {
+    for (const SceneObject* obj : objects) {
+        if (obj->doesIntersect(ray)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /*Intersection* Scene::IntersectAABBTree(const Ray& ray, SceneObject*& object)

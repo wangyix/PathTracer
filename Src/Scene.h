@@ -98,6 +98,7 @@ public:
     void Render();
     //STColor3f TraceRay(const Ray& ray, int bounce = -1);
     bool Intersect(const Ray& ray, SceneObject const** object, Intersection* inter);
+    bool DoesIntersect(const Ray& ray);
 
     //std::string info();
 
@@ -193,6 +194,8 @@ protected:
     bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
     //Intersection* IntersectAABBTree(const Ray& ray, /*result*/SceneObject*& object);
     //Intersection* IntersectUniformGrid(const Ray& ray, /*result*/SceneObject*& object);
+
+    bool DoesIntersectNoAccelStructure(const Ray& ray);
 
     //void buildAABBTrees();	////build the entire scene as an aabb-tree
     //void buildUniformGrids();	////build the entire scene as a uniform grid
