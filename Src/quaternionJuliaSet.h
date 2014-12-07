@@ -64,18 +64,21 @@ public:
         : mu(_mu), epsilon(_epsilon), lastIntersection(-1.f, STPoint3(FLT_MAX, FLT_MAX, FLT_MAX), STVector3(0.f, 0.f, 0.f))
 	{
 		this->name = "qjulia";
-        this->maxInt = 2;
+        //this->maxInt = 2;
 	}
+
+    bool getIntersect(const Ray& ray, Intersection* intersection) const override;
+    bool doesIntersect(const Ray& ray) const override;
 	
-	
-	Intersection* getIntersect(const Ray& ray);
+	/*Intersection* getIntersect(const Ray& ray);
 	bool doesIntersect(const Ray& ray);
 	
 	Intersection** getIntersections(const Ray& ray) {return NULL;}
 	bool isInsideOpen(const STPoint3& pt) { return false; }
 	bool isInsideClosed(const STPoint3& pt) { return false; }
 	
-	AABB* getAABB();
+	AABB* getAABB();*/
+
 private:
 	float4 mu;
 	float epsilon;

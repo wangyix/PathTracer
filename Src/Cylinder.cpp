@@ -8,7 +8,7 @@
 
 using namespace std;
 
-Intersection* Cylinder::getIntersect(const Ray &ray) {
+/*Intersection* Cylinder::getIntersect(const Ray &ray) {
     Intersection *interB = bottom->getIntersect(ray);
     Intersection *interT = top->getIntersect(ray);
     Intersection *flat = NULL;
@@ -224,6 +224,138 @@ AABB* Cylinder::getAABB()
 	float zMax = max(A.z, B.z); 
 
 	return new AABB(xMin-radius, xMax+radius, yMin-radius, yMax+radius, zMin-radius, zMax+radius);
+}*/
+
+
+
+bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
+    // transform ray to unit-cylinder space
+    Ray ray_unit = ray.transform(toUnitCylinderSpace);
+    const STPoint3& e = ray_unit.e;
+    const STVector3& d = ray_unit.d;
+
+    float min_inter_t = FLT_MAX;
+    STPoint3 min_inter_p;
+    STVector3 min_inter_p_n;
+
+    // intersect with caps
+    if (d.z != 0.f) {   // if ray parallel to caps, then no intersection    
+        // intersect with top cap
+        float t_top = (1.f - e.z) / d.z;
+        if (ray_unit.inRange(t_top)) {
+            STPoint3 inter_top = ray_unit.at(t_top);
+            if (inter_top.x*inter_top.x + inter_top.y*inter_top.y <= 1.f) { // check if intersection is within cap disk
+                min_inter_t = t_top;
+                min_inter_p = inter_top;
+                min_inter_p_n = STVector3(0.f, 0.f, 1.f);
+            }
+        }
+        // intersect with bottom cap
+        float t_bottom = -e.z / d.z;
+        if (ray_unit.inRange(t_bottom) && t_bottom < min_inter_t) {
+            STPoint3 inter_bottom = ray_unit.at(t_bottom);
+            if (inter_bottom.x*inter_bottom.x + inter_bottom.y*inter_bottom.y <= 1.f) { // check if intersection is within cap disk
+                min_inter_t = t_bottom;
+                min_inter_p = inter_bottom;
+                min_inter_p_n = STVector3(0.f, 0.f, -1.f);
+            }
+        }
+    }
+
+    // intersect with side
+    if (d.x != 0.f || d.y != 0.f) { // if ray parallel to side, then no intersection
+        // solve for ray-cirlce intersection in XY plane
+        STVector2 e_xy(e.x, e.y);
+        STVector2 d_xy(d.x, d.y);
+        float a = d_xy.LengthSq();
+        float b = 2.f * STVector2::Dot(d_xy, e_xy);
+        float c = e_xy.LengthSq() - 1.f;
+        float disc = b * b - 4 * a * c;
+        if (disc >= 0.f) {
+            float neg_b_over_2a = -b / (2.f * a);
+            float sqrtf_disc_over_2a = sqrtf(disc) / (2.f * a);
+            float t1 = neg_b_over_2a - sqrtf_disc_over_2a;
+            if (ray_unit.inRange(t1) && t1 < min_inter_t) {
+                STPoint3 inter_side = ray_unit.at(t1);
+                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                    min_inter_t = t1;
+                    min_inter_p = inter_side;
+                    min_inter_p_n = STVector3(inter_side.x, inter_side.y, 0.f);
+                }
+            }
+            float t2 = neg_b_over_2a + sqrtf_disc_over_2a;
+            if (ray_unit.inRange(t2) && t2 < min_inter_t) {
+                STPoint3 inter_side = ray_unit.at(t2);
+                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                    min_inter_t = t2;
+                    min_inter_p = inter_side;
+                    min_inter_p_n = STVector3(inter_side.x, inter_side.y, 0.f);
+                }
+            }
+        }
+    }
+
+    intersection->t = min_inter_t;
+    intersection->point = toObjectSpace * min_inter_p;
+    intersection->normal = toObjectInvTranspose * min_inter_p_n;
+}
+
+
+bool Cylinder::doesIntersect(const Ray& ray) const {
+    // transform ray to unit-cylinder space
+    Ray ray_unit = ray.transform(toUnitCylinderSpace);
+    const STPoint3& e = ray_unit.e;
+    const STVector3& d = ray_unit.d;
+
+    // intersect with caps
+    if (d.z != 0.f) {   // if ray parallel to caps, then no intersection    
+        // intersect with top cap
+        float t_top = (1.f - e.z) / d.z;
+        if (ray_unit.inRange(t_top)) {
+            STPoint3 inter_top = ray_unit.at(t_top);
+            if (inter_top.x*inter_top.x + inter_top.y*inter_top.y <= 1.f) { // check if intersection is within cap disk
+                return true;
+            }
+        }
+        // intersect with bottom cap
+        float t_bottom = -e.z / d.z;
+        if (ray_unit.inRange(t_bottom)) {
+            STPoint3 inter_bottom = ray_unit.at(t_bottom);
+            if (inter_bottom.x*inter_bottom.x + inter_bottom.y*inter_bottom.y <= 1.f) { // check if intersection is within cap disk
+                return true;
+            }
+        }
+    }
+
+    // intersect with side
+    if (d.x != 0.f || d.y != 0.f) { // if ray parallel to side, then no intersection
+        // solve for ray-cirlce intersection in XY plane
+        STVector2 e_xy(e.x, e.y);
+        STVector2 d_xy(d.x, d.y);
+        float a = d_xy.LengthSq();
+        float b = 2.f * STVector2::Dot(d_xy, e_xy);
+        float c = e_xy.LengthSq() - 1.f;
+        float disc = b * b - 4 * a * c;
+        if (disc >= 0.f) {
+            float neg_b_over_2a = -b / (2.f * a);
+            float sqrtf_disc_over_2a = sqrtf(disc) / (2.f * a);
+            float t1 = neg_b_over_2a - sqrtf_disc_over_2a;
+            if (ray_unit.inRange(t1)) {
+                STPoint3 inter_side = ray_unit.at(t1);
+                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                    return true;
+                }
+            }
+            float t2 = neg_b_over_2a + sqrtf_disc_over_2a;
+            if (ray_unit.inRange(t2)) {
+                STPoint3 inter_side = ray_unit.at(t2);
+                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -232,19 +364,9 @@ float Cylinder::getSurfaceArea() const {
 }
 
 STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
-    // construct axes for cylinder (cylinder along z axis, from 0 to |A-B|
-    // I, J are unit length, perpendicular to K, which is equal to B-A;
-    STVector3 I, J;
-    STVector3 K = B - A;
-    if (K.x == 0.f && K.y == 0.f) {
-        I = STVector3(1.f, 0.f, 0.f);
-        J = STVector3(0.f, 1.f, 0.f);
-    } else {
-        I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
-        I.Normalize();
-        J = STVector3::Cross(K, I);
-        J.Normalize();
-    }
+
+    STPoint3 p_unit;    // the chosen point in unit-cylinder-space
+    STVector3 p_n_unit;
 
     // generate random in [0,total] and see if it's in [0,topCapCutoff],
     // [topCapCutoff,bottomCapCutoff], or [bottomCapCutoff,total] to choose either
@@ -262,24 +384,30 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
         float x = sqrt_r * cosf(theta);
         float y = sqrt_r * sinf(theta);
 
+        p_unit.x = x;
+        p_unit.y = y;
+        p_n_unit.x = 0.f;
+        p_n_unit.y = 0.f;
         if (total < topCapCutoff) {
-            // get point on top cap
-            *normal = K;
-            normal->Normalize();
-            return B + radius * (x*I + y*J);
+            // point on top cap
+            p_unit.z = 1.f;
+            p_n_unit.z = 1.f;
         } else {
-            // get point on bottom cap
-            *normal = -K;
-            normal->Normalize();
-            return A + radius * (x*I + y*J);
+            // point on bottom cap
+            p_unit.z = 0.f;
+            p_n_unit.z = -1.f;
         }
     } else {
         // sample the cylinder side (theta in [0,2pi], h in [0,1])
         float theta = randFloat() * 2.f * M_PI;
         float h = randFloat();
+        float x = cosf(theta);
+        float y = sinf(theta);
 
-        *normal = cosf(theta)*I + sinf(theta)*J;
-        normal->Normalize();
-        return A + h*K + *normal*radius;
+        p_unit = STPoint3(x, y, h);
+        p_n_unit = STVector3(x, y, 0.f);
     }
+
+    *normal = toObjectInvTranspose * p_n_unit;
+    return toObjectSpace * p_unit;
 }

@@ -14,26 +14,29 @@ public:
         : center(_center), radius(_radius) 
     {
         this->name = "sphere";
-        maxInt = 2;
+        //maxInt = 2;
     }
     Sphere(const Sphere& copy)
         : center(copy.center), radius(copy.radius)
     {
         this->name = copy.name;
-        this->maxInt = copy.maxInt;
+        //this->maxInt = copy.maxInt;
     }
 
-    Intersection* getIntersect(const Ray& ray);
+    /*Intersection* getIntersect(const Ray& ray);
     bool doesIntersect(const Ray& ray);
     Intersection** getIntersections(const Ray& ray);
     
     bool isInsideOpen(const STPoint3& pt);
     bool isInsideClosed(const STPoint3& pt);
 
-    AABB* getAABB();
+    AABB* getAABB();*/
 
-    float getSurfaceArea() const;
-    STPoint3 uniformSampleSurface(STVector3* normal) const;
+    bool getIntersect(const Ray& ray, Intersection* intersection) const override;
+    bool doesIntersect(const Ray& ray) const override;
+
+    float getSurfaceArea() const override;
+    STPoint3 uniformSampleSurface(STVector3* normal) const override;
 
 private:
     STPoint3 center;

@@ -5,7 +5,7 @@
 
 #include "Sphere.h"
 
-Intersection* Sphere::getIntersect(const Ray &ray) {
+/*Intersection* Sphere::getIntersect(const Ray &ray) {
 	float a = ray.d.LengthSq();
 	float b = 2 * STVector3::Dot(ray.d, ray.e - center);
 	float c = (ray.e - center).LengthSq() - radius * radius;
@@ -91,7 +91,36 @@ AABB* Sphere::getAABB()
 {
     return new AABB(center.x - radius, center.x + radius, center.y - radius, center.y + radius, center.z - radius, center.z + radius);
 }
+*/
 
+bool Sphere::getIntersect(const Ray& ray, Intersection* intersection) const {
+    float a = ray.d.LengthSq();
+    float b = 2 * STVector3::Dot(ray.d, ray.e - center);
+    float c = (ray.e - center).LengthSq() - radius * radius;
+    float disc = b * b - 4 * a * c;
+    if (disc < 0.) return false;
+    float t1 = (-b - sqrt(disc)) / (2 * a);
+    float t2 = (-b + sqrt(disc)) / (2 * a);     // we know t1 <= t2 since a > 0
+    if (t2 < ray.t_min || t1 > ray.t_max) return false;
+    // (!(ray.inRange(t1) || ray.inRange(t2))) return false;
+    float t = (t1 < ray.t_min ? t1 : t2);
+    intersection->point = ray.at(t);
+    intersection->normal = (intersection->point - center);
+    //intersection->normal.Normalize();     // sceneObject will normalize this later
+    return true;
+}
+
+bool Sphere::doesIntersect(const Ray& ray) const {
+    float a = ray.d.LengthSq();
+    float b = 2 * STVector3::Dot(ray.d, ray.e - center);
+    float c = (ray.e - center).LengthSq() - radius * radius;
+    float disc = b * b - 4 * a * c;
+    if (disc < 0.) return false;
+    float t1 = (-b - sqrt(disc)) / (2 * a);
+    float t2 = (-b + sqrt(disc)) / (2 * a);     // we know t1 <= t2 since a > 0
+    if (t2 < ray.t_min || t1 > ray.t_max) return false;
+    return true;
+}
 
 float Sphere::getSurfaceArea() const {
     return 4.f * M_PI * radius * radius;
@@ -107,6 +136,6 @@ STPoint3 Sphere::uniformSampleSurface(STVector3* normal) const {
     normal->x = sinf(phi) * cosf(theta);
     normal->y = sinf(phi) * sinf(theta);
     normal->z = cosf(phi);
-    normal->Normalize();
+    //normal->Normalize();  // SceneObject will normalize this
     return center + radius * *normal;
 }

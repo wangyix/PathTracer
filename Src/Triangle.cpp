@@ -10,7 +10,7 @@ float determinant(const STVector3& a, const STVector3& b, const STVector3& c) {
     return a.x*(b.y*c.z-b.z*c.y)-b.x*(a.y*c.z-a.z*c.y)+c.x*(a.y*b.z-a.z*b.y);
 }
 
-Intersection* Triangle::getIntersect(const Ray &ray) {
+/*Intersection* Triangle::getIntersect(const Ray &ray) {
     float detA = determinant(v1 - v2, v1 - v3, ray.d);
     if (detA == 0.) return NULL;
     float beta  = determinant(v1 - ray.e, v1 - v3, ray.d) / detA;
@@ -57,8 +57,30 @@ AABB* Triangle::getAABB()
     if(v3.z > zmax)zmax = v3.z;
     
     return new AABB(xmin, xmax, ymin, ymax, zmin, zmax);
+}*/
+
+
+bool Triangle::getIntersect(const Ray& ray, Intersection* intersection) const {
+    float detA = determinant(v1 - v2, v1 - v3, ray.d);
+    if (detA == 0.) return false;
+    float beta = determinant(v1 - ray.e, v1 - v3, ray.d) / detA;
+    float gamma = determinant(v1 - v2, v1 - ray.e, ray.d) / detA;
+    float t = determinant(v1 - v2, v1 - v3, v1 - ray.e) / detA;
+    if (!ray.inRange(t) || beta < 0 || gamma < 0 || beta + gamma > 1) return false;
+    intersection->point = ray.at(t);
+    intersection->normal = (1 - beta - gamma)*n1 + beta*n2 + gamma*n3;  // sceneObject will normalize this later
+    intersection->uv = STPoint2((1 - beta - gamma)*uv1.x + beta*uv2.x + gamma*uv3.x, (1 - beta - gamma)*uv1.y + beta*uv2.y + gamma*uv3.y);
+    return true;
 }
 
+bool Triangle::doesIntersect(const Ray& ray) const {
+    float detA = determinant(v1 - v2, v1 - v3, ray.d);
+    if (detA == 0.) return false;
+    float beta = determinant(v1 - ray.e, v1 - v3, ray.d) / detA;
+    float gamma = determinant(v1 - v2, v1 - ray.e, ray.d) / detA;
+    float t = determinant(v1 - v2, v1 - v3, v1 - ray.e) / detA;
+    return (ray.inRange(t) && beta >= 0 && gamma >= 0 && beta + gamma <= 1);
+}
 
 float Triangle::getSurfaceArea() const {
     return 0.5f * STVector3::Cross(v2 - v1, v3 - v1).Length();
@@ -77,6 +99,6 @@ STPoint3 Triangle::uniformSampleSurface(STVector3* normal) const {
     float c3 = sqrt_r1 * r2;
 
     *normal = c1*n1 + c2*n2 + c3*n3;
-    normal->Normalize();
+    //normal->Normalize();  // SceneObject will normalize this
     return c1*v1 + c2*v2 + c3*v3;
 }
