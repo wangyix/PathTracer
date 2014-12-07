@@ -55,6 +55,10 @@ AABB* TriangleMesh::getAABB()
 }*/
 
 bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) const {
+    if (!boundingSphere.doesIntersect(ray)) {
+        return false;
+    }
+
     Intersection min_int(FLT_MAX, STPoint3(), STVector3());
     for (const Triangle& triangle : triangles) {
         Intersection inter;
@@ -70,6 +74,10 @@ bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) cons
 }
 
 bool TriangleMesh::doesIntersect(const Ray& ray) const {
+    if (!boundingSphere.doesIntersect(ray)) {
+        return false;
+    }
+
     for (const Triangle& triangle : triangles) {
         if (triangle.doesIntersect(ray)) {
             return true;

@@ -99,8 +99,10 @@ bool Sphere::getIntersect(const Ray& ray, Intersection* intersection) const {
     float c = (ray.e - center).LengthSq() - radius * radius;
     float disc = b * b - 4 * a * c;
     if (disc < 0.) return false;
-    float t1 = (-b - sqrt(disc)) / (2 * a);
-    float t2 = (-b + sqrt(disc)) / (2 * a);     // we know t1 <= t2 since a > 0
+    float neg_b_over_2a = -b / (2.f * a);
+    float sqrt_disc_over_2a = sqrtf(disc) / (2.f * a);
+    float t1 = neg_b_over_2a - sqrt_disc_over_2a;
+    float t2 = neg_b_over_2a + sqrt_disc_over_2a;     // we know t1 <= t2 since a > 0
     if (t2 < ray.t_min || t1 > ray.t_max) return false;
     // (!(ray.inRange(t1) || ray.inRange(t2))) return false;
     float t = (t1 >= ray.t_min ? t1 : t2);
@@ -117,8 +119,10 @@ bool Sphere::doesIntersect(const Ray& ray) const {
     float c = (ray.e - center).LengthSq() - radius * radius;
     float disc = b * b - 4 * a * c;
     if (disc < 0.) return false;
-    float t1 = (-b - sqrt(disc)) / (2 * a);
-    float t2 = (-b + sqrt(disc)) / (2 * a);     // we know t1 <= t2 since a > 0
+    float neg_b_over_2a = -b / (2.f * a);
+    float sqrt_disc_over_2a = sqrtf(disc) / (2.f * a);
+    float t1 = neg_b_over_2a - sqrt_disc_over_2a;
+    float t2 = neg_b_over_2a + sqrt_disc_over_2a;     // we know t1 <= t2 since a > 0
     if (t2 < ray.t_min || t1 > ray.t_max) return false;
     return true;
 }

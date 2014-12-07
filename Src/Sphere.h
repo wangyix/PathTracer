@@ -23,6 +23,9 @@ public:
         //this->maxInt = copy.maxInt;
     }
 
+    void setCenter(const STPoint3& c) { center = c; }
+    void setRadius(float r) { radius = r; }
+
     /*Intersection* getIntersect(const Ray& ray);
     bool doesIntersect(const Ray& ray);
     Intersection** getIntersections(const Ray& ray);
