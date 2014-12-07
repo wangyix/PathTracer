@@ -1,10 +1,12 @@
 #ifndef RayTracer_TriangleMesh_h
 #define RayTracer_TriangleMesh_h
 
+#include <memory>
+
 #include "Shape.h"
 #include "Triangle.h"
-#include "AABB.h"
-#include "AABBTree.h"
+//#include "AABB.h"
+//#include "AABBTree.h"
 #include "STTriangleMesh.h"
 
 class TriangleMesh : public Shape {

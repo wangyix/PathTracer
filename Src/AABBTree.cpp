@@ -5,6 +5,7 @@
 
 #include "AABBTree.h"
 
+#if 0
 AABBTreeNode::AABBTreeNode(SceneObject* obj, AABB* aabb)
 {
     this->object = obj;
@@ -202,3 +203,4 @@ Intersection* AABBTreeNode::getIntersectionWithObject(const Ray& ray, /*result*/
 		}
     }
 }
+#endif

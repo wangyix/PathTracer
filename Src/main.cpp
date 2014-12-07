@@ -1,7 +1,8 @@
 #include "st.h"
 #include "stgl.h"
 #include "stglut.h"
-#include "ExampleScene.h"
+//#include "ExampleScene.h"
+#include "Scene.h"
 #include <iostream>
 #include <time.h>
 
@@ -41,9 +42,9 @@ int main(int argc, const char * argv[])
         exit(0);
     }
 
-    ExampleScene *scene = new ExampleScene();
-    scene->setRenderSubimage(blocks_x, blocks_y, block_i, block_j);
-    scene->initializeSceneFromScript(sceneFile);
+    Scene scene;
+    scene.setRenderSubimage(blocks_x, blocks_y, block_i, block_j);
+    scene.initializeSceneFromScript(sceneFile);
 
     //scene->initializeAs5NonUniformScene();
     //scene->initializeSceneFromScript("rtScene.txt");
@@ -82,7 +83,7 @@ int main(int argc, const char * argv[])
     clock_t start, end;
     start=clock();
 
-    scene->Render();
+    scene.Render();
 
     end=clock();
     cout << "Render time: "<<(double)(end-start) / ((double)CLOCKS_PER_SEC)<<" s"<<std::endl;

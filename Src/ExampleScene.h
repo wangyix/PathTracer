@@ -6,7 +6,8 @@
 class ExampleScene : public Scene
 {
 public:
-    using Scene::Render;
+    
+    /*using Scene::Render;
     using Scene::initializeSceneFromScript;
     
     ExampleScene(){}
@@ -38,6 +39,7 @@ public:
 
     void initializeAs5UniformScene();
     void initializeAs5NonUniformScene();
+    */
 };
 
 #endif

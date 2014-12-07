@@ -13,16 +13,16 @@ class LightDistribution {
 public:
     LightDistribution() {}
 
-    void init(const std::vector<SceneObject>& objects) {
+    void init(const std::vector<SceneObject*>& objects) {
         // build list of light objects and their powers (max component) to be used
         // when picking the light object to sample y0 from.
         lightObjects.clear();
         lightPowers.clear();
         powerTotal = 0.f;
-        for (const SceneObject& o : objects) {
-            if (o.emitsLight()) {
-                lightObjects.push_back(&o);
-                float power = o.getEmittedPower().maxComponent();
+        for (const SceneObject* o : objects) {
+            if (o->emitsLight()) {
+                lightObjects.push_back(o);
+                float power = o->getEmittedPower().maxComponent();
                 lightPowers.push_back(power);
                 powerTotal += power;
             }
@@ -172,7 +172,7 @@ protected:
     int sampleRate;
 
     Camera camera;
-    std::vector<SceneObject> objects;
+    std::vector<SceneObject*> objects;
     //std::vector<Light *> lights;
     //std::vector<AreaLight *> areaLights;
 

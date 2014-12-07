@@ -929,37 +929,37 @@ void Scene::rtTranslate(float tx, float ty, float tz)
 
 void Scene::rtSphere(const STPoint3& center, float radius)
 {
-    objects.emplace_back(new Sphere(center, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new Sphere(center, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3)
 {
-    objects.emplace_back(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3)
 {
-    objects.emplace_back(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z)
 {
-    objects.emplace_back(new Box(o, x, y, z), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new Box(o, x, y, z), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtBox(const STPoint3& center, const STVector3& size)
 {
-    objects.emplace_back(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtCylinder(const STPoint3& A, const STPoint3 B, float radius)
 {
-    objects.emplace_back(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 void Scene::rtQJulia(const float4& mu, const float epsilon)
 {
-    objects.emplace_back(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+    objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
 /*void Scene::rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name)
@@ -999,7 +999,7 @@ void Scene::rtTriangleMesh(const std::string& file_name, const bool& counter_clo
     std::vector<STTriangleMesh*> meshes;
     STTriangleMesh::LoadObj(meshes, file_name);
     for (int i = 0; i < (int)meshes.size(); i++) {
-        objects.emplace_back(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower);
+        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
     }
     //objects.push_back(new SceneObject(new TriangleMesh(file_name,counter_clockwise,smoothed_normal), currMaterial, &matStack.back(), currTexIndex));
 }
@@ -1130,17 +1130,17 @@ bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** obj
 {
     Intersection min_inter(FLT_MAX, STPoint3(), STVector3());
     const SceneObject* min_object = NULL;
-    for (const SceneObject& obj : objects) {
+    for (const SceneObject* obj : objects) {
         Intersection inter;
-        if (obj.getIntersect(ray, &inter)) {
+        if (obj->getIntersect(ray, &inter)) {
             if (inter.t < min_inter.t && ray.inRange(inter.t)) {    // inRange should be checked already by obj.getIntersect()
                 min_inter = inter;
-                min_object = &obj;
+                min_object = obj;
             }
         }
     }
     *object = min_object;
-    return (min_object);
+    return (min_object != NULL);
 }
 
 /*Intersection* Scene::IntersectAABBTree(const Ray& ray, SceneObject*& object)

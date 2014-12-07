@@ -1,5 +1,6 @@
 #include "ExampleScene.h"
 
+#if 0
 void ExampleScene::initializeSceneBasicGeometry()
 {
 	rtClear();
@@ -743,3 +744,4 @@ void ExampleScene::initializeAs5NonUniformScene() {
     uniform_grid = new UniformGrid(objects, scene_bounding_box, subdivision);
     */
 }
+#endif

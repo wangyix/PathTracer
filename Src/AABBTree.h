@@ -6,6 +6,7 @@
 #ifndef AABBTree_h
 #define AABBTree_h
 
+#if 0
 #include "st.h"
 #include "Shape.h"
 #include "SceneObject.h"
@@ -73,4 +74,6 @@ public:
         else return NULL;
     }
 };
+#endif
+
 #endif 

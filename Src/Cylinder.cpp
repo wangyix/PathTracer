@@ -295,9 +295,13 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
         }
     }
 
-    intersection->t = min_inter_t;
-    intersection->point = toObjectSpace * min_inter_p;
-    intersection->normal = toObjectInvTranspose * min_inter_p_n;
+    if (min_inter_t != FLT_MAX) {
+        intersection->t = min_inter_t;
+        intersection->point = toObjectSpace * min_inter_p;
+        intersection->normal = toObjectInvTranspose * min_inter_p_n;
+        return true;
+    }
+    return false;
 }
 
 
