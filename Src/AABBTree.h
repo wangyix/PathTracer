@@ -6,7 +6,6 @@
 #ifndef AABBTree_h
 #define AABBTree_h
 
-#if 0
 #include "st.h"
 #include "Shape.h"
 #include "SceneObject.h"
@@ -18,31 +17,32 @@
 class AABBTreeNode
 {
 public:
-	AABBTreeNode(SceneObject* obj, AABB* aabb);
+	AABBTreeNode(SceneObject* obj, const AABB& aabb);
 	AABBTreeNode(std::vector<SceneObject*>& objs, int method=1);
 	~AABBTreeNode();
-	Intersection* getIntersectionWithObject(const Ray& ray, /*result*/SceneObject*& intersected_object);
+
+    SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter);
 
     ////two ways to initialize the AABB tree
 	static const int VOL = 1;
 	static const int NUM = 2;
 
-	AABB* aabb;
+	AABB aabb;
 	SceneObject* object;
 	AABBTreeNode* left;
 	AABBTreeNode* right;
 };
 
-class AABBTree : public SceneObject
+class AABBTree //: public SceneObject
 {
-    using SceneObject::name;
+    //using SceneObject::name;
 public:
     AABBTreeNode* root;
 
-    AABBTree():root(NULL){name="aabb_tree";}
+    AABBTree() :root(NULL){}    //name = "aabb_tree";
     AABBTree(std::vector<SceneObject*>& objs)
     {
-        name="aabb_tree";
+        //name="aabb_tree";
         root=new AABBTreeNode(objs);
 		//std::cout<<"aabb tree, node number: "<<objs.size()<<std::endl;
     }
@@ -54,26 +54,36 @@ public:
     bool doesIntersect(const Ray& ray) 
     {
         if(root){
-            SceneObject* dummy_object;
+            /*SceneObject* dummy_object;
             Intersection* dummy_intersect=root->getIntersectionWithObject(ray,dummy_object);
             if(dummy_intersect!=NULL){delete dummy_intersect;return true;}
-            else return false;
+            else return false;*/
+
+            Intersection dummy_intersect;
+            return (root->getIntersectionWithObject(ray, &dummy_intersect) != NULL);
         }
         else return false;
     }
 
-    Intersection* getIntersect(const Ray& ray) 
+    bool getIntersect(const Ray& ray, Intersection* inter)
     {
-        if(root){SceneObject* dummy;return root->getIntersectionWithObject(ray,dummy);}
-        else return NULL;
+        //if(root){SceneObject* dummy;return root->getIntersectionWithObject(ray,dummy);}
+        //else return NULL;
+        if (root) {
+            return (root->getIntersectionWithObject(ray, inter) != NULL);
+        }
+        return false;
     }
 
-    Intersection* getIntersectionWithObject(const Ray& ray, /*result*/SceneObject*& intersected_object)
+    SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter)
     {
-        if(root)return root->getIntersectionWithObject(ray,intersected_object);
+        //if(root)return root->getIntersectionWithObject(ray,intersected_object);
+        //else return NULL;
+        if (root) {
+            return root->getIntersectionWithObject(ray, inter);
+        }
         else return NULL;
     }
 };
-#endif
 
 #endif 

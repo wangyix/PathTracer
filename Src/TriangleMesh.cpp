@@ -55,14 +55,19 @@ AABB* TriangleMesh::getAABB()
 }*/
 
 bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) const {
-    if (!boundingSphere.doesIntersect(ray)) {
+    /*if (!boundingSphere.doesIntersect(ray)) {
+        return false;
+    }*/
+    if (use_accel_structure) {
+        return aabb_tree->getIntersect(ray, intersection);
+    } else if (!boundingSphere.doesIntersect(ray)) {
         return false;
     }
 
     Intersection min_int(FLT_MAX, STPoint3(), STVector3());
-    for (const Triangle& triangle : triangles) {
+    for (const SceneObject* triangle : triangles) {
         Intersection inter;
-        if (triangle.getIntersect(ray, &inter) && inter.t < min_int.t) {
+        if (triangle->getIntersect(ray, &inter) && inter.t < min_int.t) {
             min_int = inter;
         }
     }
@@ -74,12 +79,17 @@ bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) cons
 }
 
 bool TriangleMesh::doesIntersect(const Ray& ray) const {
-    if (!boundingSphere.doesIntersect(ray)) {
+    /*if (!boundingSphere.doesIntersect(ray)) {
+        return false;
+    }*/
+    if (use_accel_structure) {
+        return aabb_tree->doesIntersect(ray);
+    } else if (!boundingSphere.doesIntersect(ray)) {
         return false;
     }
 
-    for (const Triangle& triangle : triangles) {
-        if (triangle.doesIntersect(ray)) {
+    for (const SceneObject* triangle : triangles) {
+        if (triangle->doesIntersect(ray)) {
             return true;
         }
     }

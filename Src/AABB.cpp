@@ -145,24 +145,24 @@ bool AABB::isInside(const STPoint3& point)
 	return point.x>=xmin && point.x<=xmax && point.y>=ymin && point.y<=ymax && point.z>=zmin && point.z<=zmax;
 }
 
-void AABB::combine(const AABB* b1,const AABB* b2,/*result*/AABB* c)
+void AABB::combine(const AABB& b1,const AABB& b2, AABB* c)
 {
-    c->xmin = b1->xmin < b2->xmin ? b1->xmin : b2->xmin;
-    c->xmax = b1->xmax > b2->xmax ? b1->xmax : b2->xmax;
-    c->ymin = b1->ymin < b2->ymin ? b1->ymin : b2->ymin;
-    c->ymax = b1->ymax > b2->ymax ? b1->ymax : b2->ymax;
-    c->zmin = b1->zmin < b2->zmin ? b1->zmin : b2->zmin;
-    c->zmax = b1->zmax > b2->zmax ? b1->zmax : b2->zmax;
+    c->xmin = b1.xmin < b2.xmin ? b1.xmin : b2.xmin;
+    c->xmax = b1.xmax > b2.xmax ? b1.xmax : b2.xmax;
+    c->ymin = b1.ymin < b2.ymin ? b1.ymin : b2.ymin;
+    c->ymax = b1.ymax > b2.ymax ? b1.ymax : b2.ymax;
+    c->zmin = b1.zmin < b2.zmin ? b1.zmin : b2.zmin;
+    c->zmax = b1.zmax > b2.zmax ? b1.zmax : b2.zmax;
 }
 
-AABB* AABB::combine(const AABB* b1, const AABB* b2)
+AABB AABB::combine(const AABB& b1, const AABB& b2)
 {
-    AABB* c=new AABB();
-    AABB::combine(b1,b2,c);
+    AABB c;
+    AABB::combine(b1, b2, &c);
     return c;
 }
 
-void AABB::combine(const STPoint3& p,/*result*/AABB* c)
+void AABB::combine(const STPoint3& p, AABB* c)
 {
     if(p.x<c->xmin)c->xmin=p.x;
     if(p.x>c->xmax)c->xmax=p.x;

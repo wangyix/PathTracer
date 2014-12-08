@@ -165,12 +165,9 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
         rayEnteringSurface = !rayLeavingSurface;
     }
 
-    // Adjust the start of the ray to e + tmin*d, and set its tmin to 0, and 
-    // also normalize the d vector.  with tmin being 0, we don't have to worry about
-    // scaling it when d is scaled.
-    Ray ray_adj(ray.e + ray.t_min * ray.d, ray.d, 0.f);
+    
+    Ray ray_adj(ray);
     ray_adj.d.Normalize();
-
 
     if (rayEnteringSurface) {
         // intersect this ray with the bounding sphere, and then reverse its direction
@@ -233,10 +230,7 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
 
 bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
 
-    // Adjust the start of the ray to e + tmin*d, and set its tmin to 0, and 
-    // also normalize the d vector.  with tmin being 0, we don't have to worry about
-    // scaling it when d is scaled.
-    Ray ray_adj(ray.e + ray.t_min * ray.d, ray.d, 0.f);
+    Ray ray_adj(ray);
     ray_adj.d.Normalize();
 
     // check if the ray starts outside the bounding sphere.  If so, move its start

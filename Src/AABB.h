@@ -32,6 +32,7 @@ public:
 
     float xcenter, ycenter, zcenter;
     float xmin, xmax, ymin, ymax, zmin, zmax;
+
 	STPoint3 minCorner(){return STPoint3(xmin,ymin,zmin);}
 	STPoint3 maxCorner(){return STPoint3(xmax,ymax,zmax);}
     STVector3 edgeLength(){return STVector3(xmax-xmin,ymax-ymin,zmax-zmin);}
@@ -39,9 +40,9 @@ public:
     void enlarge(const float offset){xmin-=offset;xmax+=offset;ymin-=offset;ymax+=offset;zmin-=offset;zmax+=offset;}
     void enlarge(const float offset[3]){xmin-=offset[0];xmax+=offset[0];ymin-=offset[1];ymax+=offset[1];zmin-=offset[2];zmax+=offset[2];}
 
-    static void combine(const AABB* b1,const AABB* b2,/*result*/AABB* c);
-    static AABB* combine(const AABB* b1, const AABB* b2);
-    static void combine(const STPoint3& p,/*result*/AABB* c);
+    static void combine(const AABB& b1,const AABB& b2, AABB* c);
+    static AABB combine(const AABB& b1, const AABB& b2);
+    static void combine(const STPoint3& p, AABB* c);
 
     static float minWithIndex(const float x,const float y,const float z,/*result*/int& min_idx)
     {

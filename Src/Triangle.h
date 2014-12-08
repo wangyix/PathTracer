@@ -61,6 +61,8 @@ public:
     float getSurfaceArea() const override;
     STPoint3 uniformSampleSurface(STVector3* normal) const override;
 
+    AABB getAABB() const; // does not override; used only for TriangleMesh AABBtree
+
 private:
     STPoint3 v1, v2, v3;
     STVector3 n1, n2, n3;

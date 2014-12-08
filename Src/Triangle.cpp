@@ -36,10 +36,9 @@ Intersection** Triangle::getIntersections (const Ray & ray) {
     Intersection *inter = getIntersect(ray);
     Intersection ** result = &inter;
     return result;
-}
+}*/
 
-AABB* Triangle::getAABB()
-{
+AABB Triangle::getAABB() const {
     float xmin, xmax, ymin, ymax, zmin, zmax;
     if(v1.x > v2.x){xmin = v2.x;xmax = v1.x;}
     else{xmin = v1.x;xmax = v2.x;}
@@ -56,8 +55,8 @@ AABB* Triangle::getAABB()
     if(v3.z < zmin)zmin = v3.z;
     if(v3.z > zmax)zmax = v3.z;
     
-    return new AABB(xmin, xmax, ymin, ymax, zmin, zmax);
-}*/
+    return AABB(xmin, xmax, ymin, ymax, zmin, zmax);
+}
 
 
 bool Triangle::getIntersect(const Ray& ray, Intersection* intersection) const {

@@ -5,8 +5,7 @@
 
 #include "AABBTree.h"
 
-#if 0
-AABBTreeNode::AABBTreeNode(SceneObject* obj, AABB* aabb)
+AABBTreeNode::AABBTreeNode(SceneObject* obj, const AABB& aabb)
 {
     this->object = obj;
     this->left = NULL;
@@ -16,17 +15,17 @@ AABBTreeNode::AABBTreeNode(SceneObject* obj, AABB* aabb)
 
 bool compare1(SceneObject* obj1, SceneObject* obj2)
 {
-    return obj1->aabb->xcenter < obj2->aabb->xcenter;
+    return obj1->getAabb().xcenter < obj2->getAabb().xcenter;
 }
 
 bool compare2(SceneObject* obj1, SceneObject* obj2)
 {
-    return obj1->aabb->ycenter < obj2->aabb->ycenter;
+    return obj1->getAabb().ycenter < obj2->getAabb().ycenter;
 }
 
 bool compare3(SceneObject* obj1, SceneObject* obj2)
 {
-    return obj1->aabb->zcenter < obj2->aabb->zcenter;
+    return obj1->getAabb().zcenter < obj2->getAabb().zcenter;
 }
 
 ////construct a aabb tree
@@ -37,13 +36,13 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
 		this->object = objs[0];
 		this->left = NULL;
 		this->right = NULL;
-		this->aabb = objs[0]->aabb;
+		this->aabb = objs[0]->getAabb();
 	}
 	else if(num == 2){
 		this->object = NULL;
-		this->left = new AABBTreeNode(objs[0], objs[0]->aabb);
-		this->right = new AABBTreeNode(objs[1], objs[1]->aabb);
-		this->aabb = AABB::combine(objs[0]->aabb, objs[1]->aabb);
+        this->left = new AABBTreeNode(objs[0], objs[0]->getAabb());
+        this->right = new AABBTreeNode(objs[1], objs[1]->getAabb());
+        this->aabb = AABB::combine(objs[0]->getAabb(), objs[1]->getAabb());
 	}
 	else{
 		if(method == AABBTreeNode::VOL){
@@ -51,17 +50,17 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
 			float xdev = 0, ydev = 0, zdev = 0;
 			int size = objs.size();
 			for(int i = 0;i < size;++i){
-				xsum += objs[i]->aabb->xcenter;
-				ysum += objs[i]->aabb->ycenter;
-				zsum += objs[i]->aabb->zcenter;
+				xsum += objs[i]->getAabb().xcenter;
+				ysum += objs[i]->getAabb().ycenter;
+				zsum += objs[i]->getAabb().zcenter;
 			}
 			xsum /= size;
 			ysum /= size;
 			zsum /= size;
 			for(int i = 0;i < size;++i){
-				xdev += (objs[i]->aabb->xcenter - xsum) * (objs[i]->aabb->xcenter - xsum);
-				ydev += (objs[i]->aabb->ycenter - ysum) * (objs[i]->aabb->ycenter - ysum);
-				zdev += (objs[i]->aabb->zcenter - zsum) * (objs[i]->aabb->zcenter - zsum);
+				xdev += (objs[i]->getAabb().xcenter - xsum) * (objs[i]->getAabb().xcenter - xsum);
+				ydev += (objs[i]->getAabb().ycenter - ysum) * (objs[i]->getAabb().ycenter - ysum);
+				zdev += (objs[i]->getAabb().zcenter - zsum) * (objs[i]->getAabb().zcenter - zsum);
 			}
 			int idx = xdev > ydev ? 1 : 2;
 			if(idx == 1)
@@ -73,19 +72,19 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
 			std::vector<SceneObject*> robjs;
 			if(idx == 1){
 				for(int i = 0;i < size;++i){
-					if(objs[i]->aabb->xcenter < xsum) lobjs.push_back(objs[i]);
+					if(objs[i]->getAabb().xcenter < xsum) lobjs.push_back(objs[i]);
 					else robjs.push_back(objs[i]);
 				}
 			}
 			else if(idx == 2){
 				for(int i = 0;i < size;++i){
-					if(objs[i]->aabb->ycenter < ysum) lobjs.push_back(objs[i]);
+					if(objs[i]->getAabb().ycenter < ysum) lobjs.push_back(objs[i]);
 					else robjs.push_back(objs[i]);
 				}
 			}
 			else if(idx == 3){
 				for(int i = 0;i < size;++i){
-					if(objs[i]->aabb->zcenter < zsum) lobjs.push_back(objs[i]);
+					if(objs[i]->getAabb().zcenter < zsum) lobjs.push_back(objs[i]);
 					else robjs.push_back(objs[i]);
 				}
 			}
@@ -98,13 +97,13 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
 					this->object = lobjs[0];
 					this->left = NULL;
 					this->right = NULL;
-					this->aabb = lobjs[0]->aabb;
+					this->aabb = lobjs[0]->getAabb();
 				}
 				else if(robjs.size()>0){
 					this->object = robjs[0];
 					this->left = NULL;
 					this->right = NULL;
-					this->aabb = robjs[0]->aabb;
+                    this->aabb = robjs[0]->getAabb();
 				}
 				return;
 			}
@@ -119,17 +118,17 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
 			float xdev = 0, ydev = 0, zdev = 0;
 			int size = objs.size();
 			for(int i = 0;i < size;++i){
-				xsum += objs[i]->aabb->xcenter;
-				ysum += objs[i]->aabb->ycenter;
-				zsum += objs[i]->aabb->zcenter;
+				xsum += objs[i]->getAabb().xcenter;
+				ysum += objs[i]->getAabb().ycenter;
+				zsum += objs[i]->getAabb().zcenter;
 			}
 			xsum /= size;
 			ysum /= size;
 			zsum /= size;
 			for(int i = 0;i < size;++i){
-				xdev += (objs[i]->aabb->xcenter - xsum) * (objs[i]->aabb->xcenter - xsum);
-				ydev += (objs[i]->aabb->ycenter - ysum) * (objs[i]->aabb->ycenter - ysum);
-				zdev += (objs[i]->aabb->zcenter - zsum) * (objs[i]->aabb->zcenter - zsum);
+				xdev += (objs[i]->getAabb().xcenter - xsum) * (objs[i]->getAabb().xcenter - xsum);
+				ydev += (objs[i]->getAabb().ycenter - ysum) * (objs[i]->getAabb().ycenter - ysum);
+				zdev += (objs[i]->getAabb().zcenter - zsum) * (objs[i]->getAabb().zcenter - zsum);
 			}
 			int idx = xdev > ydev ? 1 : 2;
 			if(idx == 1) idx = xdev > zdev ? 1 : 3;
@@ -159,41 +158,57 @@ AABBTreeNode::~AABBTreeNode()
     if(right!=NULL)delete right;
 }
 
-Intersection* AABBTreeNode::getIntersectionWithObject(const Ray& ray, /*result*/SceneObject*& intersected_object)
+SceneObject* AABBTreeNode::getIntersectionWithObject(const Ray& ray, Intersection* inter)
 {
 	//std::cout<<"recursion parent: "<<*(this->aabb)<<std::endl;
 	//if(this->left)std::cout<<"left: "<<*(this->left->aabb)<<std::endl;
 	//if(this->right)std::cout<<"right: "<<*(this->right->aabb)<<std::endl;
     if(object != NULL){
-        return object->getIntersectionWithObject(ray,intersected_object);
+        //return object->getIntersectionWithObject(ray,intersected_object);
+        return object->getIntersectionWithObject(ray, inter);
     }
     else{
-        if(aabb->doesIntersect(ray)){
+        if(aabb.doesIntersect(ray)){
             SceneObject *left_obj = NULL;
             SceneObject *right_obj = NULL;
 			//std::cout<<"trace left"<<std::endl;
-            Intersection* left_inter = this->left->getIntersectionWithObject(ray, left_obj);
+            //Intersection* left_inter = this->left->getIntersectionWithObject(ray, left_obj);
+
 			//std::cout<<"trace right"<<std::endl;
-            Intersection* right_inter = this->right->getIntersectionWithObject(ray, right_obj);
-            if(left_inter!=NULL && right_inter!=NULL){
-                if(left_inter->t < right_inter->t){
-                    intersected_object = left_obj;
-                    delete right_inter;
-                    return left_inter;
+            //Intersection* right_inter = this->right->getIntersectionWithObject(ray, right_obj);
+
+            Intersection left_inter, right_inter;
+            left_obj = this->left->getIntersectionWithObject(ray, &left_inter);
+            right_obj = this->right->getIntersectionWithObject(ray, &right_inter);
+
+            //if(left_inter!=NULL && right_inter!=NULL){
+            if (left_obj != NULL && right_obj != NULL) {
+                if(left_inter.t < right_inter.t){
+                    //intersected_object = left_obj;
+                    //delete right_inter;
+                    //return left_inter;
+                    *inter = left_inter;
+                    return left_obj;
                 }
                 else{
-                    intersected_object = right_obj;
-                    delete left_inter;
-                    return right_inter;
+                    //intersected_object = right_obj;
+                    //delete left_inter;
+                    //return right_inter;
+                    *inter = right_inter;
+                    return right_obj;
                 }
             }
-            else if(left_inter!=NULL){
-                intersected_object = left_obj;
-                return left_inter;
+            else if (left_obj != NULL){
+                //intersected_object = left_obj;
+                //return left_inter;
+                *inter = left_inter;
+                return left_obj;
             }
-            else if(right_inter!=NULL){
-                intersected_object = right_obj;
-                return right_inter;
+            else if(right_obj != NULL){
+                //intersected_object = right_obj;
+                //return right_inter;
+                *inter = right_inter;
+                return right_obj;
             }
             else return NULL;
         }
@@ -203,4 +218,3 @@ Intersection* AABBTreeNode::getIntersectionWithObject(const Ray& ray, /*result*/
 		}
     }
 }
-#endif
