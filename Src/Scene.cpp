@@ -167,7 +167,7 @@ int curr_x, curr_y, curr_a, curr_b;
 std::vector<Path> paths;
 
 
-
+std::vector<STColor3f> brightPixels;
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
@@ -281,12 +281,16 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             // calculate weight w_0t knowing that S_i = (p1t/pt)^2 + ... + (p0/pt)^2
             float w_0t = 1.f / (1.f + S_i);
 
-            /*if (S_i == 0.f && i > 3) {
-                paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
-                continue;
-            }*/
+            STColor3f C_0t = w_0t * Cs_0t;
 
-            *C_0t_sum += (w_0t * Cs_0t);
+            if (S_i == 0.f && i > 3) {
+                //paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
+                //continue;
+                brightPixels[curr_y * width + curr_x] += (C_0t / (float)(sampleRate * sampleRate));
+                continue;
+            }
+
+            *C_0t_sum += C_0t;
 
             /*if (curr_x == target_x && curr_y == target_y) {
                 paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
@@ -413,6 +417,7 @@ void Scene::Render() {
     std::cout << "------------------ray tracing started------------------" << std::endl;
 
     std::vector<STColor3f> pixels(width * height, STColor3f(0.f));
+    brightPixels.resize(width * height, STColor3f(0.f));
     float N = (float)(/*width * height * */sampleRate * sampleRate);
 
     int percent = 0, computed = 0;
@@ -584,23 +589,26 @@ void Scene::Render() {
     } // x loop
 
     STImage im(width, height, pixels);
-    std::string subImageFileName = imageFilename;
+    size_t dot_pos = imageFilename.find_last_of('.');
+    std::string extension = imageFilename.substr(dot_pos);
+    std::string filenameNoExtension = imageFilename.substr(0, dot_pos);
+    
     if (!(blocks_x == 1 && blocks_y == 1)) {
-
-        size_t dot_pos = imageFilename.find_last_of('.');
-        std::string extension = imageFilename.substr(dot_pos);
-
-        subImageFileName = imageFilename.substr(0, dot_pos);
-        subImageFileName.append(std::to_string(blocks_x))
+        filenameNoExtension.append(std::to_string(blocks_x))
             .append("x")
             .append(std::to_string(blocks_y))
             .append("_")
             .append(std::to_string(block_i))
             .append("_")
             .append(std::to_string(block_j));
-        subImageFileName.append(extension);
     }
-    im.Save(subImageFileName);
+    im.Save(filenameNoExtension + extension);
+
+
+    STImage im_bright(width, height, brightPixels);
+    im_bright.Save(filenameNoExtension + "_bright" + extension);
+
+
 
     std::cout << "------------------ray tracing finished------------------" << std::endl;
 
