@@ -278,10 +278,6 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             float zi_Pa_from_next = lightDistribution.Pa_y0(inter_obj); // Pa(zi)
             float S_i = S_i_at(vertices, i, zi_Pa_from_next, S_1i);
 
-            if (S_i == 0.f && i > 2) {
-                continue;
-            }
-
             // calculate weight w_0t knowing that S_i = (p1t/pt)^2 + ... + (p0/pt)^2
             float w_0t = 1.f / (1.f + S_i);
 
