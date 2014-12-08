@@ -5,13 +5,14 @@
 
 int main(int argc, const char* argv[]) {
 
-    if (argc < 3) {
-        std::cout << "Must specify at least 2 png files." << std::endl;
+    if (argc < 4) {
+        std::cout << "Specify output file followed by 2 or more png files." << std::endl;
         return 0;
     }
+    std::string outputFilename = argv[1];
 
     std::vector<std::string> filenames;
-    for (int i = 1; i < argc; i++) {
+    for (int i = 2; i < argc; i++) {
         filenames.push_back(argv[i]);
     }
     
@@ -48,10 +49,9 @@ int main(int argc, const char* argv[]) {
     }
 
     // write sumimage
-    std::string sumFilename = "sum.png";
-    error = lodepng::encode(sumFilename, sumImage, width, height);
+    error = lodepng::encode(outputFilename, sumImage, width, height);
     if (error) {
-        std::cout << "Error writing " << sumFilename << ": " << lodepng_error_text(error) << std::endl;
+        std::cout << "Error writing " << outputFilename << ": " << lodepng_error_text(error) << std::endl;
         return 1;
     }
 
