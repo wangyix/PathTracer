@@ -911,10 +911,10 @@ void Scene::rtRotate(float rx, float ry, float rz)
     }
 }
 
-void Scene::rtScale(float s)
+void Scene::rtScale(float sx, float sy, float sz)
 {
     if (!matStack.empty()) {
-        STTransform4 M = matStack.back() * STTransform4::Scaling(s, s, s);
+        STTransform4 M = matStack.back() * STTransform4::Scaling(sx, sy, sz);
         matStack.pop_back();
         matStack.push_back(M);
     }
@@ -1253,9 +1253,9 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             ss >> rx >> ry >> rz;
             rtRotate(rx, ry, rz);
         } else if (command == "Scale") {
-            float s;
-            ss >> s;
-            rtScale(s);
+            float sx, sy, sz;
+            ss >> sx >> sy >> sz;
+            rtScale(sx, sy, sz);
         } else if (command == "Translate") {
             float tx, ty, tz;
             ss >> tx >> ty >> tz;

@@ -116,7 +116,7 @@ public:
     void rtPopMatrix();
     void rtLoadMatrix(const STTransform4& mat);
     void rtRotate(float rx, float ry, float rz);
-    void rtScale(float s);
+    void rtScale(float sx, float sy, float sz);
     void rtTranslate(float tx, float ty, float tz);
     void rtSphere(const STPoint3& center, float radius);
     void rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3);

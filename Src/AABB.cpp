@@ -61,7 +61,7 @@ float AABB::intersect(const Ray& ray,int& i_intersect)
     float ax = 1.f / ray.d.x;
     float ay = 1.f / ray.d.y;
     float az = 1.f / ray.d.z;
-    float txnear, txfar, tynear, tyfar, tznear, tzfar;
+    float txnear = 0.f, txfar = 0.f, tynear, tyfar, tznear, tzfar;
     if(ray.d.x == 0.f){
         if(ray.e.x >=xmin && ray.e.x <= xmax){
             txnear = -FLT_MAX; 
