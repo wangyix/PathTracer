@@ -151,7 +151,31 @@ bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, f
 }
 
 
+Intersection quaternionJuliaSet::getLastIntersection() {
+    std::thread::id thread_id = std::this_thread::get_id();
+    lastIntersectionsLock.lock();
+    auto it = lastIntersections.find(thread_id);
+    if (it != lastIntersections.end()) {
+        lastIntersectionsLock.unlock();
+        return it->second;
+    }
+    Intersection inter(FLT_MAX, STPoint3(), STVector3());
+    lastIntersections.insert(std::unordered_map<std::thread::id, Intersection>::value_type(thread_id, inter));
+    lastIntersectionsLock.unlock();
+    return inter;
+}
+
+void quaternionJuliaSet::setLastIntersection(const Intersection& lastIntersection) {
+    std::thread::id thread_id = std::this_thread::get_id();
+    lastIntersectionsLock.lock();
+    lastIntersections[thread_id] = lastIntersection;
+    lastIntersectionsLock.unlock();
+}
+
+
 bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection) const {
+
+    Intersection lastIntersection = const_cast<quaternionJuliaSet*>(this)->getLastIntersection();
 
     // check if this ray is meant to be a ray starting from the intersection
     // point of the last ray that we intersected with this julia set
@@ -219,10 +243,8 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
     intersection->point = point;
     intersection->normal = normal;
     
-    //lastIntersection = *intersection;
-    // dirty way to modify member inside const member function
-    Intersection* lastInterPtr = const_cast<Intersection*>(&lastIntersection);
-    *lastInterPtr = *intersection;
+    // update last intersection to be the intersection we just found
+    const_cast<quaternionJuliaSet*>(this)->setLastIntersection(*intersection);
 
     return true;
 }

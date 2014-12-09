@@ -220,7 +220,7 @@ protected:
     //STColor3f traceShadowRay(const Ray& ray, const Light& light);
     //void getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb);
 
-    void generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum);
+    void generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex>& vertices, STColor3f* C_0t_sum);
     void generateLightSubpath(std::vector<Vertex>& vertices);
 
     float S_i_at(const std::vector<Vertex>& vertices, int i);

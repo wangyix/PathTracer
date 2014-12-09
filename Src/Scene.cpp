@@ -9,7 +9,7 @@
 #include <limits>
 
 #define DEFAULT_NUM_RENDER_THREADS 4
-#define NUM_PIXEL_LOCKS 101
+#define NUM_PIXEL_LOCKS 1009
 
 Scene::Scene()
     : currBsdf(new Lambertian()), currEmittedPower(0.f),
@@ -161,15 +161,11 @@ struct Path {
     }
 };
 
-const int target_x = 175;
-const int target_y = 359 - 162;
 
-int curr_x, curr_y, curr_a, curr_b;
-std::vector<Path> paths;
+//std::vector<Path> paths;
 
 
-
-void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
+void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
     camera.setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
 
@@ -283,12 +279,12 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
 
             STColor3f C_0t = w_0t * Cs_0t;
 
-            if (S_i == 0.f && i > 4) {
+            if (S_i == 0.f && i > 3) {
                 //paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
                 //continue;
                 
                 //brightPixels[curr_y * width + curr_x] += (C_0t / (float)(sampleRate * sampleRate));
-                AddCstToBrightPixel(curr_x, curr_y, C_0t);
+                AddCstToBrightPixel(x, y, C_0t);
                 continue;
             }
 
@@ -406,16 +402,13 @@ void Scene::AddCstToBrightPixel(int x, int y, const STColor3f& C_st) {
 
 
 void Scene::ProcessPixel(int x, int y) {
-    curr_x = x;
-    curr_y = y;
+
     // work on pixel (x, y)
     STColor3f C_sum_this_pixel(0.f);
 
     // sampleRate^2 stratified estimates (sample-path groups) per pixel
     for (int a = 0; a < sampleRate; a++) {
         for (int b = 0; b < sampleRate; b++) {
-            curr_a = a;
-            curr_b = b;
 
             // offset (x,y) by between [a/sampleRate, b/sampleRate] and [(a+1)/sampleRate, (b+1)/sampleRate)]
             // those are the bounds for the (a,b) subpixel within pixel (x,y)
@@ -429,7 +422,7 @@ void Scene::ProcessPixel(int x, int y) {
             // generate eye subpath thru (u,v)
             std::vector<Vertex> vertices_E;
             STColor3f C0t_sum;
-            generateEyeSubpath(u, v, vertices_E, &C0t_sum);
+            generateEyeSubpath(u, v, x, y, vertices_E, &C0t_sum);
 
             // generate light subpath
             std::vector<Vertex> vertices_L;
@@ -682,7 +675,7 @@ void Scene::Render() {
 
 
 
-    // write stored paths to files (full and abridged printouts)
+    /*// write stored paths to files (full and abridged printouts)
     if (!paths.empty()) {
         // sort paths by contribution
         std::sort(paths.begin(), paths.end(), [](const Path& a, const Path& b)->bool {
@@ -696,7 +689,7 @@ void Scene::Render() {
             p.write(ofs);
             p.writeAbridged(ofs_ab);
         }
-    }
+    }*/
 }
 
 /*STColor3f Scene::TraceRay(const Ray &ray, int bounce) {

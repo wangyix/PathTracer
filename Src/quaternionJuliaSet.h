@@ -9,6 +9,10 @@
 #ifndef __RayTracer__quaternionJuliaSet__
 #define __RayTracer__quaternionJuliaSet__
 
+#include <unordered_map>
+#include <thread>
+#include <mutex>
+
 #include "Shape.h"
 
 
@@ -61,7 +65,7 @@ inline float3 cross(const float3& left, const float3& right)
 class quaternionJuliaSet : public Shape {
 public:
 	quaternionJuliaSet(float4 _mu, const float _epsilon)
-        : mu(_mu), epsilon(_epsilon), lastIntersection(FLT_MAX, STPoint3(FLT_MAX, FLT_MAX, FLT_MAX), STVector3(0.f, 0.f, 0.f))
+        : mu(_mu), epsilon(_epsilon)
 	{
 		this->name = "qjulia";
         //this->maxInt = 2;
@@ -80,10 +84,14 @@ public:
 	AABB* getAABB();*/
 
 private:
+    Intersection getLastIntersection();
+    void setLastIntersection(const Intersection& lastIntersection);
+
 	float4 mu;
 	float epsilon;
 
-    Intersection lastIntersection;
+    std::unordered_map<std::thread::id, Intersection> lastIntersections;
+    std::mutex lastIntersectionsLock;
 };
 
 #endif /* defined(__RayTracer__quaternionJuliaSet__) */
