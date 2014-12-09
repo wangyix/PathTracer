@@ -283,7 +283,7 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
 
             STColor3f C_0t = w_0t * Cs_0t;
 
-            if (S_i == 0.f && i > 3) {
+            if (S_i == 0.f && i > 4) {
                 //paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
                 //continue;
                 brightPixels[curr_y * width + curr_x] += (C_0t / (float)(sampleRate * sampleRate));
@@ -418,7 +418,20 @@ void Scene::Render() {
 
     std::vector<STColor3f> pixels(width * height, STColor3f(0.f));
     brightPixels.resize(width * height, STColor3f(0.f));
-    float N = (float)(/*width * height * */sampleRate * sampleRate);
+    
+
+    // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
+    // it should be proprotional to (sampleRate^2).
+    // For any pixel sensor, we're essentially taking (width*height)*sampleRate^2 estimates for its response value.
+    // (every pixel response is estimated using the sample paths in these (width*height)*sampleRate^2 estimates,
+    // but only a small subset of those paths will contribute to any particular pixel's response).  So, each pixel's
+    // response is the sum of the estimates divided by (width*height)*sampleRate^2 to get an avg.  However, as resolution
+    // increases, each pixel's sensor must become more sensitive since it's responding to incoming power from a smaller
+    // solid angle (since the pixel is smaller), so its sensitivity is proprotional to (width*height).  So our 
+    // multiplier should be proprotional to (width*height) / ((width*height)*sampleRate^2) = 1 / (sampleRate^2)
+
+    const float C_ST_MULTIPLIER = 1.f / (float)(sampleRate * sampleRate);
+
 
     int percent = 0, computed = 0;
 
@@ -558,7 +571,7 @@ void Scene::Render() {
                                 int x_w = (int)(u_w * width);
                                 int y_w = (int)(v_w * height);
 
-                                pixels[y_w * width + x_w] += (C_st / N);
+                                pixels[y_w * width + x_w] += (C_st * C_ST_MULTIPLIER);
 
                                 /*if (x_w == target_x && y_w == target_y) {
                                     paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
@@ -578,7 +591,7 @@ void Scene::Render() {
                 } // sample-rate loop
             } // sample-rate loop
 
-            pixels[y * width + x] += (C_sum_this_pixel / N);
+            pixels[y * width + x] += (C_sum_this_pixel * C_ST_MULTIPLIER);
 
             computed++;
             if (100 * computed / pixelsToRender > percent) {
