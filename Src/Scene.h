@@ -4,6 +4,7 @@
 #include "st.h"
 #include "RayTrace.h"
 #include "quaternionJuliaSet.h"
+#include "thread-pool.h"
 
 #include <iostream>
 #include <memory>
@@ -96,6 +97,11 @@ public:
     //virtual ~Scene();
 
     void Render();
+
+    void ProcessPixel(int x, int y);
+    void AddCstToPixel(int x, int y, const STColor3f& C_st);
+    void AddCstToBrightPixel(int x, int y, const STColor3f& C_st);
+    
     //STColor3f TraceRay(const Ray& ray, int bounce = -1);
     bool Intersect(const Ray& ray, SceneObject const** object, Intersection* inter);
     bool DoesIntersect(const Ray& ray);
@@ -109,6 +115,7 @@ public:
     void rtClear();
     void rtCamera(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect);
     void rtOutput(int imgWidth, int imgHeight, const std::string& outputFilename);
+    void rtNumRenderThreads(int n);
     //void rtBounceDepth(int depth);
     void rtShadowBias(float bias);
     void rtSampleRate(int sample_rate);
@@ -181,6 +188,15 @@ protected:
 
     int blocks_x, blocks_y;
     int block_i, block_j;
+
+    std::vector<STColor3f> pixels;
+    std::vector<std::mutex> pixelLocks;
+
+    std::vector<STColor3f> brightPixels;
+    std::vector<std::mutex> brightPixelLocks;
+
+    ThreadPool renderThreadPool;
+    int renderThreadsDesired;
 
     ////texture
     //STColor3f textureColor(const int texture_index, const STPoint2& uv);

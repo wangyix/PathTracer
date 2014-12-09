@@ -88,7 +88,7 @@ int main(int argc, const char * argv[])
     end=clock();
     cout << "Render time: "<<(double)(end-start) / ((double)CLOCKS_PER_SEC)<<" s"<<std::endl;
 
-    //system("PAUSE");
+    system("PAUSE");
 
     return 0;
 }

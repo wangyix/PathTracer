@@ -8,12 +8,13 @@
 #include <memory>
 #include <limits>
 
-
+#define DEFAULT_NUM_RENDER_THREADS 4
+#define NUM_PIXEL_LOCKS 101
 
 Scene::Scene()
     : currBsdf(new Lambertian()), currEmittedPower(0.f),
     /*currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f),*/ camera(), /*accel_structure(NONE), uniform_grid(NULL),*/
-    blocks_x(1), blocks_y(1), block_i(0), block_j(0)
+    pixelLocks(NUM_PIXEL_LOCKS), brightPixelLocks(NUM_PIXEL_LOCKS), renderThreadPool(), renderThreadsDesired(DEFAULT_NUM_RENDER_THREADS)
 {
     rtSampleRate(1);
 }
@@ -167,7 +168,6 @@ int curr_x, curr_y, curr_a, curr_b;
 std::vector<Path> paths;
 
 
-std::vector<STColor3f> brightPixels;
 
 void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
 
@@ -286,7 +286,9 @@ void Scene::generateEyeSubpath(float u, float v, std::vector<Vertex>& vertices, 
             if (S_i == 0.f && i > 4) {
                 //paths.emplace_back(curr_x, curr_y, curr_a, curr_b, 0, i + 1, std::vector<Vertex>(), vertices, w_0t, Cs_0t, (w_0t * Cs_0t));
                 //continue;
-                brightPixels[curr_y * width + curr_x] += (C_0t / (float)(sampleRate * sampleRate));
+                
+                //brightPixels[curr_y * width + curr_x] += (C_0t / (float)(sampleRate * sampleRate));
+                AddCstToBrightPixel(curr_x, curr_y, C_0t);
                 continue;
             }
 
@@ -386,6 +388,188 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     }
 }
 
+void Scene::AddCstToPixel(int x, int y, const STColor3f& C_st) {
+    int pixelIndex = y * width + x;
+    std::mutex& pixelLock = pixelLocks[pixelIndex % NUM_PIXEL_LOCKS];
+    pixelLock.lock();
+    pixels[pixelIndex] += C_st;
+    pixelLock.unlock();
+}
+
+void Scene::AddCstToBrightPixel(int x, int y, const STColor3f& C_st) {
+    int pixelIndex = y * width + x;
+    std::mutex& pixelLock = brightPixelLocks[pixelIndex % NUM_PIXEL_LOCKS];
+    pixelLock.lock();
+    brightPixels[pixelIndex] += C_st;
+    pixelLock.unlock();
+}
+
+
+void Scene::ProcessPixel(int x, int y) {
+    curr_x = x;
+    curr_y = y;
+    // work on pixel (x, y)
+    STColor3f C_sum_this_pixel(0.f);
+
+    // sampleRate^2 stratified estimates (sample-path groups) per pixel
+    for (int a = 0; a < sampleRate; a++) {
+        for (int b = 0; b < sampleRate; b++) {
+            curr_a = a;
+            curr_b = b;
+
+            // offset (x,y) by between [a/sampleRate, b/sampleRate] and [(a+1)/sampleRate, (b+1)/sampleRate)]
+            // those are the bounds for the (a,b) subpixel within pixel (x,y)
+            float xs = (float)x + (((float)a + randFloat()) / sampleRate);
+            float ys = (float)y + (((float)b + randFloat()) / sampleRate);
+
+            // convert to screen coords (u,v)
+            float u = xs / width;
+            float v = ys / height;
+
+            // generate eye subpath thru (u,v)
+            std::vector<Vertex> vertices_E;
+            STColor3f C0t_sum;
+            generateEyeSubpath(u, v, vertices_E, &C0t_sum);
+
+            // generate light subpath
+            std::vector<Vertex> vertices_L;
+            generateLightSubpath(vertices_L);
+
+            // accumulate C0t contributions
+            C_sum_this_pixel += C0t_sum;
+
+            // calculate contributions for all samples created by linking
+            // prefixes of eye and light subpaths
+
+            for (size_t t = 1; t <= vertices_E.size(); t++) {
+                for (size_t s = 1; s <= vertices_L.size(); s++) {
+
+                    const Vertex& gap_v_E = vertices_E[t - 1];
+                    const Vertex& gap_v_L = vertices_L[s - 1];
+
+                    // if either gap vertex is specular, this path will have 0 contribution
+                    if (gap_v_E.isSpecular() || gap_v_L.isSpecular()) {
+                        continue;
+                    }
+
+                    // calculate visibility between gap vertices
+                    STPoint3 gap_point_E = gap_v_E.getIntersection().point;
+                    STPoint3 gap_point_L = gap_v_L.getIntersection().point;
+                    STVector3 gap_EL = gap_point_L - gap_point_E;
+                    STVector3 gap_EL_w = gap_EL;
+                    gap_EL_w.Normalize();
+
+                    STVector3 gap_normal_E = gap_v_E.getIntersection().normal;
+                    STVector3 gap_normal_L = gap_v_L.getIntersection().normal;
+                    float gap_cosw_E = STVector3::Dot(gap_EL_w, gap_normal_E);
+                    float gap_cosw_L = STVector3::Dot(-gap_EL_w, gap_normal_L);
+
+                    // check if gap vector goes out the backface of either vertex
+                    if (gap_cosw_E <= 0.f || gap_cosw_L <= 0.f) {
+                        continue;
+                    }
+
+                    // check if the gap vector intersects anything
+                    Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias, gap_EL.Length() - shadowBias);
+                    /*const SceneObject* gap_inter_obj = NULL;
+                    Intersection gap_inter;
+                    if (Intersect(gap_ray_EL, &gap_inter_obj, &gap_inter)) {
+                    continue;
+                    }*/
+                    if (DoesIntersect(gap_ray_EL)) {
+                        continue;
+                    }
+
+                    // calculate c_st
+                    float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.LengthSq();
+                    STColor3f f_gap_E = gap_v_E.f(gap_v_E.w_to_prev, gap_EL_w);
+                    STColor3f f_gap_L = gap_v_L.f(gap_v_L.w_to_prev, -gap_EL_w);
+                    STColor3f c_st = f_gap_E * G_gap * f_gap_L;
+
+                    // calculate C*st = aEs * c_st * aL (unweighted contribution)
+                    STColor3f Cs_st = gap_v_E.alpha * c_st * gap_v_L.alpha;
+
+
+                    // calculate S at gap vertex E
+                    float S_E;
+                    float Pa_gap_LtoE = qPsig_a_to_b(gap_v_L, gap_v_E, -gap_EL_w, gap_v_L.w_to_prev)
+                        * G_gap;
+                    if (t == 1) {
+                        S_E = S_i_at(vertices_E, 0, Pa_gap_LtoE);
+                    } else {
+                        float Pa_E_1E = qPsig_a_to_b(vertices_E[t - 1], vertices_E[t - 2],
+                            vertices_E[t - 1].w_to_prev, gap_EL_w)
+                            * vertices_E[t - 1].G_prev;
+
+                        float S_1E = S_i_at(vertices_E, t - 2, Pa_E_1E);
+                        S_E = S_i_at(vertices_E, t - 1, Pa_gap_LtoE, S_1E);
+                    }
+
+                    // calculate S at gap vertex L
+                    float S_L;
+                    float Pa_gap_EtoL = qPsig_a_to_b(gap_v_E, gap_v_L, gap_EL_w, gap_v_E.w_to_prev)
+                        * G_gap;
+                    if (s == 1) {
+                        S_L = S_i_at(vertices_L, 0, Pa_gap_EtoL);
+                    } else {
+                        float Pa_L_1L = qPsig_a_to_b(vertices_L[s - 1], vertices_L[s - 2],
+                            vertices_L[s - 1].w_to_prev, -gap_EL_w)
+                            * vertices_L[s - 1].G_prev;
+
+
+                        float S_1L = S_i_at(vertices_L, s - 2, Pa_L_1L);
+                        S_L = S_i_at(vertices_L, s - 1, Pa_gap_EtoL, S_1L);
+                    }
+
+                    // calculate w_st
+                    float w_st = 1.f / (S_L + 1.f + S_E);
+
+                    // calculate weighted contribution Cst
+                    STColor3f C_st = w_st * Cs_st;
+
+                    // accumulate this sample
+                    if (t == 1) {
+                        // find where z0->y(s-1) intersects img plane
+                        // paths that don't go thru img plane don't contribute
+                        float u_w, v_w;
+                        camera.getUvOfDirection(gap_EL_w, &u_w, &v_w);
+                        if (u_w < 0.f || u_w >= 1.f || v_w < 0.f || v_w >= 1.f) {
+                            continue;
+                        }
+                        // convert to x,y pixel coordinates, accumulate contribution
+                        int x_w = (int)(u_w * width);
+                        int y_w = (int)(v_w * height);
+
+                        //pixels[y_w * width + x_w] += C_st;
+                        AddCstToPixel(x_w, y_w, C_st);
+
+                        /*if (x_w == target_x && y_w == target_y) {
+                        paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
+                        }*/
+
+                    } else {
+                        C_sum_this_pixel += C_st;
+
+                        /*if (curr_x == target_x && curr_y == target_y) {
+                        paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
+                        }*/
+                    }
+
+                } // s loop
+            } // t loop
+
+        } // sample-rate loop
+    } // sample-rate loop
+
+    //pixels[y * width + x] += C_sum_this_pixel;
+    AddCstToPixel(x, y, C_sum_this_pixel);
+}
+
+
+
+
+
+
 void calculateFromTo(int length, int blocks, int block_i, int* from, int* to) {
     // remainder will be allocated to lower blocks, i.e. if width=100 and blocks_x=6, then
     // blocks will have width 17, 17, 17, 17, 16, 16
@@ -408,16 +592,12 @@ void Scene::Render() {
     calculateFromTo(width, blocks_x, block_i, &x_from, &x_to);
     calculateFromTo(height, blocks_y, block_j, &y_from, &y_to);
 
-    int pixelsToRender = (x_to - x_from) * (y_to - y_from);
-
-
+   
     lightDistribution.init(objects);
 
+    renderThreadPool.increaseNumThreads(renderThreadsDesired);
 
     std::cout << "------------------ray tracing started------------------" << std::endl;
-
-    std::vector<STColor3f> pixels(width * height, STColor3f(0.f));
-    brightPixels.resize(width * height, STColor3f(0.f));
     
 
     // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
@@ -433,181 +613,58 @@ void Scene::Render() {
     const float C_ST_MULTIPLIER = 1.f / (float)(sampleRate * sampleRate);
 
 
-    int percent = 0, computed = 0;
+    // schedule render-pixel tasks in 100 batches
+    int totalPixels = (x_to - x_from) * (y_to - y_from);
+    int pixelsRendered = 0;
+    int percent = 0;
 
-    for (int y = y_from; y < y_to; y++) {
-        for (int x = x_from; x < x_to; x++) {
-            curr_x = x;
-            curr_y = y;
-            // work on pixel (x, y)
-            STColor3f C_sum_this_pixel(0.f);
+    int x = x_from;
+    int y = y_from;
+    do {
+        percent++;
+        int pixelsRenderedAfterThisIteration = percent * totalPixels / 100;
+        int pixelsToRenderThisIteration = pixelsRenderedAfterThisIteration - pixelsRendered;
+        for (int i = 0; i < pixelsToRenderThisIteration; i++) {
 
-            // sampleRate^2 stratified estimates (sample-path groups) per pixel
-            for (int a = 0; a < sampleRate; a++) {
-                for (int b = 0; b < sampleRate; b++) {
-                    curr_a = a;
-                    curr_b = b;
-
-                    // offset (x,y) by between [a/sampleRate, b/sampleRate] and [(a+1)/sampleRate, (b+1)/sampleRate)]
-                    // those are the bounds for the (a,b) subpixel within pixel (x,y)
-                    float xs = (float)x + (((float)a + randFloat()) / sampleRate);
-                    float ys = (float)y + (((float)b + randFloat()) / sampleRate);
-
-                    // convert to screen coords (u,v)
-                    float u = xs / width;
-                    float v = ys / height;
-
-                    // generate eye subpath thru (u,v)
-                    std::vector<Vertex> vertices_E;
-                    STColor3f C0t_sum;
-                    generateEyeSubpath(u, v, vertices_E, &C0t_sum);
-
-                    // generate light subpath
-                    std::vector<Vertex> vertices_L;
-                    generateLightSubpath(vertices_L);
-
-                    // accumulate C0t contributions
-                    C_sum_this_pixel += C0t_sum;
-
-                    // calculate contributions for all samples created by linking
-                    // prefixes of eye and light subpaths
-
-                    for (size_t t = 1; t <= vertices_E.size(); t++) {
-                        for (size_t s = 1; s <= vertices_L.size(); s++) {
-
-                            const Vertex& gap_v_E = vertices_E[t - 1];
-                            const Vertex& gap_v_L = vertices_L[s - 1];
-
-                            // if either gap vertex is specular, this path will have 0 contribution
-                            if (gap_v_E.isSpecular() || gap_v_L.isSpecular()) {
-                                continue;
-                            }
-
-                            // calculate visibility between gap vertices
-                            STPoint3 gap_point_E = gap_v_E.getIntersection().point;
-                            STPoint3 gap_point_L = gap_v_L.getIntersection().point;
-                            STVector3 gap_EL = gap_point_L - gap_point_E;
-                            STVector3 gap_EL_w = gap_EL;
-                            gap_EL_w.Normalize();
-
-                            STVector3 gap_normal_E = gap_v_E.getIntersection().normal;
-                            STVector3 gap_normal_L = gap_v_L.getIntersection().normal;
-                            float gap_cosw_E = STVector3::Dot(gap_EL_w, gap_normal_E);
-                            float gap_cosw_L = STVector3::Dot(-gap_EL_w, gap_normal_L);
-
-                            // check if gap vector goes out the backface of either vertex
-                            if (gap_cosw_E <= 0.f || gap_cosw_L <= 0.f) {
-                                continue;
-                            }
-
-                            // check if the gap vector intersects anything
-                            Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias, gap_EL.Length() - shadowBias);
-                            /*const SceneObject* gap_inter_obj = NULL;
-                            Intersection gap_inter;
-                            if (Intersect(gap_ray_EL, &gap_inter_obj, &gap_inter)) {
-                                continue;
-                            }*/
-                            if (DoesIntersect(gap_ray_EL)) {
-                                continue;
-                            }
-
-                            // calculate c_st
-                            float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.LengthSq();
-                            STColor3f f_gap_E = gap_v_E.f(gap_v_E.w_to_prev, gap_EL_w);
-                            STColor3f f_gap_L = gap_v_L.f(gap_v_L.w_to_prev, -gap_EL_w);
-                            STColor3f c_st = f_gap_E * G_gap * f_gap_L;
-
-                            // calculate C*st = aEs * c_st * aL (unweighted contribution)
-                            STColor3f Cs_st = gap_v_E.alpha * c_st * gap_v_L.alpha;
-
-
-                            // calculate S at gap vertex E
-                            float S_E;
-                            float Pa_gap_LtoE = qPsig_a_to_b(gap_v_L, gap_v_E, -gap_EL_w, gap_v_L.w_to_prev)
-                                * G_gap;
-                            if (t == 1) {
-                                S_E = S_i_at(vertices_E, 0, Pa_gap_LtoE);
-                            } else {
-                                float Pa_E_1E = qPsig_a_to_b(vertices_E[t - 1], vertices_E[t - 2],
-                                    vertices_E[t - 1].w_to_prev, gap_EL_w)
-                                    * vertices_E[t - 1].G_prev;
-
-                                float S_1E = S_i_at(vertices_E, t - 2, Pa_E_1E);
-                                S_E = S_i_at(vertices_E, t - 1, Pa_gap_LtoE, S_1E);
-                            }
-
-                            // calculate S at gap vertex L
-                            float S_L;
-                            float Pa_gap_EtoL = qPsig_a_to_b(gap_v_E, gap_v_L, gap_EL_w, gap_v_E.w_to_prev)
-                                * G_gap;
-                            if (s == 1) {
-                                S_L = S_i_at(vertices_L, 0, Pa_gap_EtoL);
-                            } else {
-                                float Pa_L_1L = qPsig_a_to_b(vertices_L[s - 1], vertices_L[s - 2],
-                                    vertices_L[s - 1].w_to_prev, -gap_EL_w)
-                                    * vertices_L[s - 1].G_prev;
-
-
-                                float S_1L = S_i_at(vertices_L, s - 2, Pa_L_1L);
-                                S_L = S_i_at(vertices_L, s - 1, Pa_gap_EtoL, S_1L);
-                            }
-
-                            // calculate w_st
-                            float w_st = 1.f / (S_L + 1.f + S_E);
-
-                            // calculate weighted contribution Cst
-                            STColor3f C_st = w_st * Cs_st;
-
-                            // accumulate this sample
-                            if (t == 1) {
-                                // find where z0->y(s-1) intersects img plane
-                                // paths that don't go thru img plane don't contribute
-                                float u_w, v_w;
-                                camera.getUvOfDirection(gap_EL_w, &u_w, &v_w);
-                                if (u_w < 0.f || u_w >= 1.f || v_w < 0.f || v_w >= 1.f) {
-                                    continue;
-                                }
-                                // convert to x,y pixel coordinates, accumulate contribution
-                                int x_w = (int)(u_w * width);
-                                int y_w = (int)(v_w * height);
-
-                                pixels[y_w * width + x_w] += (C_st * C_ST_MULTIPLIER);
-
-                                /*if (x_w == target_x && y_w == target_y) {
-                                    paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
-                                }*/
-
-                            } else {
-                                C_sum_this_pixel += C_st;
-
-                                /*if (curr_x == target_x && curr_y == target_y) {
-                                    paths.emplace_back(curr_x, curr_y, curr_a, curr_b, s, t, vertices_L, vertices_E, w_st, Cs_st, C_st);
-                                }*/
-                            }
-
-                        } // s loop
-                    } // t loop
-
-                } // sample-rate loop
-            } // sample-rate loop
-
-            pixels[y * width + x] += (C_sum_this_pixel * C_ST_MULTIPLIER);
-
-            computed++;
-            if (100 * computed / pixelsToRender > percent) {
-                percent++;
-                std::cout << percent << "% ";
+            renderThreadPool.schedule(std::bind(&Scene::ProcessPixel, this, x, y));
+            
+            if (x == x_to - 1) {
+                x = x_from;
+                y++;
+            } else {
+                x++;
             }
-        } // y loop
-    } // x loop
+        }
+        renderThreadPool.wait();
 
-    STImage im(width, height, pixels);
+        pixelsRendered = pixelsRenderedAfterThisIteration;
+        std::cout << percent << "% ";
+    } while (percent < 100);
+
+
+
+    // scale pixels by C_ST_MULTIPLIER, map from radiance to color
+    const float LOG_SCALE = 1.f;
+    for (STColor3f& p : pixels) {
+        p *= C_ST_MULTIPLIER;
+        //p = LOG_SCALE * (p + 1.f).Log();
+    }
+    for (STColor3f& p : brightPixels) {
+        p *= C_ST_MULTIPLIER;
+        //p = LOG_SCALE * (p + 1.f).Log();
+    }
+
+    
+    std::cout << "------------------ray tracing finished------------------" << std::endl;
+
+
+    // determine the base output filename based on what block we rendered
     size_t dot_pos = imageFilename.find_last_of('.');
     std::string extension = imageFilename.substr(dot_pos);
     std::string filenameNoExtension = imageFilename.substr(0, dot_pos);
-    
     if (!(blocks_x == 1 && blocks_y == 1)) {
-        filenameNoExtension.append(std::to_string(blocks_x))
+        filenameNoExtension.append("_")
+            .append(std::to_string(blocks_x))
             .append("x")
             .append(std::to_string(blocks_y))
             .append("_")
@@ -615,25 +672,25 @@ void Scene::Render() {
             .append("_")
             .append(std::to_string(block_j));
     }
-    im.Save(filenameNoExtension + extension);
 
+    // write output image files
+    STImage im(width, height, pixels);
+    im.Save(filenameNoExtension + extension);
 
     STImage im_bright(width, height, brightPixels);
     im_bright.Save(filenameNoExtension + "_bright" + extension);
 
 
 
-    std::cout << "------------------ray tracing finished------------------" << std::endl;
-
+    // write stored paths to files (full and abridged printouts)
     if (!paths.empty()) {
         // sort paths by contribution
         std::sort(paths.begin(), paths.end(), [](const Path& a, const Path& b)->bool {
             return a.C_st.maxComponent() > b.C_st.maxComponent();
         });
 
-        std::string basename = "paths_" + std::to_string(block_i) + "_" + std::to_string(block_j);
-        std::ofstream ofs(basename + ".txt", std::ofstream::out);
-        std::ofstream ofs_ab(basename + "_abr.txt", std::ofstream::out);
+        std::ofstream ofs(filenameNoExtension + "_paths.txt", std::ofstream::out);
+        std::ofstream ofs_ab(filenameNoExtension + "_paths_abr.txt", std::ofstream::out);
         for (const Path& p : paths) {
             //p.writeContributionOnly(ofs_c);
             p.write(ofs);
@@ -885,6 +942,13 @@ void Scene::rtOutput(int imgWidth, int imgHeight, const std::string& outputFilen
     width = imgWidth;
     height = imgHeight;
     imageFilename = outputFilename;
+
+    pixels.resize(width * height, STColor3f(0.f));
+    brightPixels.resize(width * height, STColor3f(0.f));
+}
+
+void Scene::rtNumRenderThreads(int n) {
+    renderThreadsDesired = n;
 }
 
 /*void Scene::rtBounceDepth(int depth)
@@ -1241,6 +1305,10 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             std::string fname;
             ss >> w >> h >> fname;
             rtOutput(w, h, fname);
+        } else if (command == "Threads") {
+            int n;
+            ss >> n;
+            rtNumRenderThreads(n);
         } /*else if (command == "BounceDepth") {
             int depth;
             ss >> depth;
