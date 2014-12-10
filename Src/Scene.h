@@ -5,9 +5,11 @@
 #include "RayTrace.h"
 #include "quaternionJuliaSet.h"
 #include "thread-pool.h"
+#include "Threaded.h"
 
 #include <iostream>
 #include <memory>
+
 
 
 class LightDistribution {
@@ -190,13 +192,15 @@ protected:
     int block_i, block_j;
 
     std::vector<STColor3f> pixels;
-    std::vector<std::mutex> pixelLocks;
-
     std::vector<STColor3f> brightPixels;
+
+#if THREADED
+    std::vector<std::mutex> pixelLocks;
     std::vector<std::mutex> brightPixelLocks;
 
     ThreadPool renderThreadPool;
     int renderThreadsDesired;
+#endif
 
     ////texture
     //STColor3f textureColor(const int texture_index, const STPoint2& uv);

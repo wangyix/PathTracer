@@ -152,6 +152,7 @@ bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, f
 
 
 Intersection quaternionJuliaSet::getLastIntersection() {
+#if THREADED
     std::thread::id thread_id = std::this_thread::get_id();
     lastIntersectionsLock.lock();
     auto it = lastIntersections.find(thread_id);
@@ -163,13 +164,20 @@ Intersection quaternionJuliaSet::getLastIntersection() {
     lastIntersections.insert(std::unordered_map<std::thread::id, Intersection>::value_type(thread_id, inter));
     lastIntersectionsLock.unlock();
     return inter;
+#else
+    return lastIntersection;
+#endif
 }
 
 void quaternionJuliaSet::setLastIntersection(const Intersection& lastIntersection) {
+#if THREADED
     std::thread::id thread_id = std::this_thread::get_id();
     lastIntersectionsLock.lock();
     lastIntersections[thread_id] = lastIntersection;
     lastIntersectionsLock.unlock();
+#else
+    this->lastIntersection = lastIntersection;
+#endif
 }
 
 

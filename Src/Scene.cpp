@@ -13,8 +13,10 @@
 
 Scene::Scene()
     : currBsdf(new Lambertian()), currEmittedPower(0.f),
-    /*currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f),*/ camera(), /*accel_structure(NONE), uniform_grid(NULL),*/
-    pixelLocks(NUM_PIXEL_LOCKS), brightPixelLocks(NUM_PIXEL_LOCKS), renderThreadPool(), renderThreadsDesired(DEFAULT_NUM_RENDER_THREADS)
+    /*currMaterial(NULL), currTexIndex(-1), use_shadow(true), use_transparent_shadow(false), attenuation_coefficient(1.f),*/ camera() /*accel_structure(NONE), uniform_grid(NULL),*/
+#if THREADED
+    , pixelLocks(NUM_PIXEL_LOCKS), brightPixelLocks(NUM_PIXEL_LOCKS), renderThreadPool(), renderThreadsDesired(DEFAULT_NUM_RENDER_THREADS)
+#endif
 {
     rtSampleRate(1);
 }
@@ -386,18 +388,26 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
 void Scene::AddCstToPixel(int x, int y, const STColor3f& C_st) {
     int pixelIndex = y * width + x;
+#if THREADED
     std::mutex& pixelLock = pixelLocks[pixelIndex % NUM_PIXEL_LOCKS];
     pixelLock.lock();
     pixels[pixelIndex] += C_st;
     pixelLock.unlock();
+#else
+    pixels[pixelIndex] += C_st;
+#endif
 }
 
 void Scene::AddCstToBrightPixel(int x, int y, const STColor3f& C_st) {
     int pixelIndex = y * width + x;
+#if THREADED
     std::mutex& pixelLock = brightPixelLocks[pixelIndex % NUM_PIXEL_LOCKS];
     pixelLock.lock();
     brightPixels[pixelIndex] += C_st;
     pixelLock.unlock();
+#else
+    brightPixels[pixelIndex] += C_st;
+#endif
 }
 
 
@@ -588,23 +598,12 @@ void Scene::Render() {
    
     lightDistribution.init(objects);
 
-    renderThreadPool.increaseNumThreads(renderThreadsDesired);
-
     std::cout << "------------------ray tracing started------------------" << std::endl;
-    
 
-    // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
-    // it should be proprotional to (sampleRate^2).
-    // For any pixel sensor, we're essentially taking (width*height)*sampleRate^2 estimates for its response value.
-    // (every pixel response is estimated using the sample paths in these (width*height)*sampleRate^2 estimates,
-    // but only a small subset of those paths will contribute to any particular pixel's response).  So, each pixel's
-    // response is the sum of the estimates divided by (width*height)*sampleRate^2 to get an avg.  However, as resolution
-    // increases, each pixel's sensor must become more sensitive since it's responding to incoming power from a smaller
-    // solid angle (since the pixel is smaller), so its sensitivity is proprotional to (width*height).  So our 
-    // multiplier should be proprotional to (width*height) / ((width*height)*sampleRate^2) = 1 / (sampleRate^2)
 
-    const float C_ST_MULTIPLIER = 1.f / (float)(sampleRate * sampleRate);
+#if THREADED
 
+    renderThreadPool.increaseNumThreads(renderThreadsDesired);
 
     // schedule render-pixel tasks in 100 batches
     int totalPixels = (x_to - x_from) * (y_to - y_from);
@@ -634,6 +633,37 @@ void Scene::Render() {
         std::cout << percent << "% ";
     } while (percent < 100);
 
+#else
+
+    int totalPixels = (x_to - x_from) * (y_to - y_from);
+    int percent = 0, computed = 0;
+
+    for (int y = y_from; y < y_to; y++) {
+        for (int x = x_from; x < x_to; x++) {
+
+            ProcessPixel(x, y);
+
+            computed++;
+            if (100 * computed / totalPixels > percent) {
+                percent++;
+                std::cout << percent << "% ";
+            }
+        }
+    }
+
+#endif
+
+    // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
+    // it should be proprotional to (sampleRate^2).
+    // For any pixel sensor, we're essentially taking (width*height)*sampleRate^2 estimates for its response value.
+    // (every pixel response is estimated using the sample paths in these (width*height)*sampleRate^2 estimates,
+    // but only a small subset of those paths will contribute to any particular pixel's response).  So, each pixel's
+    // response is the sum of the estimates divided by (width*height)*sampleRate^2 to get an avg.  However, as resolution
+    // increases, each pixel's sensor must become more sensitive since it's responding to incoming power from a smaller
+    // solid angle (since the pixel is smaller), so its sensitivity is proprotional to (width*height).  So our 
+    // multiplier should be proprotional to (width*height) / ((width*height)*sampleRate^2) = 1 / (sampleRate^2)
+
+    const float C_ST_MULTIPLIER = 1.f / (float)(sampleRate * sampleRate);
 
 
     // scale pixels by C_ST_MULTIPLIER, map from radiance to color
@@ -941,7 +971,9 @@ void Scene::rtOutput(int imgWidth, int imgHeight, const std::string& outputFilen
 }
 
 void Scene::rtNumRenderThreads(int n) {
+#if THREADED
     renderThreadsDesired = n;
+#endif
 }
 
 /*void Scene::rtBounceDepth(int depth)
