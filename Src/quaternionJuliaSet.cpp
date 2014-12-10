@@ -223,7 +223,8 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
 bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
 
     Ray ray_adj(ray);
-    ray_adj.d.Normalize();
+    float ray_d_length = ray.d.Length();
+    ray_adj.d /= ray_d_length;  // ray_adj.d.Normalize()
 
     // check if the ray starts outside the bounding sphere.  If so, move its start
     // position to where it first intersects the bounding sphere
@@ -260,10 +261,13 @@ bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
     }
     STPoint3 point(hit.x, hit.y, hit.z);
 
-    // calculate t from the perspective of the original ray given to us
-    float t = STVector3::Dot(point - ray.e, ray.d) / ray.d.LengthSq();
+    // calculate t from the perspective of the original ray given to us.  Pad the t_min with
+    // some epsilons to prevent a ray starting on the julia set surface going outwards
+    // intersecting at the same spot due to the backwards ray-march
+    float ray_t_epsilon_pad = 2.5f * epsilon / ray_d_length;
+    float t = STVector3::Dot(point - ray.e, ray.d) / (ray_d_length * ray_d_length);//ray.d.LengthSq();
 
-    return ray.inRange(t);
+    return (t >= (ray.t_min + ray_t_epsilon_pad) && t <= ray.t_max);
 }
 
 
