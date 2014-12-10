@@ -14,7 +14,6 @@
 #include <mutex>
 
 #include "Shape.h"
-#include "Threaded.h"
 
 
 // begin from http://fastcpp.blogspot.com/p/common-datatypes.html
@@ -67,9 +66,6 @@ class quaternionJuliaSet : public Shape {
 public:
 	quaternionJuliaSet(float4 _mu, const float _epsilon)
         : mu(_mu), epsilon(_epsilon)
-#if !THREADED
-        , lastIntersection(FLT_MAX, STPoint3(), STVector3())
-#endif
 	{
 		this->name = "qjulia";
         //this->maxInt = 2;
@@ -88,18 +84,8 @@ public:
 	AABB* getAABB();*/
 
 private:
-    Intersection getLastIntersection();
-    void setLastIntersection(const Intersection& lastIntersection);
-
 	float4 mu;
 	float epsilon;
-
-#if THREADED
-    std::unordered_map<std::thread::id, Intersection> lastIntersections;
-    std::mutex lastIntersectionsLock;
-#else
-    Intersection lastIntersection;
-#endif
 };
 
 #endif /* defined(__RayTracer__quaternionJuliaSet__) */

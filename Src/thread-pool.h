@@ -79,7 +79,7 @@ private:
 
 
   void dispatcher();
-  void worker(int workerID);
+  void worker(size_t workerID);
 
   /**
   * ThreadPools are the type of thing that shouldn't be cloneable, since it's

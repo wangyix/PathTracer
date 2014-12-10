@@ -69,7 +69,7 @@ bool Triangle::getIntersect(const Ray& ray, Intersection* intersection) const {
     intersection->t = t;
     intersection->point = ray.at(t);
     intersection->normal = (1 - beta - gamma)*n1 + beta*n2 + gamma*n3;  // sceneObject will normalize this later
-    intersection->uv = STPoint2((1 - beta - gamma)*uv1.x + beta*uv2.x + gamma*uv3.x, (1 - beta - gamma)*uv1.y + beta*uv2.y + gamma*uv3.y);
+    //intersection->uv = STPoint2((1 - beta - gamma)*uv1.x + beta*uv2.x + gamma*uv3.x, (1 - beta - gamma)*uv1.y + beta*uv2.y + gamma*uv3.y);
     return true;
 }
 

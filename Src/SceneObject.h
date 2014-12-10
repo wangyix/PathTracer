@@ -44,6 +44,7 @@ public:
         emittedPower(emittedPower)
     {
         tInverse = transform.Inverse();
+        //tTranspose = transform.Transpose();
         tInverseTranspose = tInverse.Transpose();
         scale = transform.columnnMagnitude(0);  // assuming transform does not warp shape
         if (shape) name = shape->name;
@@ -70,6 +71,8 @@ public:
         return false;
     }
 
+    // only used in aabbtree, which is only used in TriangleMesh right now,
+    // so this should only get called on TriangleMeshTriangle instances
     virtual SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter) {
         if (getIntersect(ray, inter)) {
             return this;
@@ -92,7 +95,7 @@ public:
     bool emitsLight() const { return isLight; }
     const STColor3f& getEmittedPower() const { return emittedPower; }
     const Bsdf* getBsdf() const { return bsdf.get(); }
-
+    const Shape* getShape() const { return shape.get(); }
 
     virtual AABB getAabb() const { return AABB(); } // only overridden by TriangleMeshTriangle
 
@@ -101,7 +104,7 @@ protected:
     //AABB* aabb;
     //Material material;
 	//int texture_index;
-    STTransform4 transform, tInverse, tInverseTranspose;
+    STTransform4 transform, tInverse, tInverseTranspose; //tTranspose, 
     float scale;        // cached, stores the scaling factor in transform (it's assumed that transform does not warp shape)
     
     std::string name;
@@ -113,7 +116,10 @@ protected:
 private:
     SceneObject(const SceneObject& copy)    ////shallow copy
         : /*shape(copy.shape), aabb(copy.aabb), material(copy.material),*/
-        transform(copy.transform), tInverse(copy.tInverse), tInverseTranspose(copy.tInverseTranspose), name(copy.name)
+        transform(copy.transform), tInverse(copy.tInverse),
+        //tTranspose(copy.tTranspose),
+        tInverseTranspose(copy.tInverseTranspose),
+        name(copy.name)
     {}
 };
 

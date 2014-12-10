@@ -101,7 +101,7 @@ void ThreadPool::dispatcher() {
   }
 }
 
-void ThreadPool::worker(int workerID) {
+void ThreadPool::worker(size_t workerID) {
   while (true) {
     // wait to gain exclusive access to dispatcher's "office", wait for a task
     // to be provided, then leave the dispatcher's "office"

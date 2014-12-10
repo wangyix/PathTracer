@@ -55,6 +55,7 @@ public:
         return look;
     }
 
+    STVector3 getDirectionOfUv(float u, float v) const;
     void getUvOfDirection(const STVector3 w, float* u, float* v) const;
 
     void setSampleUV(float u, float v);

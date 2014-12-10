@@ -71,6 +71,11 @@ float Camera::getFocalRatio(const STPoint3 &f) {
     return STVector3::Dot(f - eye, lookAt - eye) / (lookAt - eye).LengthSq();
 }
 
+STVector3 Camera::getDirectionOfUv(float u, float v) const {
+    STVector3 w = pointOnPlane(u, v) - eye;
+    w.Normalize();
+    return w;
+}
 
 void Camera::getUvOfDirection(const STVector3 w, float* u, float* v) const {
     STVector3 w_v = worldToView * w;
@@ -130,10 +135,7 @@ STColor3f CameraBsdf::f(const STVector3& wo, const STVector3& wi) const {
 
 STColor3f CameraBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // we'll choose w so that it goes thru (u_sample,v_sample), as we were told
-    Ray w_ray;
-    camera.generateRay(w_ray, u_sample, v_sample);
-    w_ray.d.Normalize();
-    *wi = w_ray.d;
+    *wi = camera.getDirectionOfUv(u_sample, v_sample);
     *cos_wi = STVector3::Dot(*wi, camera.getLook());
 
     *pdf_sig = p_sig(wo, *wi);

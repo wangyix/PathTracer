@@ -11,13 +11,15 @@
 #include "STVector3.h"
 #include "Bsdf.h"
 
+
 struct Intersection {
     float t;
     STPoint3 point;
     STVector3 normal;
-	STPoint2 uv;
-    Intersection(const float _t, const STPoint3& _point, const STVector3& _normal,const STPoint2 _uv=STPoint2()): t(_t), point(_point), normal(_normal), uv(_uv) {}
-    Intersection(const Intersection& copy){t=copy.t;point=copy.point;normal=copy.normal;uv=copy.uv;}
+	//STPoint2 uv;
+    Intersection(const float _t, const STPoint3& _point, const STVector3& _normal)//, STPoint2 _uv=STPoint2())
+        : t(_t), point(_point), normal(_normal) {}
+    Intersection(const Intersection& copy){ t = copy.t; point = copy.point; normal = copy.normal; }//uv = copy.uv; }
     Intersection() {}
     ~Intersection(){}
 };
@@ -25,7 +27,7 @@ struct Intersection {
 struct Vertex {
 public:
 
-    Vertex(const Intersection& inter, const Bsdf* bsdf) :
+    Vertex(const Intersection& inter, const Bsdf* bsdf, const SceneObject* obj) :
         w_to_prev(0.f),
         alpha(-1.f),
         G_prev(-1.f),
@@ -35,6 +37,7 @@ public:
         prev_gap_nonspecular(-1.f),
         S(-1.f),
         bsdf(bsdf),
+        obj(obj),
         intersection(inter)
     {
         // if the specified bsdf is expecting its params wi, wo in normal-space, construct
@@ -100,6 +103,10 @@ public:
         return bsdf->getDescriptionString();
     }
 
+    const SceneObject* getObj() const {
+        return obj;
+    }
+
 public:
     STVector3 w_to_prev;       // direction to previous vertex
     STColor3f alpha;        // alpha_i1
@@ -114,7 +121,8 @@ public:
     float S;                // (pi/pi1)^2 + ... + (p0/pi1)^2, terms corresponding to specular-gap are 0
 
 private:
-    const Bsdf* bsdf;       // used for isSpecular, f( ), and Psig( )
+    const Bsdf* bsdf;       // used for isSpecular, f( ), and Psig( ). may be different from obj->bsdf (i.e. in case of lights, bsdf=y0Lambertian instead of obj->bsdf)
+    const SceneObject* obj;
     Intersection intersection;
     STTransform4 normalToWorld, worldToNormal;  // transforms between world-space and normal-space
 };

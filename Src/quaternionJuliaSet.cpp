@@ -7,6 +7,7 @@
 //
 
 #include "quaternionJuliaSet.h"
+#include "SceneObject.h"
 
 #define DELTA (1e-5f)
 #define ITERATIONS (12)
@@ -132,9 +133,6 @@ float4 IntersectQJulia(STVector3 rO, STVector3 rD, float4 c, float epsilon, floa
 
 
 
-
-
-
 bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, float* t1, float* t2) {
     STVector3 c_to_e(e.x, e.y, e.z);
     
@@ -151,49 +149,16 @@ bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, f
 }
 
 
-Intersection quaternionJuliaSet::getLastIntersection() {
-#if THREADED
-    std::thread::id thread_id = std::this_thread::get_id();
-    lastIntersectionsLock.lock();
-    auto it = lastIntersections.find(thread_id);
-    if (it != lastIntersections.end()) {
-        lastIntersectionsLock.unlock();
-        return it->second;
-    }
-    Intersection inter(FLT_MAX, STPoint3(), STVector3());
-    lastIntersections.insert(std::unordered_map<std::thread::id, Intersection>::value_type(thread_id, inter));
-    lastIntersectionsLock.unlock();
-    return inter;
-#else
-    return lastIntersection;
-#endif
-}
-
-void quaternionJuliaSet::setLastIntersection(const Intersection& lastIntersection) {
-#if THREADED
-    std::thread::id thread_id = std::this_thread::get_id();
-    lastIntersectionsLock.lock();
-    lastIntersections[thread_id] = lastIntersection;
-    lastIntersectionsLock.unlock();
-#else
-    this->lastIntersection = lastIntersection;
-#endif
-}
-
-
 bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection) const {
 
-    Intersection lastIntersection = const_cast<quaternionJuliaSet*>(this)->getLastIntersection();
-
-    // check if this ray is meant to be a ray starting from the intersection
-    // point of the last ray that we intersected with this julia set
+    // check if this ray starts on the surface of this julia set
     bool rayLeavingSurface = false;
     bool rayEnteringSurface = false;
-    const float same_point_threshold = 0.0001f;
-    if ((ray.e - lastIntersection.point).LengthSq() < same_point_threshold * same_point_threshold) {
+    //const float same_point_threshold = 0.0001f;
+    if (ray.e_obj && ray.e_obj->getShape() == this) {
         // compare ray direction to the normal of the last intersection point to see if this ray
         // is entering or leaving the surface
-        rayLeavingSurface = (STVector3::Dot(ray.d, lastIntersection.normal) >= 0.f);
+        rayLeavingSurface = (ray.d_dot_e_normal >= 0.f);
         rayEnteringSurface = !rayLeavingSurface;
     }
 
@@ -250,10 +215,7 @@ bool quaternionJuliaSet::getIntersect(const Ray& ray, Intersection* intersection
     intersection->t = t;
     intersection->point = point;
     intersection->normal = normal;
-    
-    // update last intersection to be the intersection we just found
-    const_cast<quaternionJuliaSet*>(this)->setLastIntersection(*intersection);
-
+   
     return true;
 }
 

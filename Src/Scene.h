@@ -32,7 +32,9 @@ public:
         }
     }
 
-    void sample_y0(STPoint3* y0, STVector3* y0_n, Bsdf const** bsdf, float* Pa_y0, STColor3f* Le0_y0) {
+    void sample_y0(STPoint3* y0, STVector3* y0_n, SceneObject const** obj,
+        Bsdf const** bsdf, float* Pa_y0, STColor3f* Le0_y0) {
+
         // choose a light source to sample based on max component of emitted power
         float r = randFloat() * powerTotal;
         size_t chosen_i = 0;
@@ -44,6 +46,7 @@ public:
         float Pa_y0_multiplier = lightPowers[chosen_i] / powerTotal;
 
         const SceneObject* light = lightObjects[chosen_i];
+        *obj = light;
 
         // choose point y0 uniformly on chosen light 
         *y0 = light->uniformSampleSurface(y0_n);

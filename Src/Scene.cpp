@@ -179,7 +179,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
     camera.sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
 
     // record z0
-    vertices.emplace_back(Intersection(0.f, z0, z0_n), z0_bsdf);
+    vertices.emplace_back(Intersection(0.f, z0, z0_n), z0_bsdf, (const SceneObject*)NULL);
     //vertices.back().w_to_prev                    // not defined for z0
     vertices.back().alpha = We0_z0 / Pa_z0;
     //vertices.back().G_prev                    // not defined for y0
@@ -189,7 +189,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
     vertices.back().prev_gap_nonspecular = 0.f; // z0 is nonspecular but z_(-1) is specular
     //vertices.back().S                         // calculated when next vertex and w after is chosen
 
-
+    
     int i = 0;      // v_i is last inserted vertex
     while (true) {
         // choose next direction w
@@ -219,7 +219,8 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
         }
 
         // find intersection between chosen direction and scene.
-        Ray w_ray(vertices[i].getIntersection().point, w, shadowBias);
+        const Intersection& rayFromInter = vertices[i].getIntersection();
+        Ray w_ray(rayFromInter.point, w, vertices[i].getObj(), rayFromInter.normal, shadowBias);
         const SceneObject* inter_obj = NULL;
         Intersection inter;
         if (!Intersect(w_ray, &inter_obj, &inter)) {
@@ -244,7 +245,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
         float cos_intersected_w = fabsf(STVector3::Dot(-w, inter.normal));
 
         // record new vertex
-        vertices.emplace_back(inter, inter_obj->getBsdf());
+        vertices.emplace_back(inter, inter_obj->getBsdf(), inter_obj);
         i++;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
@@ -304,13 +305,14 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
     STPoint3 y0;
     STVector3 y0_n;
+    const SceneObject* y0_obj;
     const Bsdf* y0_bsdf;
     float Pa_y0;
     STColor3f Le0_y0;
-    lightDistribution.sample_y0(&y0, &y0_n, &y0_bsdf, &Pa_y0, &Le0_y0);
+    lightDistribution.sample_y0(&y0, &y0_n, &y0_obj, &y0_bsdf, &Pa_y0, &Le0_y0);
 
     // record y0
-    vertices.emplace_back(Intersection(0.f, y0, y0_n), y0_bsdf);
+    vertices.emplace_back(Intersection(0.f, y0, y0_n), y0_bsdf, y0_obj);
     //vertices.back().w_to_prev                    // not defined for y0
     vertices.back().alpha = Le0_y0 / Pa_y0;
     //vertices.back().G_prev                    // not defined for y0
@@ -320,7 +322,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     vertices.back().prev_gap_nonspecular = 1.f; // y0, y_(-1) both have nonspecular P
     //vertices.back().S                         // calculated when next vertex and w after is chosen
 
-
+    
     int i = 0;      // v_i is last inserted vertex
     while (true) {
         // choose next direction w
@@ -350,7 +352,8 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         }
 
         // find intersection between chosen direction and scene.
-        Ray w_ray(vertices[i].getIntersection().point, w, shadowBias);
+        const Intersection& rayFromInter = vertices[i].getIntersection();
+        Ray w_ray(rayFromInter.point, w, vertices[i].getObj(), rayFromInter.normal, shadowBias);
         const SceneObject* inter_obj = NULL;
         Intersection inter;
         if (!Intersect(w_ray, &inter_obj, &inter)) {
@@ -375,7 +378,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         float cos_intersected_w = fabsf(STVector3::Dot(-w, inter.normal));
 
         // record new vertex
-        vertices.emplace_back(inter, inter_obj->getBsdf());
+        vertices.emplace_back(inter, inter_obj->getBsdf(), inter_obj);
         i++;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
@@ -473,7 +476,8 @@ void Scene::ProcessPixel(int x, int y) {
                     }
 
                     // check if the gap vector intersects anything
-                    Ray gap_ray_EL(gap_point_E, gap_EL_w, shadowBias, gap_EL.Length() - shadowBias);
+                    Ray gap_ray_EL(gap_point_E, gap_EL_w, gap_v_E.getObj(), gap_normal_E,
+                        shadowBias, gap_EL.Length() - shadowBias);
                     /*const SceneObject* gap_inter_obj = NULL;
                     Intersection gap_inter;
                     if (Intersect(gap_ray_EL, &gap_inter_obj, &gap_inter)) {
@@ -1223,6 +1227,7 @@ void Scene::buildUniformGrids()
 
     uniform_grid = new UniformGrid(objects, scene_bounding_box, scene_subdivision);
 }*/
+
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
