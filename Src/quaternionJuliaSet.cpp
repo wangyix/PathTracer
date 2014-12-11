@@ -12,7 +12,7 @@
 #define DELTA (1e-5f)
 #define ITERATIONS (12)
 #define ESCAPE_COEFFICIENT (2)
-#define RADIUS (2)
+#define RADIUS (1.5f)
 
 // begin code from "OpenCL RayTraced Quaternion Julia-Set Example" in Mac Developer Library
 float4 qmult( float4 q1, float4 q2 )

@@ -160,8 +160,11 @@ public:
     //void rtVolumetricTexture(VolumetricTexture* vt);
     //void rtBindTexture(const int tex_id){ currTexIndex = tex_id; }
     //void rtUnbindTexture(){ currTexIndex = -1; }
+    void rtSaveEveryNPercent(int n);
 
     void setRenderSubimage(int blocks_x, int blocks_y, int block_i, int block_j);
+
+    void savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename);
 
 protected:
     std::vector<STTransform4> matStack;
@@ -204,6 +207,8 @@ protected:
     ThreadPool renderThreadPool;
     int renderThreadsDesired;
 #endif
+
+    int saveEveryNPercent;
 
     ////texture
     //STColor3f textureColor(const int texture_index, const STPoint2& uv);

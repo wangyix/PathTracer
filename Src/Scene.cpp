@@ -17,6 +17,7 @@ Scene::Scene()
 #if THREADED
     , pixelLocks(NUM_PIXEL_LOCKS), brightPixelLocks(NUM_PIXEL_LOCKS), renderThreadPool(), renderThreadsDesired(DEFAULT_NUM_RENDER_THREADS)
 #endif
+    , saveEveryNPercent(100)
 {
     rtSampleRate(1);
 }
@@ -595,6 +596,25 @@ void calculateFromTo(int length, int blocks, int block_i, int* from, int* to) {
 
 void Scene::Render() {
 
+    // determine the output filenames
+    size_t dot_pos = imageFilename.find_last_of('.');
+    std::string extension = imageFilename.substr(dot_pos);
+    std::string filenameNoExtension = imageFilename.substr(0, dot_pos);
+    if (!(blocks_x == 1 && blocks_y == 1)) {
+        filenameNoExtension.append("_")
+            .append(std::to_string(blocks_x))
+            .append("x")
+            .append(std::to_string(blocks_y))
+            .append("_")
+            .append(std::to_string(block_i))
+            .append("_")
+            .append(std::to_string(block_j));
+    }
+    std::string pixelsImgFilename = filenameNoExtension + extension;
+    std::string brightPixelsImgFilename = filenameNoExtension + "_bright" + extension;
+
+
+
     int x_from, x_to, y_from, y_to;
     calculateFromTo(width, blocks_x, block_i, &x_from, &x_to);
     calculateFromTo(height, blocks_y, block_j, &y_from, &y_to);
@@ -635,6 +655,11 @@ void Scene::Render() {
 
         pixelsRendered = pixelsRenderedAfterThisIteration;
         std::cout << percent << "% ";
+
+        if (percent % saveEveryNPercent == 0) {
+            savePixels(pixelsImgFilename, brightPixelsImgFilename);
+        }
+
     } while (percent < 100);
 
 #else
@@ -651,61 +676,18 @@ void Scene::Render() {
             if (100 * computed / totalPixels > percent) {
                 percent++;
                 std::cout << percent << "% ";
+
+                if (percent % saveEveryNPercent == 0) {
+                    savePixels(pixelsImgFilename, brightPixelsImgFilename);
+                }
             }
         }
     }
 
 #endif
 
-    // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
-    // it should be proprotional to (sampleRate^2).
-    // For any pixel sensor, we're essentially taking (width*height)*sampleRate^2 estimates for its response value.
-    // (every pixel response is estimated using the sample paths in these (width*height)*sampleRate^2 estimates,
-    // but only a small subset of those paths will contribute to any particular pixel's response).  So, each pixel's
-    // response is the sum of the estimates divided by (width*height)*sampleRate^2 to get an avg.  However, as resolution
-    // increases, each pixel's sensor must become more sensitive since it's responding to incoming power from a smaller
-    // solid angle (since the pixel is smaller), so its sensitivity is proprotional to (width*height).  So our 
-    // multiplier should be proprotional to (width*height) / ((width*height)*sampleRate^2) = 1 / (sampleRate^2)
-
-    const float C_ST_MULTIPLIER = 1.f / (float)(sampleRate * sampleRate);
-
-
-    // scale pixels by C_ST_MULTIPLIER, map from radiance to color
-    const float LOG_SCALE = 1.f;
-    for (STColor3f& p : pixels) {
-        p *= C_ST_MULTIPLIER;
-        //p = LOG_SCALE * (p + 1.f).Log();
-    }
-    for (STColor3f& p : brightPixels) {
-        p *= C_ST_MULTIPLIER;
-        //p = LOG_SCALE * (p + 1.f).Log();
-    }
-
     
     std::cout << "------------------ray tracing finished------------------" << std::endl;
-
-
-    // determine the base output filename based on what block we rendered
-    size_t dot_pos = imageFilename.find_last_of('.');
-    std::string extension = imageFilename.substr(dot_pos);
-    std::string filenameNoExtension = imageFilename.substr(0, dot_pos);
-    if (!(blocks_x == 1 && blocks_y == 1)) {
-        filenameNoExtension.append("_")
-            .append(std::to_string(blocks_x))
-            .append("x")
-            .append(std::to_string(blocks_y))
-            .append("_")
-            .append(std::to_string(block_i))
-            .append("_")
-            .append(std::to_string(block_j));
-    }
-
-    // write output image files
-    STImage im(width, height, pixels);
-    im.Save(filenameNoExtension + extension);
-
-    STImage im_bright(width, height, brightPixels);
-    im_bright.Save(filenameNoExtension + "_bright" + extension);
 
 
 
@@ -725,6 +707,42 @@ void Scene::Render() {
         }
     }*/
 }
+
+void Scene::savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename) {
+
+    // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
+    // it should be proprotional to (sampleRate^2).
+    // For any pixel sensor, we're essentially taking (width*height)*sampleRate^2 estimates for its response value.
+    // (every pixel response is estimated using the sample paths in these (width*height)*sampleRate^2 estimates,
+    // but only a small subset of those paths will contribute to any particular pixel's response).  So, each pixel's
+    // response is the sum of the estimates divided by (width*height)*sampleRate^2 to get an avg.  However, as resolution
+    // increases, each pixel's sensor must become more sensitive since it's responding to incoming power from a smaller
+    // solid angle (since the pixel is smaller), so its sensitivity is proprotional to (width*height).  So our 
+    // multiplier should be proprotional to (width*height) / ((width*height)*sampleRate^2) = 1 / (sampleRate^2)
+
+    const float C_ST_MULTIPLIER = 1.f / (float)(sampleRate * sampleRate);
+
+    {
+        std::vector<STColor3f> pixelsCopy(pixels);
+        const float LOG_SCALE = 1.f;
+        for (STColor3f& p : pixelsCopy) {
+            p *= C_ST_MULTIPLIER;
+            //p = LOG_SCALE * (p + 1.f).Log();
+        }
+        STImage im(width, height, pixelsCopy);
+        im.Save(pixelsFilename);
+    }
+    {
+        std::vector<STColor3f> brightPixelsCopy(brightPixels);
+        for (STColor3f& p : brightPixelsCopy) {
+            p *= C_ST_MULTIPLIER;
+            //p = LOG_SCALE * (p + 1.f).Log();
+        }
+        STImage im_bright(width, height, brightPixelsCopy);
+        im_bright.Save(brightPixelsFilename);
+    }
+}
+
 
 /*STColor3f Scene::TraceRay(const Ray &ray, int bounce) {
     if (bounce == bounceDepth){
@@ -1074,6 +1092,10 @@ void Scene::rtQJulia(const float4& mu, const float epsilon)
     objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
+void Scene::rtSaveEveryNPercent(int n)  {
+    saveEveryNPercent = std::max(1, std::min(n, 100));
+}
+
 /*void Scene::rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name)
 {
     Material* participating_media_material = new Material();
@@ -1339,7 +1361,11 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             int n;
             ss >> n;
             rtNumRenderThreads(n);
-        } /*else if (command == "BounceDepth") {
+        } else if (command == "SaveEveryNPercent") {
+            int n;
+            ss >> n;
+            rtSaveEveryNPercent(n);
+        }/*else if (command == "BounceDepth") {
             int depth;
             ss >> depth;
             rtBounceDepth(depth);
