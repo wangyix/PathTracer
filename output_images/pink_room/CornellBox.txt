@@ -1,0 +1,123 @@
+Camera   0 0 20   0 1 0   0 -7 0  36.5   1.7777778
+Output    1920  1080    ./CornellBox.png
+Threads 4
+ShadowBias 0.001
+SampleRate 1
+
+# upper light --------------------------------------------------------
+Material 5000 5000 5000  L 0 0 0
+Sphere -9.6 4.9 -9.6   0.1
+
+# lower light ---------------------------------------------------------
+Material 4500 4500 4500 L 0 0 0
+Sphere -0.3 -7 -7  0.4
+
+
+
+## The Room ##
+
+Material 0 0 0  L 0.7 0.7 0.7
+
+# Floor
+Triangle   -12.5 -10 21   12.5 -10 -23   -12.5 -10 -23
+Triangle   12.5 -10 21   12.5 -10 -23   -12.5 -10 21
+
+# Ceiling
+Triangle   -12.5 10 21   -12.5 10 -23   12.5 10 -23
+Triangle   12.5 10 21   -12.5 10 21   12.5 10 -23
+
+# Back wall
+Material   0 0 0  L .7 .7 .7
+Triangle   -12.5 -10 -23   12.5 10 -23   -12.5 10 -23
+Triangle   12.5 -10 -23   12.5 10 -23   -12.5 -10 -23
+
+# Left wall
+Material   0 0 0  L 0.7512.571 0.59951 0.583824
+Triangle   -12.5 10 21   -12.5 -10 -23   -12.5 10 -23
+Triangle   -12.5 -10 21   -12.5 -10 -23   -12.5 10 21
+
+# Right wall
+Material   0 0 0  L  0.7512.571 0.59951 0.583824
+Triangle   12.5 -10 21   12.5 10 -23   12.5 -10 -23
+Triangle   12.5 10 21   12.5 10 -23   12.5 -10 21
+
+# Wall behind camera
+Material   0 0 0  L 0.7 0.7 0.7
+Triangle   -12.5 -10 21   12.5 10 21   -12.5 10 21
+Triangle   12.5 -10 21   12.5 10 21   -12.5 -10 21
+
+
+## Stuff in the box ##
+
+
+# gold ====================================================================
+
+PushMatrix
+
+Material   0 0 0  SC  1.000 0.766 0.336   0.177 0.177 0.177   3.638 3.638 3.638
+Translate 5.75 -6.5 -2
+Rotate 0 30 0
+Scale 2.5 2.5 2.5
+QJulia  -0.2 -0.8 0 0  0.003
+
+PopMatrix
+
+
+PushMatrix
+
+Material   0 0 0  SD  0.9 0.9 0.9  0.9 0.9 0.9  1  1.3
+Translate 5.75 -6.5 -2
+Scale 4 4 4
+TriangleMesh dodecahedron.obj 1 0
+
+PopMatrix
+
+
+
+# d and d dice ====================================================================
+
+PushMatrix
+
+Material   0 0 0  SC  0.662157 0.877843 1  0.177 0.177 0.177   3.638 3.638 3.638
+Translate -3 -8.5 4
+Rotate 0 0 0
+Scale 2 2 2
+TriangleMesh DandDdice.obj 1 0
+
+PopMatrix
+
+
+
+
+# julia set alone ====================================================================
+
+PushMatrix
+Material   0 0 0  SD  0.7778 0.6667 1   0.7778 0.6667 1   1  1.3
+Translate 2 -8.5 3
+Rotate 35 142 20
+Scale 2 2 2
+QJulia -0.2 0.6 0.2 0.2  0.003
+
+PopMatrix
+
+
+# green ====================================================================
+
+Material   0 0 0  SD  0.56 0.8 0.56  0.7 1 0.7  1  1.3
+PushMatrix
+Translate -6 -7 -4
+Rotate 0 128 0
+Scale 2.31 2.31 2.31
+QJulia  0.45 0.24 0.52 0.39  0.003
+
+PopMatrix
+
+
+Material   0 0 0  SD  0.9 0.9 0.9  0.9 0.9 0.9  1  1.3
+PushMatrix
+Translate -6 -7 -4
+Rotate 0 -50 0
+Scale 3 3 3
+Box -1 -1 -1  1 -1 -1  -1 1 -1  -1 -1 1 
+
+PopMatrix

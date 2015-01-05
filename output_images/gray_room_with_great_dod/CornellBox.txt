@@ -1,0 +1,160 @@
+Camera   0 3 24   0 1 0   0 -7 4  36.5   1.7777778
+Output 1920 1080    ./CornellBox.png
+#Output   864   486   ./CornellBox.png
+#Output   640   360   ./CornellBox.png
+Threads 4
+ShadowBias 0.001
+SampleRate 32
+SaveEveryNPercent 1
+
+# light
+Material 3000 3000 3000 L 0 0 0
+Sphere -12 4.9 -9.6   0.2
+
+Material 3500 3500 3500 L 0 0 0
+Sphere 0 -7 -2.6    0.2
+
+## The Room ##
+
+Material   0 0 0  L 0.711765 0.7392456 0.768628
+
+# back wall
+Triangle   -12.5 -10 -12.6   12.5 10 -12.6   -12.5 10 -12.6
+Triangle   12.5 -10 -12.6   12.5 10 -12.6   -12.5 -10 -12.6
+
+# Red wall
+Triangle   -12.5 10 24.5   -12.5 -10 -12.6   -12.5 10 -12.6
+Triangle   -12.5 -10 24.5   -12.5 -10 -12.6   -12.5 10 24.5
+
+# Blue wall
+Triangle   12.5 -10 24.5   12.5 10 -12.6   12.5 -10 -12.6
+Triangle   12.5 10 24.5   12.5 10 -12.6   12.5 -10 24.5
+
+# wall behind camera
+Triangle   -12.5 -10 24.5   12.5 10 24.5   -12.5 10 24.5
+Triangle   12.5 -10 24.5   12.5 10 24.5   -12.5 -10 24.5
+
+Material   0 0 0  L 0.7 0.7 0.7
+
+# Floor
+Triangle   -12.5 -10 24.5   12.5 -10 -12.6   -12.5 -10 -12.6
+Triangle   12.5 -10 24.5   12.5 -10 -12.6   -12.5 -10 24.5
+
+# Ceiling
+Triangle   -12.5 10 24.5   -12.5 10 -12.6  12.5 10 -12.6
+Triangle   12.5 10 24.5   -12.5 10 24.5   12.5 10 -12.6
+
+
+
+
+## Stuff in the box ##
+
+
+# green ====================================================================
+PushMatrix
+Translate -5.4 -7.3 -3
+
+# julia set --------------------------------------------------------
+Material   0 0 0  SD  0.56 0.8 0.56  0.7 1 0.7  1  1.3
+PushMatrix
+Rotate 0 128 0
+Scale 2.3 2.3 2.3
+QJulia  0.45 0.24 0.52 0.39  0.003
+PopMatrix
+
+# box --------------------------------------------------------
+Material   0 0 0  SD  0.9 0.9 0.9  0.9 0.9 0.9  1  1.3
+PushMatrix
+Rotate 0 -50 0
+Scale 3 3 3
+Box -1 -1 -1  1 -1 -1  -1 1 -1  -1 -1 1 
+PopMatrix
+
+PopMatrix
+
+
+
+# gold ====================================================================
+PushMatrix
+Translate 5 -7 -1
+
+# julia set --------------------------------------------------------
+Material   0 0 0  SC  1.000 0.766 0.336   0.177 0.177 0.177   3.638 3.638 3.638
+PushMatrix
+Rotate 0 25 0
+Scale 2.5 2.5 2.5
+QJulia  -0.2 -0.8 0 0  0.003
+PopMatrix
+
+# dodecahedron --------------------------------------------------------
+Material   0 0 0  SD  0.9 0.9 0.9  0.9 0.9 0.9  1  1.3
+PushMatrix
+Rotate 0 30 0
+Rotate 65 0 0
+Scale 4 4 4
+TriangleMesh dodecahedron.obj 1 0
+PopMatrix
+
+PopMatrix
+
+
+
+# d and d dice ====================================================================
+PushMatrix
+Translate 5 -8.25 7
+
+Material   0 0 0  SC  0.662157 0.877843 1  0.177 0.177 0.177   3.638 3.638 3.638
+PushMatrix
+Rotate 0 0 0
+Scale 2.25 2.25 2.25
+TriangleMesh DandDdice.obj 1 0
+PopMatrix
+
+PopMatrix
+
+
+# purple jila set ====================================================================
+PushMatrix
+Translate -8.25 -8.5 3
+
+PushMatrix
+Material   0 0 0  SD  0.7778 0.6667 1   0.8 0.7 1.0   1  1.3
+Rotate 35 142 20
+Scale 2.5 2.5 2.5
+QJulia -0.2 0.6 0.2 0.2  0.003
+PopMatrix
+
+PopMatrix
+
+
+# ruby something ====================================================================
+PushMatrix
+Translate -1.5 -8 6
+
+PushMatrix
+Material   0 0 0  SD  0.811765 0.4 0.488235  0.811765 0.5 0.588235  1  1.3
+
+Rotate 0 63 0
+Scale 0.85 0.85 0.85
+TriangleMesh great_dod.obj 1 0
+
+
+
+#Scale 2 2 2
+#QJulia 0.40 0.1 0.05 0.29   0.003
+
+#Scale 0.2 0.2 0.2
+#TriangleMesh icosa_hollow.obj 1 0
+
+#Scale 0.2 0.2 0.2
+#TriangleMesh great_stellated_dodecahedron.obj 1 0
+
+#scale 0.5 0.5 0.5
+#TriangleMesh hart-stellated-icos.obj 1 0
+
+#Scale 0.5 0.5 0.5
+#TriangleMesh MB-harlequin.obj 1 0
+
+PopMatrix
+
+PopMatrix
