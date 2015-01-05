@@ -1,15 +1,29 @@
 Bidirectional path tracer implementation based on:
 "Robust Monte Carlo Methods for Light Transport Simulation".  Eric Veach, 1997
 
+Output images and their respective scene files can be found in the output_images
+directory.  A video of quaternion julia sets made from rendered images can be
+viewed here:
+http://vimeo.com/115604738
+
+
 The power heuristic with beta=2 was used for computing the weights of the path
 contributions.  Importance sampling was used for selecting reflected/refracted
 ray directions during subpath construction.  Three types of BSDFs were implemented:
 Lambertian, Fresnel conductor, and Fresnel dielectric (the implmementation of the
 latter two were based on those found in PBRT).
 
+Also, quaternion julia sets were added as a shape that can be rendered.  The method
+we used for finding ray intersections with Julia sets is the one described in the
+1989 paper “Ray Tracing Deterministic 3-D Fractals” by Hart, et. al, with some extra
+modifications to handle reflected and refracted rays.
+
 To reduce fireflies, certain types of paths had their contributions put in a
 separate image instead of the main output image (paths of type s=0, t>2,
 and w_st=1).  This seperate image has suffix "_bright" appended to the filename.
+
+
+
 
 Args:
 Raytracer.exe (scenefile.txt)?  (x y i j)?
