@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0CBD59F5-B525-49FC-81CD-828450A6F66B}</ProjectGuid>
+    <RootNamespace>raytracer</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\Bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IntDir>..\Temp\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\Bin\</OutDir>
+    <IntDir>..\Temp\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(OutDir)RayTracer.exe</OutputFile>
+      <AdditionalLibraryDirectories>../../libst/lib/$(Configuration);../../libst/ext/vc2008/lib/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)RayTracer.exe</OutputFile>
+      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../libst/lib/$(Configuration);../../libst/ext/vc2008/lib/$(Configuration)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Src\AABB.cpp" />
+    <ClCompile Include="..\Src\AABBTree.cpp" />
+    <ClCompile Include="..\Src\Bsdf.cpp" />
+    <ClCompile Include="..\Src\Camera.cpp" />
+    <ClCompile Include="..\Src\Cylinder.cpp" />
+    <ClCompile Include="..\Src\ExampleScene.cpp" />
+    <ClCompile Include="..\Src\main.cpp" />
+    <ClCompile Include="..\Src\Material.cpp" />
+    <ClCompile Include="..\Src\quaternionJuliaSet.cpp" />
+    <ClCompile Include="..\Src\Scene.cpp" />
+    <ClCompile Include="..\Src\semaphore.cc" />
+    <ClCompile Include="..\Src\Sphere.cpp" />
+    <ClCompile Include="..\Src\thread-pool.cc" />
+    <ClCompile Include="..\Src\Triangle.cpp" />
+    <ClCompile Include="..\Src\TriangleMesh.cpp" />
+    <ClCompile Include="..\Src\VolumetricTexture.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Src\AABB.h" />
+    <ClInclude Include="..\Src\AABBTree.h" />
+    <ClInclude Include="..\Src\AmbientLight.h" />
+    <ClInclude Include="..\Src\AreaLight.h" />
+    <ClInclude Include="..\Src\Box.h" />
+    <ClInclude Include="..\Src\Bsdf.h" />
+    <ClInclude Include="..\Src\Camera.h" />
+    <ClInclude Include="..\Src\CompoundShape.h" />
+    <ClInclude Include="..\Src\Cylinder.h" />
+    <ClInclude Include="..\Src\DirectionalLight.h" />
+    <ClInclude Include="..\Src\ExampleScene.h" />
+    <ClInclude Include="..\Src\ImagePlane.h" />
+    <ClInclude Include="..\Src\Intersection.h" />
+    <ClInclude Include="..\Src\Jitter.h" />
+    <ClInclude Include="..\Src\Light.h" />
+    <ClInclude Include="..\Src\Material.h" />
+    <ClInclude Include="..\Src\ObjectGroup.h" />
+    <ClInclude Include="..\Src\PointLight.h" />
+    <ClInclude Include="..\Src\quaternionJuliaSet.h" />
+    <ClInclude Include="..\Src\Ray.h" />
+    <ClInclude Include="..\Src\RayTrace.h" />
+    <ClInclude Include="..\Src\Scene.h" />
+    <ClInclude Include="..\Src\SceneObject.h" />
+    <ClInclude Include="..\Src\semaphore.h" />
+    <ClInclude Include="..\Src\Shape.h" />
+    <ClInclude Include="..\Src\Sphere.h" />
+    <ClInclude Include="..\Src\thread-pool.h" />
+    <ClInclude Include="..\Src\Threaded.h" />
+    <ClInclude Include="..\Src\Triangle.h" />
+    <ClInclude Include="..\Src\TriangleMesh.h" />
+    <ClInclude Include="..\Src\UniformGrid.h" />
+    <ClInclude Include="..\Src\VolumetricTexture.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
