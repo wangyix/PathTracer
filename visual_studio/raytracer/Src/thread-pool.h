@@ -42,6 +42,12 @@ public:
   void wait();
 
   /**
+  * Blocks and waits until the number of unfinished thunks is equal or
+  * below n.
+  */
+  void waitUntilNumUnfinishedTasks(int n);
+
+  /**
   * Increases the number of threads in the pool to specified
   * number.  Number of threads cannot be decreased at the moment.
   */
@@ -53,6 +59,8 @@ public:
   * down all resources associated with the ThreadPool.
   */
   ~ThreadPool();
+
+  int getNumThreads() const { return numThreads; }
 
 private:
   size_t numThreads;

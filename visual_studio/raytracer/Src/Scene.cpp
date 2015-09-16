@@ -642,16 +642,24 @@ void Scene::Render() {
         percent++;
         int pixelsRenderedAfterThisIteration = percent * totalPixels / 100;
         int pixelsToRenderThisIteration = pixelsRenderedAfterThisIteration - pixelsRendered;
-        for (int i = 0; i < pixelsToRenderThisIteration; i++) {
+        
 
-            renderThreadPool.schedule(std::bind(&Scene::ProcessPixel, this, x, y));
-            
-            if (x == x_to - 1) {
-                x = x_from;
-                y++;
-            } else {
-                x++;
+        const int maxThunksToPush = 100;
+        for (int i = 0; i < pixelsToRenderThisIteration; i += maxThunksToPush) {
+
+            int thunksToPush = std::min(maxThunksToPush, pixelsToRenderThisIteration - i);
+            for (int j = 0; j < thunksToPush; j++) {
+
+                renderThreadPool.schedule(std::bind(&Scene::ProcessPixel, this, x, y));
+
+                if (x == x_to - 1) {
+                    x = x_from;
+                    y++;
+                } else {
+                    x++;
+                }
             }
+            renderThreadPool.waitUntilNumUnfinishedTasks(renderThreadPool.getNumThreads());
         }
         renderThreadPool.wait();
 
