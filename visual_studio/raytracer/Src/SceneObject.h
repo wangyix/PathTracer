@@ -98,7 +98,7 @@ public:
     const Bsdf* getBsdf() const { return bsdf.get(); }
     const Shape* getShape() const { return shape.get(); }
 
-    virtual AABB getAabb() const { return AABB(); } // only overridden by TriangleMeshTriangle
+    const AABB& getAabb() const { return aabb; }
 
 protected:
     std::unique_ptr<const Shape> shape;
@@ -154,14 +154,8 @@ public:
         return triangle.uniformSampleSurface(normal);
     }
 
-    AABB getAabb() const override {
-        return aabb;
-    }
-
-
 private:
     Triangle triangle;
-    //AABB aabb;
 };
 
 

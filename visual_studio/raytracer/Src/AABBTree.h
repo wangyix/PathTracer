@@ -40,9 +40,14 @@ class AABBTree //: public SceneObject
 public:
     AABBTreeNode* root;
 
-    AABBTree(std::vector<SceneObject*>& objs) {
+    AABBTree(const std::vector<SceneObject*>& objs) {
         //name="aabb_tree";
-        root=new AABBTreeNode(objs);
+
+        // make copy of objs since AABBTreeNode constructor modifies them
+        std::vector<SceneObject*> objsCopy(objs.size());
+        for (int i = 0; i < objs.size(); i++) objsCopy[i] = objs[i];
+
+        root = new AABBTreeNode(objsCopy);
 		//std::cout<<"aabb tree, node number: "<<objs.size()<<std::endl;
     }
     ~AABBTree() {

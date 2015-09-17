@@ -36,6 +36,7 @@ Scene::~Scene()
     if ((int)aabb_trees.size() > 0)for (int i = 0; i < (int)aabb_trees.size(); i++)delete aabb_trees[i];
     if (uniform_grid != NULL)delete uniform_grid;
     */
+    if ((int)objects.size() > 0)for (int i = 0; i < (int)objects.size(); i++)delete objects[i];
     if (aabb_tree) delete aabb_tree;
 }
 
@@ -1306,7 +1307,7 @@ bool Scene::DoesIntersect(const Ray& ray) {
 
 bool Scene::IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter) {
     *object = aabb_tree->getIntersectionWithObject(ray, inter);
-    return object != NULL;
+    return *object != NULL;
 }
 
 bool Scene::DoesIntersectAABBTree(const Ray& ray) {

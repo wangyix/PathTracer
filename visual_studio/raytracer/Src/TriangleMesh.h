@@ -69,9 +69,7 @@ public:
 		}
         
         // create AABB tree
-	    std::vector<SceneObject*> triangles_copy(triangles.size());
-	    for(int i=0;i<(int)triangles.size();i++){triangles_copy[i]=triangles[i];}
-        aabb_tree = new AABBTree(triangles_copy);
+        aabb_tree = new AABBTree(triangles);
 		
 	}
 
