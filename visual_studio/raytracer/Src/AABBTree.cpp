@@ -45,110 +45,121 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
         this->aabb = AABB::combine(objs[0]->getAabb(), objs[1]->getAabb());
 	}
 	else{
-		/*if(method == AABBTreeNode::VOL){
-			float xsum = 0, ysum = 0, zsum = 0;
-			float xdev = 0, ydev = 0, zdev = 0;
-			int size = objs.size();
-			for(int i = 0;i < size;++i){
-				xsum += objs[i]->getAabb().xcenter;
-				ysum += objs[i]->getAabb().ycenter;
-				zsum += objs[i]->getAabb().zcenter;
-			}
-			xsum /= size;
-			ysum /= size;
-			zsum /= size;
-			for(int i = 0;i < size;++i){
-				xdev += (objs[i]->getAabb().xcenter - xsum) * (objs[i]->getAabb().xcenter - xsum);
-				ydev += (objs[i]->getAabb().ycenter - ysum) * (objs[i]->getAabb().ycenter - ysum);
-				zdev += (objs[i]->getAabb().zcenter - zsum) * (objs[i]->getAabb().zcenter - zsum);
-			}
-			int idx = xdev > ydev ? 1 : 2;
-			if(idx == 1)
-				idx = xdev > zdev ? 1 : 3;
-			else
-				idx = ydev > zdev ? 2 : 3;
+        switch (method) {
+        case AABBTreeNode::VOL: {
+            float xsum = 0, ysum = 0, zsum = 0;
+            float xdev = 0, ydev = 0, zdev = 0;
+            int size = objs.size();
+            for (int i = 0; i < size; ++i){
+                xsum += objs[i]->getAabb().xcenter;
+                ysum += objs[i]->getAabb().ycenter;
+                zsum += objs[i]->getAabb().zcenter;
+            }
+            xsum /= size;
+            ysum /= size;
+            zsum /= size;
+            for (int i = 0; i < size; ++i){
+                xdev += (objs[i]->getAabb().xcenter - xsum) * (objs[i]->getAabb().xcenter - xsum);
+                ydev += (objs[i]->getAabb().ycenter - ysum) * (objs[i]->getAabb().ycenter - ysum);
+                zdev += (objs[i]->getAabb().zcenter - zsum) * (objs[i]->getAabb().zcenter - zsum);
+            }
+            int idx = xdev > ydev ? 1 : 2;
+            if (idx == 1)
+                idx = xdev > zdev ? 1 : 3;
+            else
+                idx = ydev > zdev ? 2 : 3;
 
-			std::vector<SceneObject*> lobjs;
-			std::vector<SceneObject*> robjs;
-			if(idx == 1){
-				for(int i = 0;i < size;++i){
-					if(objs[i]->getAabb().xcenter < xsum) lobjs.push_back(objs[i]);
-					else robjs.push_back(objs[i]);
-				}
-			}
-			else if(idx == 2){
-				for(int i = 0;i < size;++i){
-					if(objs[i]->getAabb().ycenter < ysum) lobjs.push_back(objs[i]);
-					else robjs.push_back(objs[i]);
-				}
-			}
-			else if(idx == 3){
-				for(int i = 0;i < size;++i){
-					if(objs[i]->getAabb().zcenter < zsum) lobjs.push_back(objs[i]);
-					else robjs.push_back(objs[i]);
-				}
-			}
+            std::vector<SceneObject*> lobjs;
+            std::vector<SceneObject*> robjs;
+            if (idx == 1){
+                for (int i = 0; i < size; ++i){
+                    if (objs[i]->getAabb().xcenter < xsum) lobjs.push_back(objs[i]);
+                    else robjs.push_back(objs[i]);
+                }
+            } else if (idx == 2){
+                for (int i = 0; i < size; ++i){
+                    if (objs[i]->getAabb().ycenter < ysum) lobjs.push_back(objs[i]);
+                    else robjs.push_back(objs[i]);
+                }
+            } else if (idx == 3){
+                for (int i = 0; i < size; ++i){
+                    if (objs[i]->getAabb().zcenter < zsum) lobjs.push_back(objs[i]);
+                    else robjs.push_back(objs[i]);
+                }
+            }
 
+            if (lobjs.size() == 0 || robjs.size() == 0) {
+                // fall through to NUM case
+            } else {
+                std::vector<SceneObject*>().swap(objs);
+                this->object = NULL;
+                this->left = new AABBTreeNode(lobjs, method);
+                this->right = new AABBTreeNode(robjs, method);
+                this->aabb = AABB::combine(this->left->aabb, this->right->aabb);
+                break;
+            }
 
-			std::vector<SceneObject*>().swap(objs);
-			this->object = NULL;
-			if(lobjs.size()==0||robjs.size()==0){	////having duplicate triangles
-				if(lobjs.size()>0){
-					this->object = lobjs[0];
-					this->left = NULL;
-					this->right = NULL;
-					this->aabb = lobjs[0]->getAabb();
-				}
-				else if(robjs.size()>0){
-					this->object = robjs[0];
-					this->left = NULL;
-					this->right = NULL;
+            /*
+            std::vector<SceneObject*>().swap(objs);
+            this->object = NULL;
+            if (lobjs.size() == 0 || robjs.size() == 0){	////having duplicate triangles
+                if (lobjs.size() > 0){
+                    this->object = lobjs[0];
+                    this->left = NULL;
+                    this->right = NULL;
+                    this->aabb = lobjs[0]->getAabb();
+                } else if (robjs.size() > 0){
+                    this->object = robjs[0];
+                    this->left = NULL;
+                    this->right = NULL;
                     this->aabb = robjs[0]->getAabb();
-				}
-				return;
-			}
+                }
+                return;
+            }
 
-			this->left = new AABBTreeNode(lobjs, method);
-			this->right = new AABBTreeNode(robjs, method);
-			this->aabb = AABB::combine(this->left->aabb, this->right->aabb);
-			//std::cout<<*(this->aabb)<<std::endl;
-		}
-		else if(method == AABBTreeNode::NUM)*/{
-			float xsum = 0, ysum = 0, zsum = 0;
-			float xdev = 0, ydev = 0, zdev = 0;
-			int size = objs.size();
-			for(int i = 0;i < size;++i){
-				xsum += objs[i]->getAabb().xcenter;
-				ysum += objs[i]->getAabb().ycenter;
-				zsum += objs[i]->getAabb().zcenter;
-			}
-			xsum /= size;
-			ysum /= size;
-			zsum /= size;
-			for(int i = 0;i < size;++i){
-				xdev += (objs[i]->getAabb().xcenter - xsum) * (objs[i]->getAabb().xcenter - xsum);
-				ydev += (objs[i]->getAabb().ycenter - ysum) * (objs[i]->getAabb().ycenter - ysum);
-				zdev += (objs[i]->getAabb().zcenter - zsum) * (objs[i]->getAabb().zcenter - zsum);
-			}
-			int idx = xdev > ydev ? 1 : 2;
-			if(idx == 1) idx = xdev > zdev ? 1 : 3;
-			else idx = ydev > zdev ? 2 : 3;
+            this->left = new AABBTreeNode(lobjs, method);
+            this->right = new AABBTreeNode(robjs, method);
+            this->aabb = AABB::combine(this->left->aabb, this->right->aabb);
+            //std::cout<<*(this->aabb)<<std::endl;
+            */
+        }
+        case AABBTreeNode::NUM: {
+            float xsum = 0, ysum = 0, zsum = 0;
+            float xdev = 0, ydev = 0, zdev = 0;
+            int size = objs.size();
+            for (int i = 0; i < size; ++i){
+                xsum += objs[i]->getAabb().xcenter;
+                ysum += objs[i]->getAabb().ycenter;
+                zsum += objs[i]->getAabb().zcenter;
+            }
+            xsum /= size;
+            ysum /= size;
+            zsum /= size;
+            for (int i = 0; i < size; ++i){
+                xdev += (objs[i]->getAabb().xcenter - xsum) * (objs[i]->getAabb().xcenter - xsum);
+                ydev += (objs[i]->getAabb().ycenter - ysum) * (objs[i]->getAabb().ycenter - ysum);
+                zdev += (objs[i]->getAabb().zcenter - zsum) * (objs[i]->getAabb().zcenter - zsum);
+            }
+            int idx = xdev > ydev ? 1 : 2;
+            if (idx == 1) idx = xdev > zdev ? 1 : 3;
+            else idx = ydev > zdev ? 2 : 3;
 
-			if(idx == 1) std::sort(objs.begin(), objs.end(), compare1);
-			if(idx == 2) std::sort(objs.begin(), objs.end(), compare2);
-			if(idx == 3) std::sort(objs.begin(), objs.end(), compare3);
+            if (idx == 1) std::sort(objs.begin(), objs.end(), compare1);
+            if (idx == 2) std::sort(objs.begin(), objs.end(), compare2);
+            if (idx == 3) std::sort(objs.begin(), objs.end(), compare3);
 
-			std::vector<SceneObject*> lobjs;
-			std::vector<SceneObject*> robjs;
-			for(int i = 0;i < num/2;++i) lobjs.push_back(objs[i]);
-			for(int i = num/2;i < num;++i) robjs.push_back(objs[i]);
+            std::vector<SceneObject*> lobjs;
+            std::vector<SceneObject*> robjs;
+            for (int i = 0; i < num / 2; ++i) lobjs.push_back(objs[i]);
+            for (int i = num / 2; i < num; ++i) robjs.push_back(objs[i]);
 
-			std::vector<SceneObject*>().swap(objs);
-			this->object = NULL;
-			this->left = new AABBTreeNode(lobjs, method);
-			this->right = new AABBTreeNode(robjs, method);
-			this->aabb = AABB::combine(this->left->aabb, this->right->aabb);
-		}
+            std::vector<SceneObject*>().swap(objs);
+            this->object = NULL;
+            this->left = new AABBTreeNode(lobjs, method);
+            this->right = new AABBTreeNode(robjs, method);
+            this->aabb = AABB::combine(this->left->aabb, this->right->aabb);
+        }
+        }
 	}
 }
 

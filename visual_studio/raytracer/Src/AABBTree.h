@@ -18,7 +18,7 @@ class AABBTreeNode
 {
 public:
 	AABBTreeNode(SceneObject* obj, const AABB& aabb);
-	AABBTreeNode(std::vector<SceneObject*>& objs, int method=2);
+	AABBTreeNode(std::vector<SceneObject*>& objs, int method=1);
 	~AABBTreeNode();
 
     SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter);
