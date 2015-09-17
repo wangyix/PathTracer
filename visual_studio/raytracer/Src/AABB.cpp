@@ -125,9 +125,44 @@ Intersection* AABB::getIntersect(const Ray& ray) const
 	return new Intersection(t,point,normal);
 }*/
 
-bool AABB::doesIntersect(const Ray& ray) const
-{
-	return intersect(ray) != -1.f;
+static inline bool doesIntersectHelper(float eu, float ev, float ew, float du, float dv, float dw,
+                                       float umin, float umax, float vmin, float vmax, float wmin, float wmax) {
+    if (du == 0.f)
+        return false;
+    {
+        float t = (umin - eu) / du;
+        float v = ev + t * dv;
+        if (vmin <= v && v <= vmax) {
+            float w = ew + t * dw;
+            if (wmin <= w && w <= wmax) {
+                return true;
+            }
+        }
+    }
+    {
+        float t = (umax - eu) / du;
+        float v = ev + t * dv;
+        if (vmin <= v && v <= vmax) {
+            float w = ew + t * dw;
+            if (wmin <= w && w <= wmax) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool AABB::doesIntersect(const Ray& ray) const {
+    if (doesIntersectHelper(ray.e.x, ray.e.y, ray.e.z,
+        ray.d.x, ray.d.y, ray.d.z, xmin, xmax, ymin, ymax, zmin, zmax)) {
+        return true;
+    }
+    if (doesIntersectHelper(ray.e.y, ray.e.z, ray.e.x,
+        ray.d.y, ray.d.z, ray.d.x, ymin, ymax, zmin, zmax, xmin, xmax)) {
+        return true;
+    }
+    return doesIntersectHelper(ray.e.z, ray.e.x, ray.e.y,
+        ray.d.z, ray.d.x, ray.d.y, zmin, zmax, xmin, xmax, ymin, ymax);
 }
 
 bool AABB::isInside(const STPoint3& point) const
