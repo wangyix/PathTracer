@@ -72,8 +72,6 @@ public:
         return false;
     }
 
-    // only used in aabbtree, which is only used in TriangleMesh right now,
-    // so this should only get called on TriangleMeshTriangle instances
     virtual SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter) {
         if (getIntersect(ray, inter)) {
             return this;

@@ -56,76 +56,66 @@ void AABB::rescale(const STTransform4& transform)
     zcenter = .5f*(zmin + zmax);
 }
 
-float AABB::intersect(const Ray& ray,int& i_intersect) const
-{
-    float ax = 1.f / ray.d.x;
-    float ay = 1.f / ray.d.y;
-    float az = 1.f / ray.d.z;
-    float txnear = 0.f, txfar = 0.f, tynear, tyfar, tznear, tzfar;
-    if(ray.d.x == 0.f){
-        if(ray.e.x >=xmin && ray.e.x <= xmax){
-            txnear = -FLT_MAX; 
-            txfar = FLT_MAX;
-        }
-    }
-    else{
-        if(ax >= 0.f){
-            txnear = ax * (xmin - ray.e.x);
-            txfar = ax * (xmax - ray.e.x);
-        }
-        else{
-            txnear = ax * (xmax - ray.e.x);
-            txfar = ax * (xmin - ray.e.x);
-        }
+static inline void intersectHelper(float* tin, bool* tinFound, float* tout, bool* toutFound,
+                                   float eu, float ev, float ew, float du, float dv, float dw,
+                                   float umin, float umax, float vmin, float vmax, float wmin, float wmax) {
+    float uin, uout;
+    if (du > 0.f) {
+        uin = umin;
+        uout = umax;
+    } else if (du < 0.f) {
+        uin = umax;
+        uout = umin;
+    } else {
+        return;
     }
 
-    if(ray.d.y == 0.f){
-        tynear = -FLT_MAX; 
-        tyfar = FLT_MAX;
-    }
-    else{
-        if(ay >= 0.f){
-            tynear = ay * (ymin - ray.e.y);
-            tyfar = ay * (ymax - ray.e.y);
-        }
-        else{
-            tynear = ay * (ymax - ray.e.y);
-            tyfar = ay * (ymin - ray.e.y);
+    if (!*tinFound) {
+        float t = (uin - eu) / du;
+        float v = ev + t * dv;
+        if (vmin <= v && v <= vmax) {
+            float w = ew + t * dw;
+            if (wmin <= w && w <= wmax) {
+                *tin = t;
+                *tinFound = true;
+            }
         }
     }
-
-    if(ray.d.z == 0.f){
-        tznear = -FLT_MAX; 
-        tzfar = FLT_MAX;
-    }
-    else{
-        if(az >= 0.f){
-            tznear = az * (zmin - ray.e.z);
-            tzfar = az * (zmax - ray.e.z);
-        }
-        else{
-            tznear = az * (zmax - ray.e.z);
-            tzfar = az * (zmin - ray.e.z);
+    if (!*toutFound) {
+        float t = (uout - eu) / du;
+        float v = ev + t * dv;
+        if (vmin <= v && v <= vmax) {
+            float w = ew + t * dw;
+            if (wmin <= w && w <= wmax) {
+                *tout = t;
+                *toutFound = true;
+            }
         }
     }
-
-    int inear = -1;
-    float tnear = maxWithIndex(txnear, tynear, tznear, inear);
-    int ifar = -1;
-    float tfar = minWithIndex(txfar, tyfar, tzfar, ifar);
-
-    float t_intersect = -1.f;
-    
-    i_intersect = -1;
-    if(tnear <= tfar){
-        if(txnear < 0.f && tynear < 0.f && tznear < 0.f){t_intersect = tfar;i_intersect = ifar;} ////e is inside the box
-        else{t_intersect = tnear;i_intersect = inear;}
-
-        if(/*!ray.inRange(t_intersect)*/t_intersect < 0.f || t_intersect > ray.t_max){t_intersect = -1.f;i_intersect = -1;}
-    }
-    return t_intersect;
 }
 
+float AABB::intersect(const Ray& ray) const {
+    bool tinFound = false, toutFound = false;
+    float tin = -1.f, tout = -1.f;
+    intersectHelper(&tin, &tinFound, &tout, &toutFound, ray.e.x, ray.e.y, ray.e.z,
+                    ray.d.x, ray.d.y, ray.d.z, xmin, xmax, ymin, ymax, zmin, zmax);
+    intersectHelper(&tin, &tinFound, &tout, &toutFound, ray.e.y, ray.e.z, ray.e.x,
+                    ray.d.y, ray.d.z, ray.d.x, ymin, ymax, zmin, zmax, xmin, xmax);
+    intersectHelper(&tin, &tinFound, &tout, &toutFound, ray.e.z, ray.e.x, ray.e.y,
+                    ray.d.z, ray.d.x, ray.d.y, zmin, zmax, xmin, xmax, ymin, ymax);
+    
+    if (!tinFound || !toutFound) {
+        // ray line misses AABB
+        return -1.f;
+    }
+    if (ray.t_max < tin || ray.t_min > tout) {
+        // ray segment misses AABB
+        return -1.f;
+    }
+    return tin < ray.t_min ? tout : tin;
+}
+
+/* // Not used anywhere??
 Intersection* AABB::getIntersect(const Ray& ray) const
 {
 	int face=0;float t=intersect(ray,face);if(t==-1.f)return NULL;
@@ -133,11 +123,11 @@ Intersection* AABB::getIntersect(const Ray& ray) const
 	STVector3 normal=STVector3::Zero;normal.Component(face)=ray.d.Component(face)>=0.f?-1.f:1.f;
 	normal.Normalize();
 	return new Intersection(t,point,normal);
-}
+}*/
 
 bool AABB::doesIntersect(const Ray& ray) const
 {
-	int dummy_idx=0;return intersect(ray,dummy_idx)!=-1.f;
+	return intersect(ray) != -1.f;
 }
 
 bool AABB::isInside(const STPoint3& point) const

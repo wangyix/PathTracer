@@ -45,7 +45,7 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
         this->aabb = AABB::combine(objs[0]->getAabb(), objs[1]->getAabb());
 	}
 	else{
-		if(method == AABBTreeNode::VOL){
+		/*if(method == AABBTreeNode::VOL){
 			float xsum = 0, ysum = 0, zsum = 0;
 			float xdev = 0, ydev = 0, zdev = 0;
 			int size = objs.size();
@@ -113,7 +113,7 @@ AABBTreeNode::AABBTreeNode(std::vector<SceneObject*>& objs, int method)
 			this->aabb = AABB::combine(this->left->aabb, this->right->aabb);
 			//std::cout<<*(this->aabb)<<std::endl;
 		}
-		else if(method == AABBTreeNode::NUM){
+		else if(method == AABBTreeNode::NUM)*/{
 			float xsum = 0, ysum = 0, zsum = 0;
 			float xdev = 0, ydev = 0, zdev = 0;
 			int size = objs.size();
@@ -168,7 +168,7 @@ SceneObject* AABBTreeNode::getIntersectionWithObject(const Ray& ray, Intersectio
         return object->getIntersectionWithObject(ray, inter);
     }
     else{
-        if(aabb.doesIntersect(ray)){
+        if(aabb.doesIntersect(ray)) {
             SceneObject *left_obj = NULL;
             SceneObject *right_obj = NULL;
 			//std::cout<<"trace left"<<std::endl;

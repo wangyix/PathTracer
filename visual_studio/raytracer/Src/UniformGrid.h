@@ -102,10 +102,9 @@ public:
         STPoint3 p;float epsilon=1e-3f;
         bool inside=false;
         float t_intersect=-1.f;
-		int i_intersect=-1;
         if(box.isInside(ray.e)){p=ray.e;inside=true;}
         else{
-            t_intersect=box.intersect(ray,i_intersect);
+            t_intersect=box.intersect(ray);
             if(t_intersect==-1.f)return NULL;
             p=ray.at(t_intersect+epsilon);
             t_min=t_intersect;

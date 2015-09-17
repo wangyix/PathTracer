@@ -21,9 +21,9 @@ public:
     ~AABB(){}
 
     bool doesIntersect(const Ray& ray) const;
-	Intersection* getIntersect(const Ray& ray) const;
+	//Intersection* getIntersect(const Ray& ray) const; // not used anywhere??
 	bool isInside(const STPoint3& point) const;
-    float intersect(const Ray& ray,int& intersected_face) const;
+    float intersect(const Ray& ray) const;
 
     void rescale(const STTransform4& transform);
     void display();

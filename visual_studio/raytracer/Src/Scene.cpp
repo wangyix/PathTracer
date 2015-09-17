@@ -1262,7 +1262,7 @@ void Scene::buildAABBTrees()
     aabb_tree = new AABBTree(objects);
 }
 
-#define USE_ACCEL 0
+#define USE_ACCEL 1
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
