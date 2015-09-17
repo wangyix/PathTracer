@@ -56,7 +56,7 @@ void AABB::rescale(const STTransform4& transform)
     zcenter = .5f*(zmin + zmax);
 }
 
-float AABB::intersect(const Ray& ray,int& i_intersect)
+float AABB::intersect(const Ray& ray,int& i_intersect) const
 {
     float ax = 1.f / ray.d.x;
     float ay = 1.f / ray.d.y;
@@ -126,7 +126,7 @@ float AABB::intersect(const Ray& ray,int& i_intersect)
     return t_intersect;
 }
 
-Intersection* AABB::getIntersect(const Ray& ray)
+Intersection* AABB::getIntersect(const Ray& ray) const
 {
 	int face=0;float t=intersect(ray,face);if(t==-1.f)return NULL;
 	STPoint3 point=ray.at(t);
@@ -135,12 +135,12 @@ Intersection* AABB::getIntersect(const Ray& ray)
 	return new Intersection(t,point,normal);
 }
 
-bool AABB::doesIntersect(const Ray& ray)
+bool AABB::doesIntersect(const Ray& ray) const
 {
 	int dummy_idx=0;return intersect(ray,dummy_idx)!=-1.f;
 }
 
-bool AABB::isInside(const STPoint3& point)
+bool AABB::isInside(const STPoint3& point) const
 {
 	return point.x>=xmin && point.x<=xmax && point.y>=ymin && point.y<=ymax && point.z>=zmin && point.z<=zmax;
 }
@@ -153,6 +153,9 @@ void AABB::combine(const AABB& b1,const AABB& b2, AABB* c)
     c->ymax = b1.ymax > b2.ymax ? b1.ymax : b2.ymax;
     c->zmin = b1.zmin < b2.zmin ? b1.zmin : b2.zmin;
     c->zmax = b1.zmax > b2.zmax ? b1.zmax : b2.zmax;
+    c->xcenter = 0.5f * (c->xmin + c->xmax);
+    c->ycenter = 0.5f * (c->ymin + c->ymax);
+    c->zcenter = 0.5f * (c->zmin + c->zmax);
 }
 
 AABB AABB::combine(const AABB& b1, const AABB& b2)
@@ -170,4 +173,7 @@ void AABB::combine(const STPoint3& p, AABB* c)
     if(p.y>c->ymax)c->ymax=p.y;
     if(p.z<c->zmin)c->zmin=p.z;
     if(p.z>c->zmax)c->zmax=p.z;
+    c->xcenter = 0.5f * (c->xmin + c->xmax);
+    c->ycenter = 0.5f * (c->ymin + c->ymax);
+    c->zcenter = 0.5f * (c->zmin + c->zmax);
 }

@@ -20,10 +20,10 @@ public:
     AABB(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
     ~AABB(){}
 
-    bool doesIntersect(const Ray& ray);
-	Intersection* getIntersect(const Ray& ray);
-	bool isInside(const STPoint3& point);
-    float intersect(const Ray& ray,int& intersected_face);
+    bool doesIntersect(const Ray& ray) const;
+	Intersection* getIntersect(const Ray& ray) const;
+	bool isInside(const STPoint3& point) const;
+    float intersect(const Ray& ray,int& intersected_face) const;
 
     void rescale(const STTransform4& transform);
     void display();

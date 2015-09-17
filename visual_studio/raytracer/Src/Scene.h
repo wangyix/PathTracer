@@ -222,11 +222,11 @@ protected:
     //UniformGrid* uniform_grid;
 
     ////intersection functions with acceleration structures
-    //bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
+    bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
     bool IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter);
     //Intersection* IntersectUniformGrid(const Ray& ray, /*result*/SceneObject*& object);
 
-    //bool DoesIntersectNoAccelStructure(const Ray& ray);
+    bool DoesIntersectNoAccelStructure(const Ray& ray);
     bool DoesIntersectAABBTree(const Ray& ray);
 
     //void buildUniformGrids();	////build the entire scene as a uniform grid

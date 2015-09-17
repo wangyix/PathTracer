@@ -1262,6 +1262,7 @@ void Scene::buildAABBTrees()
     aabb_tree = new AABBTree(objects);
 }
 
+#define USE_ACCEL 0
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
@@ -1270,14 +1271,22 @@ bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* 
     case UNIFORM_GRID:return IntersectUniformGrid(ray, object);
     default:return IntersectionNoAccelStructure(ray, object);
     }*/
+#if USE_ACCEL
     return IntersectAABBTree(ray, object, inter);
+#else
+    return IntersectionNoAccelStructure(ray, object, inter);
+#endif
 }
 
 bool Scene::DoesIntersect(const Ray& ray) {
+#if USE_ACCEL
     return DoesIntersectAABBTree(ray);
+#else
+    return DoesIntersectNoAccelStructure(ray);
+#endif
 }
 
-/*bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter)
+bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
     Intersection min_inter(FLT_MAX, STPoint3(), STVector3());
     const SceneObject* min_object = NULL;
@@ -1293,17 +1302,17 @@ bool Scene::DoesIntersect(const Ray& ray) {
     *object = min_object;
     *inter = min_inter;
     return (min_object != NULL);
-}*/
+}
 
 
-/*bool Scene::DoesIntersectNoAccelStructure(const Ray& ray) {
+bool Scene::DoesIntersectNoAccelStructure(const Ray& ray) {
     for (const SceneObject* obj : objects) {
         if (obj->doesIntersect(ray)) {
             return true;
         }
     }
     return false;
-}*/
+}
 
 bool Scene::IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter) {
     *object = aabb_tree->getIntersectionWithObject(ray, inter);

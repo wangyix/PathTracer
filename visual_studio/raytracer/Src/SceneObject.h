@@ -62,7 +62,7 @@ public:
         return shape->doesIntersect(ray.transform(tInverse));
     }
     
-    virtual bool getIntersect(const Ray& ray, Intersection* inter)  const {
+    virtual bool getIntersect(const Ray& ray, Intersection* inter) const {
         if (shape->getIntersect(ray.transform(tInverse), inter)) {
             inter->point = transform * inter->point;
             inter->normal = tInverseTranspose * inter->normal;
