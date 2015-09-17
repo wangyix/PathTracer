@@ -54,45 +54,22 @@ AABB* TriangleMesh::getAABB()
 	return new AABB(min_corner.x,max_corner.x,min_corner.y,max_corner.y,min_corner.z,max_corner.z);
 }*/
 
-bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) const {
-    /*if (!boundingSphere.doesIntersect(ray)) {
-        return false;
-    }*/
-    if (use_accel_structure) {
-        return aabb_tree->getIntersect(ray, intersection);
-    } else if (!boundingSphere.doesIntersect(ray)) {
-        return false;
-    }
+void TriangleMesh::getAABB(const STTransform4& transform, AABB* aabb) const {
+    /*
+    *aabb = aabb_tree->root->aabb;
+    aabb->rescale(transform);*/
 
-    Intersection min_int(FLT_MAX, STPoint3(), STVector3());
-    for (const SceneObject* triangle : triangles) {
-        Intersection inter;
-        if (triangle->getIntersect(ray, &inter) && inter.t < min_int.t) {
-            min_int = inter;
-        }
+    *aabb = AABB(FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX);
+    for (int i = 0; i < mesh->mVertices.size(); i++) {
+        AABB::combine(transform * mesh->mVertices[i]->pt, aabb);
     }
-    if (min_int.t != FLT_MAX) {
-        *intersection = min_int;
-        return true;
-    }
-    return false;
+}
+
+bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) const {
+    return aabb_tree->getIntersect(ray, intersection);
 }
 
 bool TriangleMesh::doesIntersect(const Ray& ray) const {
-    /*if (!boundingSphere.doesIntersect(ray)) {
-        return false;
-    }*/
-    if (use_accel_structure) {
-        return aabb_tree->doesIntersect(ray);
-    } else if (!boundingSphere.doesIntersect(ray)) {
-        return false;
-    }
-
-    for (const SceneObject* triangle : triangles) {
-        if (triangle->doesIntersect(ray)) {
-            return true;
-        }
-    }
-    return false;
+    return aabb_tree->doesIntersect(ray);
 }
 

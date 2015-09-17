@@ -415,3 +415,16 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
     *normal = toObjectInvTranspose * p_n_unit;
     return toObjectSpace * p_unit;
 }
+
+void Cylinder::getAABB(const STTransform4& transform, AABB* aabb) const {
+    *aabb = AABB(FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX);
+    STTransform4 cylToWorld = transform * toObjectSpace;
+    AABB::combine(cylToWorld * STPoint3(-1.f, -1.f, 0.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(-1.f, 1.f, 0.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(1.f, -1.f, 0.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(1.f, 1.f, 0.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(-1.f, -1.f, 1.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(-1.f, 1.f, 1.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(1.f, -1.f, 1.f), aabb);
+    AABB::combine(cylToWorld * STPoint3(1.f, 1.f, 1.f), aabb);
+}

@@ -63,8 +63,9 @@ public:
     bool doesIntersect(const Ray& ray);
     Intersection** getIntersections(const Ray& ray);
     bool isInsideOpen(const STPoint3& pt);
-    bool isInsideClosed(const STPoint3& pt);
-    AABB* getAABB();*/
+    bool isInsideClosed(const STPoint3& pt);*/
+
+    void getAABB(const STTransform4& transform, AABB* aabb) const override;
 
     bool getIntersect(const Ray& ray, Intersection* intersection) const override;
     bool doesIntersect(const Ray& ray) const override;

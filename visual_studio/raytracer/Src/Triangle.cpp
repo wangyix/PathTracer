@@ -38,24 +38,29 @@ Intersection** Triangle::getIntersections (const Ray & ray) {
     return result;
 }*/
 
-AABB Triangle::getAABB() const {
+void Triangle::getAABB(const STTransform4& transform, AABB* aabb) const {
     float xmin, xmax, ymin, ymax, zmin, zmax;
-    if(v1.x > v2.x){xmin = v2.x;xmax = v1.x;}
-    else{xmin = v1.x;xmax = v2.x;}
-    if(v3.x < xmin)xmin = v3.x;
-    if(v3.x > xmax)xmax = v3.x;
+
+    STPoint3 vv1 = transform * v1;
+    STPoint3 vv2 = transform * v2;
+    STPoint3 vv3 = transform * v3;
+
+    if(vv1.x > vv2.x){xmin = vv2.x;xmax = vv1.x;}
+    else{xmin = vv1.x;xmax = vv2.x;}
+    if(vv3.x < xmin)xmin = vv3.x;
+    if(vv3.x > xmax)xmax = vv3.x;
     
-    if(v1.y > v2.y){ymin = v2.y;ymax = v1.y;}
-    else{ymin = v1.y;ymax = v2.y;}
-    if(v3.y < ymin)ymin = v3.y;
-    if(v3.y > ymax)ymax = v3.y;
+    if(vv1.y > vv2.y){ymin = vv2.y;ymax = vv1.y;}
+    else{ymin = vv1.y;ymax = vv2.y;}
+    if(vv3.y < ymin)ymin = vv3.y;
+    if(vv3.y > ymax)ymax = vv3.y;
     
-    if(v1.z > v2.z){zmin = v2.z;zmax = v1.z;}
-    else{zmin = v1.z;zmax = v2.z;}
-    if(v3.z < zmin)zmin = v3.z;
-    if(v3.z > zmax)zmax = v3.z;
+    if(vv1.z > vv2.z){zmin = vv2.z;zmax = vv1.z;}
+    else{zmin = vv1.z;zmax = vv2.z;}
+    if(vv3.z < zmin)zmin = vv3.z;
+    if(vv3.z > zmax)zmax = vv3.z;
     
-    return AABB(xmin, xmax, ymin, ymax, zmin, zmax);
+    *aabb = AABB(xmin, xmax, ymin, ymax, zmin, zmax);
 }
 
 

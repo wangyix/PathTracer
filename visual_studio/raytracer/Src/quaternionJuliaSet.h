@@ -80,8 +80,8 @@ public:
 	Intersection** getIntersections(const Ray& ray) {return NULL;}
 	bool isInsideOpen(const STPoint3& pt) { return false; }
 	bool isInsideClosed(const STPoint3& pt) { return false; }
-	
-	AABB* getAABB();*/
+	*/
+    void getAABB(const STTransform4& transform, AABB* aabb) const override;
 
 private:
 	float4 mu;

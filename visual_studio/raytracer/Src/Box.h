@@ -82,15 +82,25 @@ public:
         STVector3 coords = cob * (pt - o);
         return (coords.x >= -.001 && coords.y >= -.001 && coords.z >= -.001 &&
                 coords.x <= 1 + .001 && coords.y <= 1 + .001 && coords.z <= 1 + .001);
-    }
-    AABB* getAABB()
-    {
-        AABB* aabb=new AABB(FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX);
+    }*/
+
+    void getAABB(const STTransform4& transform, AABB* aabb) const override {
+        /*AABB* aabb=new AABB(FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX);
         STVector3 min_corner;STVector3 max_corner;
         AABB::combine(o,aabb);AABB::combine(o+i,aabb);AABB::combine(o+j,aabb);AABB::combine(o+k,aabb);
         AABB::combine(o+i+j,aabb);AABB::combine(o+j+k,aabb);AABB::combine(o+k+i,aabb);AABB::combine(o+i+j+k,aabb);
-        return aabb;
-    }*/
+        return aabb;*/
+
+        *aabb = AABB(FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX);
+        AABB::combine(transform * o, aabb);
+        AABB::combine(transform * (o + i), aabb);
+        AABB::combine(transform * (o + j), aabb);
+        AABB::combine(transform * (o + k), aabb);
+        AABB::combine(transform * (o + i + j), aabb);
+        AABB::combine(transform * (o + j + k), aabb);
+        AABB::combine(transform * (o + k + i), aabb);
+        AABB::combine(transform * (o + i + j + k), aabb);
+    }
 
     bool getIntersect(const Ray& ray, Intersection* intersection) const override {
         Intersection min_int(FLT_MAX, STPoint3(), STVector3());

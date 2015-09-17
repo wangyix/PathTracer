@@ -270,8 +270,12 @@ bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
     return (t >= (ray.t_min + ray_t_epsilon_pad) && t <= ray.t_max);
 }
 
-
-
+void quaternionJuliaSet::getAABB(const STTransform4& transform, AABB* aabb) const {
+    float scale = transform.columnnMagnitude(0);    // assuming transform does not warp shape
+    float r = scale * RADIUS;
+    STPoint3 c = transform * STPoint3(0.f, 0.f, 0.f);
+    *aabb = AABB(c.x - r, c.x + r, c.y - r, c.y + r, c.z - r, c.z + r);
+}
 
 
 #if 0
@@ -352,11 +356,5 @@ bool quaternionJuliaSet::doesIntersect(const Ray& ray)
 	
 	if (dist >= epsilon) return false;
 	else return true;
-}
-
-AABB* quaternionJuliaSet::getAABB()
-{
-	float radius = RADIUS;
-	return new AABB(-radius, radius, -radius, radius, -radius, radius);
 }
 #endif

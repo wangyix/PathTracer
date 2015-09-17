@@ -35,18 +35,19 @@ public:
     }*/
 
     // updated object that uses bsdf.
-    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf, STColor3f emittedPower=STColor3f(0.f)) :
+    SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf, STColor3f emittedPower = STColor3f(0.f)) :
         shape(shape),
         transform(transform),
+        tInverse(transform.Inverse()),
+        tInverseTranspose(tInverse.Transpose()),
         name("scene_object"),
         isLight(emittedPower.maxComponent() > 0.f),
         bsdf(bsdf),
         emittedPower(emittedPower)
     {
-        tInverse = transform.Inverse();
         //tTranspose = transform.Transpose();
-        tInverseTranspose = tInverse.Transpose();
         scale = transform.columnnMagnitude(0);  // assuming transform does not warp shape
+        if (shape) shape->getAABB(transform, &aabb);
         if (shape) name = shape->name;
     }
 
@@ -101,10 +102,10 @@ public:
 
 protected:
     std::unique_ptr<const Shape> shape;
-    //AABB* aabb;
+    AABB aabb;
     //Material material;
 	//int texture_index;
-    STTransform4 transform, tInverse, tInverseTranspose; //tTranspose, 
+    const STTransform4 transform, tInverse, tInverseTranspose; //tTranspose, 
     float scale;        // cached, stores the scaling factor in transform (it's assumed that transform does not warp shape)
     
     std::string name;
@@ -132,9 +133,8 @@ public:
 
     TriangleMeshTriangle(const Triangle& triangle)
         : SceneObject(NULL, STTransform4::Identity(), NULL),    // shape and bsdf will be NULL
-        triangle(triangle)
-    {   
-        aabb = triangle.getAABB();
+        triangle(triangle) {
+        triangle.getAABB(STTransform4::Identity(), &aabb);
     }  
 
     bool doesIntersect(const Ray& ray) const override{
@@ -161,7 +161,7 @@ public:
 
 private:
     Triangle triangle;
-    AABB aabb;
+    //AABB aabb;
 };
 
 

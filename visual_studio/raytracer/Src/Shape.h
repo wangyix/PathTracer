@@ -17,7 +17,7 @@ public:
     //virtual Intersection** getIntersections(const Ray& ray) = 0;
     //virtual bool isInsideClosed(const STPoint3& pt) = 0;
     //virtual bool isInsideOpen(const STPoint3& pt) = 0;
-    //virtual AABB* getAABB() = 0;
+    virtual void getAABB(const STTransform4& transform, AABB* aabb) const = 0;
     
     virtual float getSurfaceArea() const { return -1.f; }
     virtual STPoint3 uniformSampleSurface(STVector3* normal) const { return STPoint3(); }

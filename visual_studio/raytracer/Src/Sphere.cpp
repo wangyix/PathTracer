@@ -86,12 +86,15 @@ bool Sphere::isInsideClosed(const STPoint3 &pt) {
 bool Sphere::isInsideOpen(const STPoint3 &pt) {
     return ((pt - center).LengthSq() < radius * radius - .001);
 }
-
-AABB* Sphere::getAABB()
-{
-    return new AABB(center.x - radius, center.x + radius, center.y - radius, center.y + radius, center.z - radius, center.z + radius);
-}
 */
+
+void Sphere::getAABB(const STTransform4& transform, AABB* aabb) const {
+    float scale = transform.columnnMagnitude(0);    // assuming transform does not warp shape
+    float r = scale * radius;
+    STPoint3 c = transform * center;
+    *aabb = AABB(c.x - r, c.x + r, c.y - r, c.y + r, c.z - r, c.z + r);
+}
+
 
 bool Sphere::getIntersect(const Ray& ray, Intersection* intersection) const {
     float a = ray.d.LengthSq();
