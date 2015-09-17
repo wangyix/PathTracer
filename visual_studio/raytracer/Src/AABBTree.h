@@ -22,6 +22,7 @@ public:
 	~AABBTreeNode();
 
     SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter);
+    bool doesIntersect(const Ray& ray);
 
     ////two ways to initialize the AABB tree
 	static const int VOL = 1;
@@ -39,50 +40,21 @@ class AABBTree //: public SceneObject
 public:
     AABBTreeNode* root;
 
-    AABBTree() :root(NULL){}    //name = "aabb_tree";
-    AABBTree(std::vector<SceneObject*>& objs)
-    {
+    AABBTree(std::vector<SceneObject*>& objs) {
         //name="aabb_tree";
         root=new AABBTreeNode(objs);
 		//std::cout<<"aabb tree, node number: "<<objs.size()<<std::endl;
     }
-    ~AABBTree()
-    {
+    ~AABBTree() {
         if(root!=NULL)delete root;
     }
 
-    bool doesIntersect(const Ray& ray) 
-    {
-        if(root){
-            /*SceneObject* dummy_object;
-            Intersection* dummy_intersect=root->getIntersectionWithObject(ray,dummy_object);
-            if(dummy_intersect!=NULL){delete dummy_intersect;return true;}
-            else return false;*/
-
-            Intersection dummy_intersect;
-            return (root->getIntersectionWithObject(ray, &dummy_intersect) != NULL);
-        }
-        else return false;
+    bool doesIntersect(const Ray& ray)  {
+        return root->doesIntersect(ray);
     }
 
-    bool getIntersect(const Ray& ray, Intersection* inter)
-    {
-        //if(root){SceneObject* dummy;return root->getIntersectionWithObject(ray,dummy);}
-        //else return NULL;
-        if (root) {
-            return (root->getIntersectionWithObject(ray, inter) != NULL);
-        }
-        return false;
-    }
-
-    SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter)
-    {
-        //if(root)return root->getIntersectionWithObject(ray,intersected_object);
-        //else return NULL;
-        if (root) {
-            return root->getIntersectionWithObject(ray, inter);
-        }
-        else return NULL;
+    SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter) {
+        return root->getIntersectionWithObject(ray, inter);
     }
 };
 

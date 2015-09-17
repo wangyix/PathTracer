@@ -218,3 +218,14 @@ SceneObject* AABBTreeNode::getIntersectionWithObject(const Ray& ray, Intersectio
 		}
     }
 }
+
+bool AABBTreeNode::doesIntersect(const Ray& ray)
+{
+    if (object != NULL) {
+        return object->doesIntersect(ray);
+    } else if (aabb.doesIntersect(ray)) {
+        return (left->doesIntersect(ray) || right->doesIntersect(ray));
+    } else {
+        return NULL;
+    }
+}

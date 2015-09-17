@@ -66,7 +66,7 @@ void TriangleMesh::getAABB(const STTransform4& transform, AABB* aabb) const {
 }
 
 bool TriangleMesh::getIntersect(const Ray& ray, Intersection* intersection) const {
-    return aabb_tree->getIntersect(ray, intersection);
+    return aabb_tree->getIntersectionWithObject(ray, intersection) != NULL;
 }
 
 bool TriangleMesh::doesIntersect(const Ray& ray) const {

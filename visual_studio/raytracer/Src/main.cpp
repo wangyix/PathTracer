@@ -79,6 +79,7 @@ int main(int argc, const char * argv[])
     ////initialize acceleration structures
     //scene->buildAccelStructures(std::string("aabb"));
     //scene->buildAccelStructures(std::string("grid"));
+    scene.buildAABBTrees();     // must call this!
 
     clock_t start, end;
     start=clock();

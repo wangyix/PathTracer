@@ -99,7 +99,7 @@ class Scene
 {
 public:
     Scene();
-    //virtual ~Scene();
+    virtual ~Scene();
 
     void Render();
 
@@ -166,6 +166,8 @@ public:
 
     void savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename);
 
+    void buildAABBTrees();	////build the entire scene as an aabb-tree
+
 protected:
     std::vector<STTransform4> matStack;
     //Material* currMaterial;
@@ -216,16 +218,17 @@ protected:
     ////acceleration structures
     //enum AccelStructure{ NONE, AABB_TREE, UNIFORM_GRID } accel_structure;
     //std::vector<AABBTree*> aabb_trees;
+    AABBTree* aabb_tree;
     //UniformGrid* uniform_grid;
 
     ////intersection functions with acceleration structures
-    bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
-    //Intersection* IntersectAABBTree(const Ray& ray, /*result*/SceneObject*& object);
+    //bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
+    bool IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter);
     //Intersection* IntersectUniformGrid(const Ray& ray, /*result*/SceneObject*& object);
 
-    bool DoesIntersectNoAccelStructure(const Ray& ray);
+    //bool DoesIntersectNoAccelStructure(const Ray& ray);
+    bool DoesIntersectAABBTree(const Ray& ray);
 
-    //void buildAABBTrees();	////build the entire scene as an aabb-tree
     //void buildUniformGrids();	////build the entire scene as a uniform grid
     //void fillLights(std::vector<Light *>& lights, Intersection* inter);
     //void fillLightsWithAttenuation(std::vector<Light *>& lights, std::vector<STColor3f>& attenuations, Intersection* inter);

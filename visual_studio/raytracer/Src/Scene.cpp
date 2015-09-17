@@ -18,12 +18,14 @@ Scene::Scene()
     , pixelLocks(NUM_PIXEL_LOCKS), brightPixelLocks(NUM_PIXEL_LOCKS), renderThreadPool(), renderThreadsDesired(DEFAULT_NUM_RENDER_THREADS)
 #endif
     , saveEveryNPercent(100)
+    , aabb_tree(NULL)
 {
     rtSampleRate(1);
 }
 
-/*Scene::~Scene()
+Scene::~Scene()
 {
+    /*
     if (currMaterial != NULL)delete currMaterial;
     if ((int)textures.size() > 0)for (int i = 0; i < (int)textures.size(); i++)delete textures[i];
     if ((int)volumetric_textures.size() > 0)for (int i = 0; i < (int)volumetric_textures.size(); i++)delete volumetric_textures[i];
@@ -33,7 +35,9 @@ Scene::Scene()
     if ((int)areaLights.size() > 0)for (int i = 0; i < (int)areaLights.size(); i++)delete areaLights[i];
     if ((int)aabb_trees.size() > 0)for (int i = 0; i < (int)aabb_trees.size(); i++)delete aabb_trees[i];
     if (uniform_grid != NULL)delete uniform_grid;
-}*/
+    */
+    if (aabb_tree) delete aabb_tree;
+}
 
 /*std::string Scene::info() {
     std::stringstream out;
@@ -1237,14 +1241,6 @@ void Scene::buildAccelStructures(std::string& accel)
     }
 }
 
-void Scene::buildAABBTrees()
-{
-    ////by default all objects are organized in ONE aabb tree
-    accel_structure = AABB_TREE;
-    AABBTree* aabb_tree = new AABBTree(objects);
-    aabb_trees.push_back(aabb_tree);
-}
-
 void Scene::buildUniformGrids()
 {
     accel_structure = UNIFORM_GRID;
@@ -1260,6 +1256,11 @@ void Scene::buildUniformGrids()
     uniform_grid = new UniformGrid(objects, scene_bounding_box, scene_subdivision);
 }*/
 
+void Scene::buildAABBTrees()
+{
+    aabb_tree = new AABBTree(objects);
+}
+
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
@@ -1268,10 +1269,14 @@ bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* 
     case UNIFORM_GRID:return IntersectUniformGrid(ray, object);
     default:return IntersectionNoAccelStructure(ray, object);
     }*/
-    return IntersectionNoAccelStructure(ray, object, inter);
+    return IntersectAABBTree(ray, object, inter);
 }
 
-bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter)
+bool Scene::DoesIntersect(const Ray& ray) {
+    return DoesIntersectAABBTree(ray);
+}
+
+/*bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
     Intersection min_inter(FLT_MAX, STPoint3(), STVector3());
     const SceneObject* min_object = NULL;
@@ -1287,40 +1292,27 @@ bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** obj
     *object = min_object;
     *inter = min_inter;
     return (min_object != NULL);
-}
+}*/
 
-bool Scene::DoesIntersect(const Ray& ray) {
-    return DoesIntersectNoAccelStructure(ray);
-}
 
-bool Scene::DoesIntersectNoAccelStructure(const Ray& ray) {
+/*bool Scene::DoesIntersectNoAccelStructure(const Ray& ray) {
     for (const SceneObject* obj : objects) {
         if (obj->doesIntersect(ray)) {
             return true;
         }
     }
     return false;
+}*/
+
+bool Scene::IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter) {
+    *object = aabb_tree->getIntersectionWithObject(ray, inter);
+    return object != NULL;
 }
 
-/*Intersection* Scene::IntersectAABBTree(const Ray& ray, SceneObject*& object)
-{
-    Intersection* min_inter = NULL;
-    SceneObject* current_object = NULL;
-    SceneObject* min_object = NULL;
-    for (int i = 0; i < (int)aabb_trees.size(); i++) {
-        AABBTree* tree = aabb_trees[i];
-        Intersection *inter = tree->getIntersectionWithObject(ray, current_object);
-
-        if (inter && (!min_inter || inter->t < min_inter->t) && ray.inRange(inter->t)) {
-            if (min_inter) delete min_inter;
-            min_inter = inter;
-            min_object = current_object;
-        } else delete inter;
-    }
-    object = min_object;
-    return min_inter;
+bool Scene::DoesIntersectAABBTree(const Ray& ray) {
+    return aabb_tree->doesIntersect(ray);
 }
-
+/*
 Intersection* Scene::IntersectUniformGrid(const Ray& ray, SceneObject*& object)
 {
     return uniform_grid->getIntersectionWithObject(ray, object);
