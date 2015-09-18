@@ -216,12 +216,12 @@ bool Cylinder::isInsideClosed(const STPoint3& pt) {
 
 AABB* Cylinder::getAABB()
 {
-	float xMin = min(A.x, B.x); 
-	float xMax = max(A.x, B.x); 
-	float yMin = min(A.y, B.y); 
-	float yMax = max(A.y, B.y); 
-	float zMin = min(A.z, B.z); 
-	float zMax = max(A.z, B.z); 
+	float xMin = min(A.x(), B.x()); 
+	float xMax = max(A.x(), B.x()); 
+	float yMin = min(A.y(), B.y()); 
+	float yMax = max(A.y(), B.y()); 
+	float zMin = min(A.z(), B.z()); 
+	float zMax = max(A.z(), B.z()); 
 
 	return new AABB(xMin-radius, xMax+radius, yMin-radius, yMax+radius, zMin-radius, zMax+radius);
 }*/
@@ -239,22 +239,22 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
     STVector3 min_inter_p_n;
 
     // intersect with caps
-    if (d.z != 0.f) {   // if ray parallel to caps, then no intersection    
+    if (d.z() != 0.f) {   // if ray parallel to caps, then no intersection    
         // intersect with top cap
-        float t_top = (1.f - e.z) / d.z;
+        float t_top = (1.f - e.z()) / d.z();
         if (ray_unit.inRange(t_top)) {
             STPoint3 inter_top = ray_unit.at(t_top);
-            if (inter_top.x*inter_top.x + inter_top.y*inter_top.y <= 1.f) { // check if intersection is within cap disk
+            if (inter_top.x()*inter_top.x() + inter_top.y()*inter_top.y() <= 1.f) { // check if intersection is within cap disk
                 min_inter_t = t_top;
                 min_inter_p = inter_top;
                 min_inter_p_n = STVector3(0.f, 0.f, 1.f);
             }
         }
         // intersect with bottom cap
-        float t_bottom = -e.z / d.z;
+        float t_bottom = -e.z() / d.z();
         if (ray_unit.inRange(t_bottom) && t_bottom < min_inter_t) {
             STPoint3 inter_bottom = ray_unit.at(t_bottom);
-            if (inter_bottom.x*inter_bottom.x + inter_bottom.y*inter_bottom.y <= 1.f) { // check if intersection is within cap disk
+            if (inter_bottom.x()*inter_bottom.x() + inter_bottom.y()*inter_bottom.y() <= 1.f) { // check if intersection is within cap disk
                 min_inter_t = t_bottom;
                 min_inter_p = inter_bottom;
                 min_inter_p_n = STVector3(0.f, 0.f, -1.f);
@@ -263,10 +263,10 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
     }
 
     // intersect with side
-    if (d.x != 0.f || d.y != 0.f) { // if ray parallel to side, then no intersection
+    if (d.x() != 0.f || d.y() != 0.f) { // if ray parallel to side, then no intersection
         // solve for ray-cirlce intersection in XY plane
-        STVector2 e_xy(e.x, e.y);
-        STVector2 d_xy(d.x, d.y);
+        STVector2 e_xy(e.x(), e.y());
+        STVector2 d_xy(d.x(), d.y());
         float a = d_xy.LengthSq();
         float b = 2.f * STVector2::Dot(d_xy, e_xy);
         float c = e_xy.LengthSq() - 1.f;
@@ -277,19 +277,19 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
             float t1 = neg_b_over_2a - sqrtf_disc_over_2a;
             if (ray_unit.inRange(t1) && t1 < min_inter_t) {
                 STPoint3 inter_side = ray_unit.at(t1);
-                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
                     min_inter_t = t1;
                     min_inter_p = inter_side;
-                    min_inter_p_n = STVector3(inter_side.x, inter_side.y, 0.f);
+                    min_inter_p_n = STVector3(inter_side.x(), inter_side.y(), 0.f);
                 }
             }
             float t2 = neg_b_over_2a + sqrtf_disc_over_2a;
             if (ray_unit.inRange(t2) && t2 < min_inter_t) {
                 STPoint3 inter_side = ray_unit.at(t2);
-                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
                     min_inter_t = t2;
                     min_inter_p = inter_side;
-                    min_inter_p_n = STVector3(inter_side.x, inter_side.y, 0.f);
+                    min_inter_p_n = STVector3(inter_side.x(), inter_side.y(), 0.f);
                 }
             }
         }
@@ -312,30 +312,30 @@ bool Cylinder::doesIntersect(const Ray& ray) const {
     const STVector3& d = ray_unit.d;
 
     // intersect with caps
-    if (d.z != 0.f) {   // if ray parallel to caps, then no intersection    
+    if (d.z() != 0.f) {   // if ray parallel to caps, then no intersection    
         // intersect with top cap
-        float t_top = (1.f - e.z) / d.z;
+        float t_top = (1.f - e.z()) / d.z();
         if (ray_unit.inRange(t_top)) {
             STPoint3 inter_top = ray_unit.at(t_top);
-            if (inter_top.x*inter_top.x + inter_top.y*inter_top.y <= 1.f) { // check if intersection is within cap disk
+            if (inter_top.x()*inter_top.x() + inter_top.y()*inter_top.y() <= 1.f) { // check if intersection is within cap disk
                 return true;
             }
         }
         // intersect with bottom cap
-        float t_bottom = -e.z / d.z;
+        float t_bottom = -e.z() / d.z();
         if (ray_unit.inRange(t_bottom)) {
             STPoint3 inter_bottom = ray_unit.at(t_bottom);
-            if (inter_bottom.x*inter_bottom.x + inter_bottom.y*inter_bottom.y <= 1.f) { // check if intersection is within cap disk
+            if (inter_bottom.x()*inter_bottom.x() + inter_bottom.y()*inter_bottom.y() <= 1.f) { // check if intersection is within cap disk
                 return true;
             }
         }
     }
 
     // intersect with side
-    if (d.x != 0.f || d.y != 0.f) { // if ray parallel to side, then no intersection
+    if (d.x() != 0.f || d.y() != 0.f) { // if ray parallel to side, then no intersection
         // solve for ray-cirlce intersection in XY plane
-        STVector2 e_xy(e.x, e.y);
-        STVector2 d_xy(d.x, d.y);
+        STVector2 e_xy(e.x(), e.y());
+        STVector2 d_xy(d.x(), d.y());
         float a = d_xy.LengthSq();
         float b = 2.f * STVector2::Dot(d_xy, e_xy);
         float c = e_xy.LengthSq() - 1.f;
@@ -346,14 +346,14 @@ bool Cylinder::doesIntersect(const Ray& ray) const {
             float t1 = neg_b_over_2a - sqrtf_disc_over_2a;
             if (ray_unit.inRange(t1)) {
                 STPoint3 inter_side = ray_unit.at(t1);
-                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
                     return true;
                 }
             }
             float t2 = neg_b_over_2a + sqrtf_disc_over_2a;
             if (ray_unit.inRange(t2)) {
                 STPoint3 inter_side = ray_unit.at(t2);
-                if (inter_side.z >= 0.f && inter_side.z <= 1.f) {   // check if intersection is within cylinder height
+                if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
                     return true;
                 }
             }
@@ -364,7 +364,7 @@ bool Cylinder::doesIntersect(const Ray& ray) const {
 
 
 float Cylinder::getSurfaceArea() const {
-    return (2.0f * M_PI * radius * radius) + (2.0f * M_PI * radius * (A - B).Length());
+    return (2.0f * M_PI * radius * radius) + (2.0f * M_PI * radius * (A - B).norm());
 }
 
 STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
@@ -377,7 +377,7 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
     // the top cap, bottom cap, or side.
     float topCapCutoff = M_PI * radius * radius;
     float bottomCapCutoff = topCapCutoff + topCapCutoff;
-    float total = bottomCapCutoff + (2.0f * M_PI * radius * (A - B).Length());
+    float total = bottomCapCutoff + (2.0f * M_PI * radius * (A - B).norm());
 
     float q = randFloat() * total;
     if (q < bottomCapCutoff) {
@@ -388,18 +388,18 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
         float x = sqrt_r * cosf(theta);
         float y = sqrt_r * sinf(theta);
 
-        p_unit.x = x;
-        p_unit.y = y;
-        p_n_unit.x = 0.f;
-        p_n_unit.y = 0.f;
+        p_unit.x() = x;
+        p_unit.y() = y;
+        p_n_unit.x() = 0.f;
+        p_n_unit.y() = 0.f;
         if (q < topCapCutoff) {
             // point on top cap
-            p_unit.z = 1.f;
-            p_n_unit.z = 1.f;
+            p_unit.z() = 1.f;
+            p_n_unit.z() = 1.f;
         } else {
             // point on bottom cap
-            p_unit.z = 0.f;
-            p_n_unit.z = -1.f;
+            p_unit.z() = 0.f;
+            p_n_unit.z() = -1.f;
         }
     } else {
         // sample the cylinder side (theta in [0,2pi], h in [0,1])

@@ -67,14 +67,14 @@ public:
     float qPsig_y0_y1(const SceneObject* light, const STVector3& y0_y1_w, const STVector3& y0_n) {
         // q = min(f/Psig, 1), so qPsig = min(f, Psig)
         // For Y0Lambertian, we have f = Psig = 1/pi for +z hemisphere
-        if (STVector3::Dot(y0_y1_w, y0_n) >= 0.f) {
+        if (y0_y1_w.dot(y0_n) >= 0.f) {
             return 1.f / M_PI;
         }
         return 0.f;
     }
 
     STColor3f Le(const SceneObject* light, const STVector3& y0_y1_w, const STVector3& y0_n) {
-        if (STVector3::Dot(y0_y1_w, y0_n) >= 0.f) {
+        if (y0_y1_w.dot(y0_n) >= 0.f) {
             return light->getEmittedPower() / (light->getSurfaceArea() * M_PI);
         }
         return STColor3f(0.f);
@@ -135,7 +135,7 @@ public:
     void rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3);
     void rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z);
     void rtBox(const STPoint3& center, const STVector3& size);
-    void rtCylinder(const STPoint3& A, const STPoint3 B, float radius);
+    void rtCylinder(const STPoint3& A, const STPoint3& B, float radius);
     void rtQJulia(const float4& mu, const float epsilon);
 
     //void rtParticipatingMedia(const STPoint3& center, const STVector3& size, const std::string& file_name);

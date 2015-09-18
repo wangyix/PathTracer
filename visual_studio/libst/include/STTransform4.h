@@ -1,9 +1,14 @@
 #ifndef STTRANSFORM4_H
 #define STTRANSFORM4_H
 
+#include "stForward.h"
+
+STTransform4 RotationMatrix(float rx, float ry, float rz);
+STTransform4 ScalingMatrix(float sx, float sy, float sz);
+STTransform4 TranslationMatrix(float tx, float ty, float tz);
+
 #if 0
 
-#include "stForward.h"
 #include <iostream>
 
 class STTransform4

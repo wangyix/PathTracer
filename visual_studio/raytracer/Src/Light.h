@@ -14,7 +14,7 @@
 class Light {
 public:
     virtual ~Light() {}
-    virtual STColor3f color(Intersection *inter, STVector3 view, const STColor3f& amb, const STColor3f& diff, const STColor3f& spec, float shine) = 0;
+    virtual STColor3f color(Intersection *inter, const STVector3& view, const STColor3f& amb, const STColor3f& diff, const STColor3f& spec, float shine) = 0;
     virtual STVector3 direction(const STPoint3& pt) = 0;
     std::string name;
 protected:

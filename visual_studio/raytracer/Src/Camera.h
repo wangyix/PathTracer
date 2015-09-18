@@ -43,20 +43,20 @@ public:
     Camera(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect);
     void setAttributes(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect);
     ~Camera(){}
-    Ray* generateRay(float u, float v, float bias = 0.) const;
-    void generateRay(Ray& ray, float u, float v, float bias = 0.) const;
+    //Ray* generateRay(float u, float v, float bias = 0.) const;
+    void generateRay(Ray* ray, float u, float v, float bias = 0.) const;
     float getFocalRatio(const STPoint3& f);
     STPoint3 pointOnPlane(float u, float v) const;
 
     const STPoint3& getEye() const { return eye; }
     STVector3 getLook() const {
         STVector3 look = lookAt - eye;
-        look.Normalize();
+        look.normalize();
         return look;
     }
 
     STVector3 getDirectionOfUv(float u, float v) const;
-    void getUvOfDirection(const STVector3 w, float* u, float* v) const;
+    void getUvOfDirection(const STVector3& w, float* u, float* v) const;
 
     void setSampleUV(float u, float v);
     void sample_z0(STPoint3* z0, STVector3* z0_n, Bsdf const** bsdf, float* Pa, STColor3f* We0) const;

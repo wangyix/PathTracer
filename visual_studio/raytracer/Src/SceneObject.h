@@ -16,6 +16,12 @@
 
 class SceneObject {
 public:
+    void* operator new(size_t size){
+        return _aligned_malloc(size, 16);
+    }
+        void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
     /*SceneObject(Shape* _shape=NULL, const Material* _material=NULL, const STTransform4* _transform=NULL, const int _texture_index=-1) :
         shape(_shape),
         aabb(NULL),
@@ -38,15 +44,15 @@ public:
     SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf, STColor3f emittedPower = STColor3f(0.f)) :
         shape(shape),
         transform(transform),
-        tInverse(transform.Inverse()),
-        tInverseTranspose(tInverse.Transpose()),
+        tInverse(transform.inverse()),
+        tInverseTranspose(tInverse.transpose()),
         name("scene_object"),
         isLight(emittedPower.maxComponent() > 0.f),
         bsdf(bsdf),
         emittedPower(emittedPower)
     {
         //tTranspose = transform.Transpose();
-        scale = transform.columnnMagnitude(0);  // assuming transform does not warp shape
+        scale = transform.block(0, 0, 3, 1).norm(); //columnnMagnitude(0);  // assuming transform does not warp shape
         if (shape) shape->getAABB(transform, &aabb);
         if (shape) name = shape->name;
     }
@@ -66,7 +72,7 @@ public:
         if (shape->getIntersect(ray.transform(tInverse), inter)) {
             inter->point = transform * inter->point;
             inter->normal = tInverseTranspose * inter->normal;
-            inter->normal.Normalize();
+            inter->normal.normalize();
             return true;
         }
         return false;
@@ -87,7 +93,7 @@ public:
         STPoint3 p = shape->uniformSampleSurface(normal);
         p = transform * p;
         *normal = tInverseTranspose * *normal;
-        normal->Normalize();
+        normal->normalize();
         return p;
     }
 
@@ -134,7 +140,12 @@ public:
         triangle(triangle) {
         triangle.getAABB(STTransform4::Identity(), &aabb);
     }  
-
+    void* operator new(size_t size) {
+        return _aligned_malloc(size, 16);
+    }
+    void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
     bool doesIntersect(const Ray& ray) const override{
         return triangle.doesIntersect(ray);
     }

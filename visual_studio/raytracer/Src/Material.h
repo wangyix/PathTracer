@@ -26,10 +26,10 @@ public:
         float sn = 0., VolumetricTexture* vt = 0)
     : ambient(amb), diffuse(diff), specular(spec), mirror(mirr), shininess(shine), refract(refr), snell(sn), volumetric_texture(vt) {}
     //~Material() {if(volumetric_texture!=0)delete volumetric_texture;}
-    STColor3f shade(Intersection* inter, STVector3 view, std::vector<Light *>& lights, const STColor3f& mirrorCol = STColor3f(), const STColor3f& refractCol = STColor3f());
-	STColor3f shade(Intersection* inter, STVector3 view, std::vector<Light *>& lights, std::vector<STColor3f>& attenuation, const STColor3f& mirrorCol = STColor3f(), const STColor3f& refractCol = STColor3f());
-	Ray *refracted(Ray into, Intersection *inter, float bias = 0.);
-    Ray *refracted(STVector3 d, Intersection *inter, float bias = 0.);
+    STColor3f shade(Intersection* inter, const STVector3& view, std::vector<Light *>& lights, const STColor3f& mirrorCol = STColor3f(), const STColor3f& refractCol = STColor3f());
+	STColor3f shade(Intersection* inter, const STVector3& view, std::vector<Light *>& lights, std::vector<STColor3f>& attenuation, const STColor3f& mirrorCol = STColor3f(), const STColor3f& refractCol = STColor3f());
+	//Ray *refracted(const Ray& into, Intersection *inter, float bias = 0.);
+    //Ray *refracted(const STVector3& d, Intersection *inter, float bias = 0.);
     bool isOpaque() { return !(refract.r || refract.g || refract.b); }
     bool isMatte() { return !(mirror.r || mirror.g || mirror.b); }
     bool isParticipatingMedia() { return volumetric_texture!=0; }

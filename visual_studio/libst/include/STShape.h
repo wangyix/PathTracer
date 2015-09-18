@@ -75,6 +75,13 @@ public:
         STPoint2 texCoord;
     };
 
+    void* operator new(size_t size){
+        return _aligned_malloc(size, 16);
+    }
+    void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
+
     //
     // Type of vertex array.
     //

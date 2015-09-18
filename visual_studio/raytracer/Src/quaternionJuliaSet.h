@@ -64,6 +64,12 @@ inline float3 cross(const float3& left, const float3& right)
 
 class quaternionJuliaSet : public Shape {
 public:
+    void* operator new(size_t size){
+        return _aligned_malloc(size, 16);
+    }
+        void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
 	quaternionJuliaSet(float4 _mu, const float _epsilon)
         : mu(_mu), epsilon(_epsilon)
 	{

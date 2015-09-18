@@ -8,7 +8,7 @@
 static const double pi = 3.14159265358979;
 
 Camera::Camera()
-    : eye(STPoint3(0.f, 0.f, 0.f)), up(STVector3(0.f, 1.f, 0.f)), lookAt(0.f, 0.f, -1.f), fovy(45.f), aspect(1.f), cameraBsdf(*this)
+    : eye(STPoint3(0.f, 0.f, 0.f)), up(STVector3(0.f, 1.f, 0.f)), lookAt(STPoint3(0.f, 0.f, -1.f)), fovy(45.f), aspect(1.f), cameraBsdf(*this)
 {
 }
 
@@ -25,17 +25,18 @@ void Camera::setAttributes(const STPoint3& _eye, const STVector3& _up, const STP
     fovy = _fovy;
     aspect = _aspect;
 
-    left = STVector3::Cross(up, lookAt - eye);
-    up = STVector3::Cross(lookAt - eye, left);
-    left.Normalize();
-    up.Normalize();
+    left = up.cross3(lookAt - eye);     // STVector3::Cross(up, lookAt - eye);
+    up = (lookAt - eye).cross3(left);    // STVector3::Cross(lookAt - eye, left);
+    left.normalize();
+    up.normalize();
 
-    float y = (lookAt - eye).Length() * tan(.5f * (fovy * (float)pi / 180.f));
+    float y = (lookAt - eye).norm() * tan(.5f * (fovy * (float)pi / 180.f));
     float x = y * aspect;
-    UL = STVector3(lookAt) + x * left + y * up;
-    UR = STVector3(lookAt) - x * left + y * up;
-    LL = STVector3(lookAt) + x * left - y * up;
-    LR = STVector3(lookAt) - x * left - y * up;
+    STVector3 lookAtV = STVector3(lookAt.x(), lookAt.y(), lookAt.z());
+    UL = lookAtV + x * left + y * up;
+    UR = lookAtV - x * left + y * up;
+    LL = lookAtV + x * left - y * up;
+    LR = lookAtV - x * left - y * up;
     UL_half_dist = y;
     LR_half_dist = x;
 
@@ -44,47 +45,65 @@ void Camera::setAttributes(const STPoint3& _eye, const STVector3& _up, const STP
     const STVector3& J = up;
     STVector3 K = getLook();
     const STPoint3& P = eye;
-    STTransform4 viewToWorld = STTransform4(
+
+    STTransform4 viewToWorld = STTransform4();
+    viewToWorld(0, 0) = I.x();
+    viewToWorld(1, 0) = I.y();
+    viewToWorld(2, 0) = I.z();
+    viewToWorld(3, 0) = 0.f;
+    viewToWorld(0, 1) = J.x();
+    viewToWorld(1, 1) = J.y();
+    viewToWorld(2, 1) = J.z();
+    viewToWorld(3, 1) = 0.f;
+    viewToWorld(0, 2) = K.x();
+    viewToWorld(1, 2) = K.y();
+    viewToWorld(2, 2) = K.z();
+    viewToWorld(3, 2) = 0.f;
+    viewToWorld(0, 3) = P.x();
+    viewToWorld(1, 3) = P.y();
+    viewToWorld(2, 3) = P.z();
+    viewToWorld(3, 3) = 1.f;
+    /*STTransform4 viewToWorld = STTransform4(
         I.x, J.x, K.x, P.x,
         I.y, J.y, K.y, P.y,
         I.z, J.z, K.z, P.z,
         0.f, 0.f, 0.f, 1.f
-        );
-    worldToView = viewToWorld.Inverse();
+        );*/
+    worldToView = viewToWorld.inverse();
 }
 
 STPoint3 Camera::pointOnPlane(float u, float v) const {
     STVector3 pVec = (1 - u) * ((1 - v) * LL + v * UL)
                         + u * ((1 - v) * LR + v * UR);
-    return STPoint3(pVec);
+    return STPoint3(pVec.x(), pVec.y(), pVec.z());
 }
 
-Ray* Camera::generateRay(float u, float v, float bias) const {
+/*Ray* Camera::generateRay(float u, float v, float bias) const {
     return new Ray(eye, pointOnPlane(u, v) - eye, bias);
 }
-
-void Camera::generateRay(Ray& ray, float u, float v, float bias) const {
-    ray = Ray(eye, pointOnPlane(u, v) - eye, bias);
+*/
+void Camera::generateRay(Ray* ray, float u, float v, float bias) const {
+    *ray = Ray(eye, pointOnPlane(u, v) - eye, bias);
 }
 
 float Camera::getFocalRatio(const STPoint3 &f) {
-    return STVector3::Dot(f - eye, lookAt - eye) / (lookAt - eye).LengthSq();
+    return (f - eye).dot(lookAt - eye) / (lookAt - eye).squaredNorm();
 }
 
 STVector3 Camera::getDirectionOfUv(float u, float v) const {
     STVector3 w = pointOnPlane(u, v) - eye;
-    w.Normalize();
+    w.normalize();
     return w;
 }
 
-void Camera::getUvOfDirection(const STVector3 w, float* u, float* v) const {
+void Camera::getUvOfDirection(const STVector3& w, float* u, float* v) const {
     STVector3 w_v = worldToView * w;
     
     // scale w_v so that it goes from the eye to a point on the camera plane
-    float target_z = (lookAt - eye).Length();
-    STVector3 w_v_scaled = w_v * (target_z / w_v.z);
-    float ndc_u = w_v_scaled.x / LR_half_dist;  // [-1, 1]
-    float ndc_v = w_v_scaled.y / UL_half_dist;  // [-1, 1]
+    float target_z = (lookAt - eye).norm();
+    STVector3 w_v_scaled = w_v * (target_z / w_v.z());
+    float ndc_u = w_v_scaled.x() / LR_half_dist;  // [-1, 1]
+    float ndc_v = w_v_scaled.y() / UL_half_dist;  // [-1, 1]
 
     *u = .5f * (1.f - ndc_u);
     *v = .5f * (ndc_v + 1.f);
@@ -129,14 +148,14 @@ STColor3f CameraBsdf::f(const STVector3& wo, const STVector3& wi) const {
     // f here means We_1(z0, w), which is 1/cosw^3 to offset the cos terms in the solid angle
     // subtended by pixels on the img plane.
     // Should really be scaled by 1/C so We_1(z0, w) integrates to 1, but this should work
-    float cos_wi = STVector3::Dot(wi, camera.getLook());
+    float cos_wi = wi.dot(camera.getLook());    // STVector3::Dot(wi, camera.getLook());
     return STColor3f(1.f) / (C * cos_wi * cos_wi * cos_wi);
 }
 
 STColor3f CameraBsdf::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // we'll choose w so that it goes thru (u_sample,v_sample), as we were told
     *wi = camera.getDirectionOfUv(u_sample, v_sample);
-    *cos_wi = STVector3::Dot(*wi, camera.getLook());
+    *cos_wi = wi->dot(camera.getLook());    // STVector3::Dot(*wi, camera.getLook());
 
     *pdf_sig = p_sig(wo, *wi);
     return f(wo, *wi);
@@ -147,7 +166,7 @@ float CameraBsdf::p_sig(const STVector3& wo, const STVector3& wi) const {
     // Psig(z0->z1) = 1 / (4 * a * tan(fovy/2)^2 * cos(theta)^4)
 
     STVector3 look = camera.getLook();
-    float cos_wi = STVector3::Dot(wi, look);
+    float cos_wi = wi.dot(look);    // STVector3::Dot(wi, look);
 
     float tanHalfFovy = tanf(0.5f * camera.fovy * (float)pi / 180.f);
     float tanHalfFovy_cosThetaSq = tanHalfFovy * cos_wi * cos_wi;

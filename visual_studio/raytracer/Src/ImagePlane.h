@@ -9,6 +9,7 @@
 #include "Camera.h"
 #include "Jitter.h"
 #include <iostream>
+#include <vector>
 
 class ImagePlane {
 public:
@@ -24,8 +25,9 @@ public:
                 for (int j = 0; j < sampling; j++) {
                     float u = ((float)x + .5f) / width;
                     float v = ((float)y + .5f) / height;
-                    Ray *camRay = camera->generateRay(u, v);
-                    STPoint3 focal = camRay->at(focus);
+                    Ray camRay;
+                    camera->generateRay(&camRay, u, v);
+                    STPoint3 focal = camRay.at(focus);
 					float jitter_u=use_jitter?jitter.get():0;float jitter_v=use_jitter?jitter.get():0;
 					float apertureOnPlane = focus >=1.f ? (focus-1.f)/focus * aperture : (1.f-focus)/focus * aperture;
                     float du = (-apertureOnPlane / 2 + apertureOnPlane * ((float)(i) + jitter_u) / sampling) / width;
@@ -34,15 +36,15 @@ public:
                     if (focus >= 1)
                         rays->push_back(new Ray(onPlane, focal - onPlane, -10000.f));
                     else rays->push_back(new Ray(focal, onPlane - focal, -2.5f));
-                    delete camRay;
                 }
             }
         } else {
             for (int i = 0; i < sampling; i++) {
                 for (int j = 0; j < sampling; j++) {
 					float jitter_u=use_jitter?jitter.get():0;float jitter_v=use_jitter?jitter.get():0;
-                    rays->push_back(camera->generateRay(((float)x + ((float)(i) + jitter_u) / sampling) / width,
-                                                        ((float)y + ((float)(j) + jitter_v) / sampling) / height));
+                    rays->push_back(NULL);
+                    camera->generateRay(rays->back(), ((float)x + ((float)(i) + jitter_u) / sampling) / width,
+                                                      ((float)y + ((float)(j) + jitter_v) / sampling) / height);
                 }
             }
         }

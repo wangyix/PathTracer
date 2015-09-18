@@ -15,7 +15,7 @@ public:
         : v1(_v1), v2(_v2), v3(_v3), col(_col) { jitter = new Jitter(); name = "area"; index = 0; setSampleRate(sampleRate); }
     ~AreaLight() { if (jitter) delete jitter; if(pretendLight) delete pretendLight;}
     
-    STColor3f color(Intersection *inter, STVector3 view, const STColor3f& amb, const STColor3f& diff, const STColor3f& spec, float shine) {
+    STColor3f color(Intersection *inter, const STVector3& view, const STColor3f& amb, const STColor3f& diff, const STColor3f& spec, float shine) override {
         return pretendLight->color(inter, view, amb, diff, spec, shine);
     }
     

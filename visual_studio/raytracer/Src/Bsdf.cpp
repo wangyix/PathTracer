@@ -1,10 +1,10 @@
 #include "Bsdf.h"
 #include "STColor3f.h"
 #include "STVector3.inl"
+#include "STUtil.h"
 
 #include <sstream>
 #include <cstdlib>
-
 
 STColor3f FrDiel(float cosi, float cost, const STColor3f& etai, const STColor3f& etat) {
     STColor3f Rparl = ((etat * cosi) - (etai * cost)) /
@@ -53,7 +53,7 @@ STColor3f fresnelDielEvaluate(float cosi, float etai, float etat) {
 
 
 STColor3f Lambertian::f(const STVector3& wo, const STVector3& wi) const {
-    if ((wo.z >= 0.f) == (wi.z >= 0.f)) {
+    if ((wo.z() >= 0.f) == (wi.z() >= 0.f)) {
         return R / M_PI;
     }
     return STColor3f(0.f);
@@ -64,10 +64,10 @@ STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_si
     float r = randFloat();                     // [0, 1]
     float theta = randFloat() * 2.0f * M_PI;   // [0, 2pi]
     float sqrt_r = sqrtf(r);
-    wi->x = sqrt_r * cosf(theta);
-    wi->y = sqrt_r * sinf(theta);
-    wi->z = sqrtf(std::max(0.f, 1.f - wi->x*wi->x - wi->y*wi->y));
-    if (CosTheta(wo) < 0.f) wi->z = -wi->z;     // make sure wi, wo are in same hemisphere
+    wi->x() = sqrt_r * cosf(theta);
+    wi->y() = sqrt_r * sinf(theta);
+    wi->z() = sqrtf(std::max(0.f, 1.f - wi->x()*wi->x() - wi->y()*wi->y()));
+    if (CosTheta(wo) < 0.f) wi->z() = -wi->z();     // make sure wi, wo are in same hemisphere
 
     *pdf_sig = 1.0f / M_PI;
     *cos_wi = AbsCosTheta(*wi);
@@ -75,7 +75,7 @@ STColor3f Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_si
 }
 
 float Lambertian::p_sig(const STVector3& wo, const STVector3& wi) const {
-    if ((wo.z >= 0.f) == (wi.z >= 0.f)) {
+    if ((wo.z() >= 0.f) == (wi.z() >= 0.f)) {
         return 1.f / M_PI;
     }
     return 0.f;
@@ -89,7 +89,7 @@ std::string Lambertian::getDescriptionString() const {
 
 
 STColor3f Y0Lambertian::f(const STVector3& wo, const STVector3& wi) const {
-    if (wi.z >= 0.f) {
+    if (wi.z() >= 0.f) {
         return STColor3f(1.f / M_PI);
     }
     return STColor3f(0.f);
@@ -100,9 +100,9 @@ STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     float r = randFloat();                     // [0, 1]
     float theta = randFloat() * 2.0f * M_PI;   // [0, 2pi]
     float sqrt_r = sqrtf(r);
-    wi->x = sqrt_r * cosf(theta);
-    wi->y = sqrt_r * sinf(theta);
-    wi->z = sqrtf(std::max(0.f, 1.f - wi->x*wi->x - wi->y*wi->y));
+    wi->x() = sqrt_r * cosf(theta);
+    wi->y() = sqrt_r * sinf(theta);
+    wi->z() = sqrtf(std::max(0.f, 1.f - wi->x()*wi->x() - wi->y()*wi->y()));
     // wi is always chosen to be in +z hemisphere on side of normal
 
     *cos_wi = CosTheta(*wi);
@@ -111,7 +111,7 @@ STColor3f Y0Lambertian::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
 }
 
 float Y0Lambertian::p_sig(const STVector3& wo, const STVector3& wi) const {
-    if (wi.z >= 0.f) {
+    if (wi.z() >= 0.f) {
         return 1.f / M_PI;
     }
     return 0.f;
@@ -142,9 +142,9 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     // Handle total internal reflection for transmission
     if (sint2 >= 1.) {
         *pdf_sig = 1.f;
-        wi->x = -wo.x;
-        wi->y = -wo.y;
-        wi->z = wo.z;
+        wi->x() = -wo.x();
+        wi->y() = -wo.y();
+        wi->z() = wo.z();
         *cos_wi = AbsCosTheta(*wi);
         return R;
     } else {
@@ -155,16 +155,16 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
         float q = (Fr.r + Fr.g + Fr.b) / 3.f;
         if (randFloat() < q) {
             *pdf_sig = q;
-            wi->x = -wo.x;
-            wi->y = -wo.y;
-            wi->z = wo.z;
+            wi->x() = -wo.x();
+            wi->y() = -wo.y();
+            wi->z() = wo.z();
             *cos_wi = AbsCosTheta(*wi);
             return Fr * R;
         } else {
             *pdf_sig = 1.f - q;
             if (entering) cost = -cost;
             float sintOverSini = eta;
-            *wi = STVector3(sintOverSini * -wo.x, sintOverSini * -wo.y, cost);
+            *wi = STVector3(sintOverSini * -wo.x(), sintOverSini * -wo.y(), cost);
             *cos_wi = AbsCosTheta(*wi);
             return (STColor3f(1.f) - Fr) * T;
         }
@@ -191,15 +191,15 @@ STColor3f SpecularCond::f(const STVector3& wo, const STVector3& wi) const {
 
 STColor3f SpecularCond::sample_f(const STVector3& wo, STVector3* wi, float *pdf_sig, float* cos_wi) const {
     // wi will always be wo reflected
-    wi->x = -wo.x;
-    wi->y = -wo.y;
-    wi->z = wo.z;
+    wi->x() = -wo.x();
+    wi->y() = -wo.y();
+    wi->z() = wo.z();
     *pdf_sig = 1.0f;     // 1*dirac
 
     *cos_wi = AbsCosTheta(*wi);
 
     // bsdf is Fr * delta(w-wi)
-    if (wo.z > 0.f) {
+    if (wo.z() > 0.f) {
         return FrCond(CosTheta(wo), eta, k) * R;
     }
     return STColor3f(0.f);

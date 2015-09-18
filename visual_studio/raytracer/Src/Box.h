@@ -11,6 +11,12 @@
 
 class Box : public Shape {
 public:
+    void* operator new(size_t size){
+        return _aligned_malloc(size, 16);
+    }
+        void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
     Box(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z)
         : o(o), i(x - o), j(y - o), k(z - o)
     {
@@ -20,8 +26,10 @@ public:
         initTriangles();
     }
     Box(const STPoint3& center,const STVector3& size)   ////axis aligned box
-        : o(center-size*.5f),i(size.x,0.f,0.f),j(0.f,size.y,0.f),k(0.f,0.f,size.z)
+        : i(STVector3(size.x(), 0.f, 0.f)), j(STVector3(0.f, size.y(), 0.f)), k(STVector3(0.f, 0.f, size.z()))
     {
+        STVector3 oo = center - size*.5f;
+        o = STPoint3(oo.x(), oo.y(), oo.z());
         //maxInt = 2;
         this->name = "box";
         fillCob();
@@ -75,13 +83,13 @@ public:
     }
     bool isInsideOpen(const STPoint3& pt) {
         STVector3 coords = cob * (pt - o);
-        return (coords.x > .001 && coords.y > .001 && coords.z > .001 &&
-                coords.x < 1 - .001 && coords.y < 1 - .001 && coords.z < 1 - .001);
+        return (coords.x() > .001 && coords.y() > .001 && coords.z() > .001 &&
+                coords.x() < 1 - .001 && coords.y() < 1 - .001 && coords.z() < 1 - .001);
     }
     bool isInsideClosed(const STPoint3& pt) {
         STVector3 coords = cob * (pt - o);
-        return (coords.x >= -.001 && coords.y >= -.001 && coords.z >= -.001 &&
-                coords.x <= 1 + .001 && coords.y <= 1 + .001 && coords.z <= 1 + .001);
+        return (coords.x() >= -.001 && coords.y() >= -.001 && coords.z() >= -.001 &&
+                coords.x() <= 1 + .001 && coords.y() <= 1 + .001 && coords.z() <= 1 + .001);
     }*/
 
     void getAABB(const STTransform4& transform, AABB* aabb) const override {
@@ -103,7 +111,7 @@ public:
     }
 
     bool getIntersect(const Ray& ray, Intersection* intersection) const override {
-        Intersection min_int(FLT_MAX, STPoint3(), STVector3());
+        Intersection min_int(FLT_MAX, STPoint3(0.f, 0.f, 0.f), STVector3(0.f, 0.f, 0.f));
         for (int i = 0; i < 12; i++) {
             Intersection inter;
             if (sides[i].getIntersect(ray, &inter) && inter.t < min_int.t) {
@@ -161,12 +169,12 @@ private:
     Triangle sides[12];
     void fillCob() {
         for (int ind = 0; ind < 3; ind++) {
-            cob[ind][0] = this->i.Component(ind);
-            cob[ind][1] = this->j.Component(ind);
-            cob[ind][2] = this->k.Component(ind);
+            cob(ind,0) = this->i[ind];
+            cob(ind,1) = this->j[ind];
+            cob(ind,2) = this->k[ind];
         }
-        cob[3][3] = 1.;
-        cob = cob.Inverse();
+        cob(3,3) = 1.;
+        cob = cob.inverse();
     }
     void initTriangles(){
         sides[0] = Triangle(o, o + j, o + i + j);

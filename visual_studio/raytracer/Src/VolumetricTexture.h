@@ -9,7 +9,7 @@ class VolumetricTexture
 {
 public:
     VolumetricTexture(/*const int _counts[3], */const std::string& file_name)
-        : min_corner(0.f,0.f,0.f), max_corner(1.f,1.f,1.f)
+        : min_corner(STPoint3(0.f,0.f,0.f)), max_corner(STPoint3(1.f,1.f,1.f))
     {
         parseFile(file_name);
     }
@@ -40,14 +40,14 @@ private:
     void getCell(const STPoint3& p, /*result*/int idx[3])
     {
         for(int d=0;d<3;d++){
-            idx[d]=(int)floor((p.Component(d)-min_corner.Component(d))*one_over_dx[d]);
+            idx[d]=(int)floor((p[d]-min_corner[d])*one_over_dx[d]);
         }
     }
 
     void getCellWithFrac(const STPoint3& p, /*result*/int idx[3], /*result*/float frac[3])
     {
         for(int d=0;d<3;d++){
-            float s=(p.Component(d)-min_corner.Component(d))*one_over_dx[d];
+            float s=(p[d]-min_corner[d])*one_over_dx[d];
             idx[d]=(int)floor(s);
             if(idx[d]>=counts[d]-1)idx[d]=counts[d]-2;//sort of hacky, but keeps idx from being out of bounds in Value function
             frac[d]=s-(float)idx[d];
@@ -79,7 +79,7 @@ private:
     {
         for(int d=0;d<3;d++){
             counts[d]=_counts[d];
-            dx[d]=(max_corner.Component(d)-min_corner.Component(d))/(float)counts[d];
+            dx[d]=(max_corner[d]-min_corner[d])/(float)counts[d];
             one_over_dx[d]=1.f/dx[d];
         }
 

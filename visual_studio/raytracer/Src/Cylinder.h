@@ -11,6 +11,12 @@
 
 class Cylinder : public Shape {
 public:
+    void* operator new(size_t size){
+        return _aligned_malloc(size, 16);
+    }
+        void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
     Cylinder(const STPoint3& _A, const STPoint3& _B, float _radius) {
         this->name = "cylinder";
         //maxInt = 2;
@@ -32,26 +38,42 @@ public:
         // I, J are radius length, perpendicular to K, which is equal to B-A;
         STVector3 I, J;
         STVector3 K = B - A;
-        if (K.x == 0.f && K.y == 0.f) {
+        if (K.x() == 0.f && K.y() == 0.f) {
             I = STVector3(radius, 0.f, 0.f);
             J = STVector3(0.f, radius, 0.f);
         } else {
-            I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
-            I.Normalize();
+            I = K.cross3(STVector3(0.f, 0.f, 1.f));  // STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
+            I.normalize();
             I *= radius;
-            J = STVector3::Cross(K, I);
-            J.Normalize();
+            J = K.cross3(I); // STVector3::Cross(K, I);
+            J.normalize();
             J *= radius;
         }
 
-        toObjectSpace = STTransform4(
+        toObjectSpace(0, 0) = I.x();
+        toObjectSpace(1, 0) = I.y();
+        toObjectSpace(2, 0) = I.z();
+        toObjectSpace(3, 0) = 0.f;
+        toObjectSpace(0, 1) = J.x();
+        toObjectSpace(1, 1) = J.y();
+        toObjectSpace(2, 1) = J.z();
+        toObjectSpace(3, 1) = 0.f;
+        toObjectSpace(0, 2) = K.x();
+        toObjectSpace(1, 2) = K.y();
+        toObjectSpace(2, 2) = K.z();
+        toObjectSpace(3, 2) = 0.f;
+        toObjectSpace(0, 3) = A.x();
+        toObjectSpace(1, 3) = A.y();
+        toObjectSpace(2, 3) = A.z();
+        toObjectSpace(3, 3) = 1.f;
+        /*toObjectSpace = STTransform4(
             I.x, J.x, K.x, A.x,
             I.y, J.y, K.y, A.y,
             I.z, J.z, K.z, A.z,
             0.f, 0.f, 0.f, 1.f
-        );
-        toUnitCylinderSpace = toObjectSpace.Inverse();
-        toObjectInvTranspose = toUnitCylinderSpace.Transpose();
+        );*/
+        toUnitCylinderSpace = toObjectSpace.inverse();
+        toObjectInvTranspose = toUnitCylinderSpace.transpose();
     }
 
     /*~Cylinder()

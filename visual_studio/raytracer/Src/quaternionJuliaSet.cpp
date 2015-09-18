@@ -271,7 +271,7 @@ bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
 }
 
 void quaternionJuliaSet::getAABB(const STTransform4& transform, AABB* aabb) const {
-    float scale = transform.columnnMagnitude(0);    // assuming transform does not warp shape
+    float scale = transform.block(0, 0, 3, 1).norm();   // columnnMagnitude(0);    // assuming transform does not warp shape
     float r = scale * RADIUS;
     STPoint3 c = transform * STPoint3(0.f, 0.f, 0.f);
     *aabb = AABB(c.x - r, c.x + r, c.y - r, c.y + r, c.z - r, c.z + r);

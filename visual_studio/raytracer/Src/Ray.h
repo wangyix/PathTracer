@@ -7,6 +7,7 @@
 #define RayTracer_Ray_h
 
 #include "float.h"
+#include "stForward.h"
 #include "STVector3.h"
 #include "STPoint3.h"
 #include "STTransform4.h"

@@ -10,13 +10,24 @@
 
 class Triangle : public Shape {
 public:
-    Triangle() : v1(0.f, 0.f, 0.f), v2(1.f, 0.f, 0.f), v3(0.f, 1.f, 0.f) {}
+    void* operator new(size_t size){
+        return _aligned_malloc(size, 16);
+    }
+        void operator delete(void* ptr) {
+        return _aligned_free(ptr);
+    }
+
+    Triangle() {
+        v1 = STPoint3(0.f, 0.f, 0.f);
+        v2 = STPoint3(1.f, 0.f, 0.f);
+        v3 = STPoint3(0.f, 1.f, 0.f);
+    }
 
     Triangle(const STPoint3& _v1, const STPoint3& _v2, const STPoint3& _v3)
 		: v1(_v1), v2(_v2), v3(_v3)
 	{
-        STVector3 n = STVector3::Cross(v2 - v1, v3 - v1); //going counterclockwise
-        n.Normalize();
+        STVector3 n = (v2 - v1).cross3(v3 - v1);    // STVector3::Cross(v2 - v1, v3 - v1); //going counterclockwise
+        n.normalize();
 		n1 = n2 = n3 = n;
         this->name = "triangle";
         //maxInt = 1;
@@ -25,8 +36,8 @@ public:
 		const STPoint2& _vt1,const STPoint2& _vt2,const STPoint2& _vt3)
 		: v1(_v1), v2(_v2), v3(_v3), uv1(_vt1), uv2(_vt2), uv3(_vt3)
 	{
-		STVector3 n = STVector3::Cross(v2 - v1, v3 - v1); //going counterclockwise
-		n.Normalize();
+		STVector3 n = (v2 - v1).cross3(v3 - v1); //going counterclockwise
+		n.normalize();
 		n1 = n2 = n3 = n;
 		this->name = "triangle";
 		//maxInt = 1;

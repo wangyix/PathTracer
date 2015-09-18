@@ -1,5 +1,48 @@
-#if 0
 #include "STTransform4.h"
+
+STTransform4 RotationMatrix(float rx, float ry, float rz) {
+    STTransform4 rotx = STTransform4::Zero(), roty = STTransform4::Zero(), rotz = STTransform4::Zero();
+    rotx(3,3) = 1.0f;
+    roty(3, 3) = 1.0f;
+    rotz(3, 3) = 1.0f;
+    float cosrx, sinrx, cosry, sinry, cosrz, sinrz;
+    cosrx = cosf(rx); sinrx = sinf(rx);
+    cosry = cosf(ry); sinry = sinf(ry);
+    cosrz = cosf(rz); sinrz = sinf(rz);
+
+    rotx(0,0) = 1.0f;
+    rotx(1,1) = cosrx; rotx(1,2) = -sinrx;
+    rotx(2,1) = sinrx; rotx(2,2) = cosrx;
+
+    roty(1,1) = 1.0f;
+    roty(0,0) = cosry; roty(2,0) = -sinry;
+    roty(0,2) = sinry; roty(2,2) = cosry;
+
+    rotz(2,2) = 1.0f;
+    rotz(0,0) = cosrz; rotz(0,1) = -sinrz;
+    rotz(1,0) = sinrz; rotz(1,1) = cosrz;
+
+    return rotx * roty * rotz;
+}
+
+STTransform4 ScalingMatrix(float sx, float sy, float sz) {
+    STTransform4 scale = STTransform4::Zero();
+    scale(0,0) = sx;
+    scale(1,1) = sy;
+    scale(2,2) = sz;
+    scale(3,3) = 1.f;
+    return scale;
+}
+STTransform4 TranslationMatrix(float tx, float ty, float tz) {
+    STTransform4 trans = STTransform4::Zero();
+    trans(0, 3) = tx;
+    trans(1, 3) = ty;
+    trans(2, 3) = tz;
+    trans(3, 3) = 1.f;
+    return trans;
+}
+
+#if 0
 #include "STVector3.h"
 #include "STPoint3.h"
 

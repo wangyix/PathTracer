@@ -153,10 +153,10 @@ struct Path {
 
     void writeVertex(std::ostream& os, const Vertex& v) const {
         const Intersection& in = v.getIntersection();
-        os << "p: (" << in.point.x << ", " << in.point.y << ", " << in.point.z << ")" << std::endl;
-        os << "n: (" << in.normal.x << ", " << in.normal.y << ", " << in.normal.z << ")" << std::endl;
+        os << "p: (" << in.point.x() << ", " << in.point.y() << ", " << in.point.z() << ")" << std::endl;
+        os << "n: (" << in.normal.x() << ", " << in.normal.y() << ", " << in.normal.z() << ")" << std::endl;
         os << "t_prev: " << in.t << std::endl;
-        os << "w_to_prev dot n: " << STVector3::Dot(v.w_to_prev, v.getIntersection().normal) << std::endl;
+        os << "w_to_prev dot n: " << v.w_to_prev.dot(v.getIntersection().normal) << std::endl;
         os << "----------------" << std::endl;
         os << v.getBsdfDescriptionString() << std::endl;
         os << "prev_gap_nonspecular: " << v.prev_gap_nonspecular << std::endl;
@@ -248,7 +248,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
 
         // calculate terms in G
         float r = inter.t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter.normal));
+        float cos_intersected_w = fabsf(-w.dot(inter.normal));
 
         // record new vertex
         vertices.emplace_back(inter, inter_obj->getBsdf(), inter_obj);
@@ -383,7 +383,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
 
         // calculate terms in G
         float r = inter.t;
-        float cos_intersected_w = fabsf(STVector3::Dot(-w, inter.normal));
+        float cos_intersected_w = fabsf(-w.dot(inter.normal));
 
         // record new vertex
         vertices.emplace_back(inter, inter_obj->getBsdf(), inter_obj);
@@ -471,12 +471,12 @@ void Scene::ProcessPixel(int x, int y) {
                     STPoint3 gap_point_L = gap_v_L.getIntersection().point;
                     STVector3 gap_EL = gap_point_L - gap_point_E;
                     STVector3 gap_EL_w = gap_EL;
-                    gap_EL_w.Normalize();
+                    gap_EL_w.normalize();
 
                     STVector3 gap_normal_E = gap_v_E.getIntersection().normal;
                     STVector3 gap_normal_L = gap_v_L.getIntersection().normal;
-                    float gap_cosw_E = STVector3::Dot(gap_EL_w, gap_normal_E);
-                    float gap_cosw_L = STVector3::Dot(-gap_EL_w, gap_normal_L);
+                    float gap_cosw_E = gap_EL_w.dot(gap_normal_E);
+                    float gap_cosw_L = -gap_EL_w.dot(gap_normal_L);
 
                     // check if gap vector goes out the backface of either vertex
                     if (gap_cosw_E <= 0.f || gap_cosw_L <= 0.f) {
@@ -485,7 +485,7 @@ void Scene::ProcessPixel(int x, int y) {
 
                     // check if the gap vector intersects anything
                     Ray gap_ray_EL(gap_point_E, gap_EL_w, gap_v_E.getObj(), gap_normal_E,
-                        shadowBias, gap_EL.Length() - shadowBias);
+                        shadowBias, gap_EL.norm() - shadowBias);
                     /*const SceneObject* gap_inter_obj = NULL;
                     Intersection gap_inter;
                     if (Intersect(gap_ray_EL, &gap_inter_obj, &gap_inter)) {
@@ -496,7 +496,7 @@ void Scene::ProcessPixel(int x, int y) {
                     }
 
                     // calculate c_st
-                    float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.LengthSq();
+                    float G_gap = (gap_cosw_E * gap_cosw_L) / gap_EL.squaredNorm();
                     STColor3f f_gap_E = gap_v_E.f(gap_v_E.w_to_prev, gap_EL_w);
                     STColor3f f_gap_L = gap_v_L.f(gap_v_L.w_to_prev, -gap_EL_w);
                     STColor3f c_st = f_gap_E * G_gap * f_gap_L;
@@ -1048,7 +1048,7 @@ void Scene::rtRotate(float rx, float ry, float rz)
 {
     if (!matStack.empty()) {
         float conv = M_PI / 180.f;
-        STTransform4 M = matStack.back() * STTransform4::Rotation(rx * conv, ry * conv, rz * conv);
+        STTransform4 M = matStack.back() * RotationMatrix(rx * conv, ry * conv, rz * conv);
         matStack.pop_back();
         matStack.push_back(M);
     }
@@ -1057,7 +1057,7 @@ void Scene::rtRotate(float rx, float ry, float rz)
 void Scene::rtScale(float sx, float sy, float sz)
 {
     if (!matStack.empty()) {
-        STTransform4 M = matStack.back() * STTransform4::Scaling(sx, sy, sz);
+        STTransform4 M = matStack.back() * ScalingMatrix(sx, sy, sz);
         matStack.pop_back();
         matStack.push_back(M);
     }
@@ -1066,7 +1066,7 @@ void Scene::rtScale(float sx, float sy, float sz)
 void Scene::rtTranslate(float tx, float ty, float tz)
 {
     if (!matStack.empty()) {
-        STTransform4 M = matStack.back() * STTransform4::Translation(tx, ty, tz);
+        STTransform4 M = matStack.back() * TranslationMatrix(tx, ty, tz);
         matStack.pop_back();
         matStack.push_back(M);
     }
@@ -1097,7 +1097,7 @@ void Scene::rtBox(const STPoint3& center, const STVector3& size)
     objects.push_back(new SceneObject(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
-void Scene::rtCylinder(const STPoint3& A, const STPoint3 B, float radius)
+void Scene::rtCylinder(const STPoint3& A, const STPoint3& B, float radius)
 {
     objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
@@ -1288,7 +1288,7 @@ bool Scene::DoesIntersect(const Ray& ray) {
 
 bool Scene::IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
-    Intersection min_inter(FLT_MAX, STPoint3(), STVector3());
+    Intersection min_inter(FLT_MAX, STPoint3(0.f, 0.f, 0.f), STVector3(0.f, 0.f, 0.f));
     const SceneObject* min_object = NULL;
     for (const SceneObject* obj : objects) {
         Intersection inter;
@@ -1360,9 +1360,9 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
         if (command == "Camera") {
             float ex, ey, ez, ux, uy, uz, lx, ly, lz, f, a;
             ss >> ex >> ey >> ez >> ux >> uy >> uz >> lx >> ly >> lz >> f >> a;
-            STPoint3 eye(ex, ey, ez);
-            STVector3 up(ux, uy, uz);
-            STPoint3 lookAt(lx, ly, lz);
+            STPoint3 eye = STPoint3(ex, ey, ez);
+            STVector3 up = STVector3(ux, uy, uz);
+            STPoint3 lookAt = STPoint3(lx, ly, lz);
             rtCamera(eye, up, lookAt, f, a);
         } else if (command == "Output") {
             int w, h;
@@ -1397,7 +1397,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             STTransform4 mat;
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
-                    ss >> mat[i][j];
+                    ss >> mat(i,j);
                 }
             }
             rtLoadMatrix(mat);
@@ -1416,7 +1416,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
         } else if (command == "Sphere") {
             float cx, cy, cz, r;
             ss >> cx >> cy >> cz >> r;
-            STPoint3 center(cx, cy, cz);
+            STPoint3 center = STPoint3(cx, cy, cz);
             rtSphere(center, r);
         } else if (command == "Triangle") {
             float x1, y1, z1, x2, y2, z2, x3, y3, z3;
@@ -1437,8 +1437,8 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
         } else if (command == "Cylinder") {
             float a1, a2, a3, b1, b2, b3, r;
             ss >> a1 >> a2 >> a3 >> b1 >> b2 >> b3 >> r;
-            STPoint3 A(a1, a2, a3);
-            STPoint3 B(b1, b2, b3);
+            STPoint3 A = STPoint3(a1, a2, a3);
+            STPoint3 B = STPoint3(b1, b2, b3);
             rtCylinder(A, B, r);
         } else if (command == "QJulia") {
             float4 mu;
