@@ -45,7 +45,7 @@ public:
 
         // make copy of objs since AABBTreeNode constructor modifies them
         std::vector<SceneObject*> objsCopy(objs.size());
-        for (int i = 0; i < objs.size(); i++) objsCopy[i] = objs[i];
+        for (int i = 0; i < (int)objs.size(); i++) objsCopy[i] = objs[i];
 
         root = new AABBTreeNode(objsCopy);
 		//std::cout<<"aabb tree, node number: "<<objs.size()<<std::endl;
