@@ -52,7 +52,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../eigen;../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -67,7 +67,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../eigen;../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
