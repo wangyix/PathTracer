@@ -9,7 +9,6 @@
 #include <memory>
 #include "Shape.h"
 #include "Ray.h"
-#include "Material.h"
 #include "STTransform4.h"
 #include "Bsdf.h"
 #include "Triangle.h"

@@ -53,6 +53,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../eigen;../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -68,6 +70,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>../../eigen;../ext/freeglut/include;../../libst/include</AdditionalIncludeDirectories>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -84,9 +88,7 @@
     <ClCompile Include="..\Src\Bsdf.cpp" />
     <ClCompile Include="..\Src\Camera.cpp" />
     <ClCompile Include="..\Src\Cylinder.cpp" />
-    <ClCompile Include="..\Src\ExampleScene.cpp" />
     <ClCompile Include="..\Src\main.cpp" />
-    <ClCompile Include="..\Src\Material.cpp" />
     <ClCompile Include="..\Src\quaternionJuliaSet.cpp" />
     <ClCompile Include="..\Src\Scene.cpp" />
     <ClCompile Include="..\Src\semaphore.cc" />
@@ -94,27 +96,15 @@
     <ClCompile Include="..\Src\thread-pool.cc" />
     <ClCompile Include="..\Src\Triangle.cpp" />
     <ClCompile Include="..\Src\TriangleMesh.cpp" />
-    <ClCompile Include="..\Src\VolumetricTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\AABB.h" />
     <ClInclude Include="..\Src\AABBTree.h" />
-    <ClInclude Include="..\Src\AmbientLight.h" />
-    <ClInclude Include="..\Src\AreaLight.h" />
     <ClInclude Include="..\Src\Box.h" />
     <ClInclude Include="..\Src\Bsdf.h" />
     <ClInclude Include="..\Src\Camera.h" />
-    <ClInclude Include="..\Src\CompoundShape.h" />
     <ClInclude Include="..\Src\Cylinder.h" />
-    <ClInclude Include="..\Src\DirectionalLight.h" />
-    <ClInclude Include="..\Src\ExampleScene.h" />
-    <ClInclude Include="..\Src\ImagePlane.h" />
     <ClInclude Include="..\Src\Intersection.h" />
-    <ClInclude Include="..\Src\Jitter.h" />
-    <ClInclude Include="..\Src\Light.h" />
-    <ClInclude Include="..\Src\Material.h" />
-    <ClInclude Include="..\Src\ObjectGroup.h" />
-    <ClInclude Include="..\Src\PointLight.h" />
     <ClInclude Include="..\Src\quaternionJuliaSet.h" />
     <ClInclude Include="..\Src\Ray.h" />
     <ClInclude Include="..\Src\RayTrace.h" />
@@ -127,8 +117,6 @@
     <ClInclude Include="..\Src\Defines.h" />
     <ClInclude Include="..\Src\Triangle.h" />
     <ClInclude Include="..\Src\TriangleMesh.h" />
-    <ClInclude Include="..\Src\UniformGrid.h" />
-    <ClInclude Include="..\Src\VolumetricTexture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
