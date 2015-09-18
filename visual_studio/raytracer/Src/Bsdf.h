@@ -3,8 +3,8 @@
 #include "STColor3f.h"
 #include"STVector3.h"
 
-inline float CosTheta(const STVector3 &w) { return w.z; }
-inline float AbsCosTheta(const STVector3 &w) { return fabsf(w.z); }
+inline float CosTheta(const STVector3 &w) { return w.z(); }
+inline float AbsCosTheta(const STVector3 &w) { return fabsf(w.z()); }
 inline float SinTheta2(const STVector3 &w) {
     return (std::max)(0.f, 1.f - CosTheta(w)*CosTheta(w));
 }

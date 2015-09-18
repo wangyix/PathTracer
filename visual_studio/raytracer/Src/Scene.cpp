@@ -1145,10 +1145,10 @@ void Scene::rtGroupObjects(int num) {
 
 void Scene::rtTriangleMesh(const std::string& file_name, const bool& counter_clockwise, const bool& smoothed_normal)
 {
-    std::vector<STTriangleMesh*> meshes;
+    std::vector<STTriangleMesh> meshes;
     STTriangleMesh::LoadObj(meshes, file_name);
     for (int i = 0; i < (int)meshes.size(); i++) {
-        objects.push_back(new SceneObject(new TriangleMesh(*meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+        objects.push_back(new SceneObject(new TriangleMesh(meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
     }
     //objects.push_back(new SceneObject(new TriangleMesh(file_name,counter_clockwise,smoothed_normal), currMaterial, &matStack.back(), currTexIndex));
 }

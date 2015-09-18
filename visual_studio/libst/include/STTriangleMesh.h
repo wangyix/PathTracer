@@ -12,6 +12,7 @@
 struct STFace;
 
 struct STVertex{
+    STVertex() {}
     STVertex(float x, float y, float z, float u=0, float v=0){
         pt=STPoint3(x,y,z);
     }
@@ -20,16 +21,16 @@ struct STVertex{
 inline std::ostream& operator <<(std::ostream& stream, const STVertex& v);
 
 struct STFace{
-    STFace(STVertex* v0, STVertex* v1, STVertex* v2){
+    STFace(const STVertex& v0, const STVertex& v1, const STVertex& v2){
         v[0]=v0;v[1]=v1;v[2]=v2;
-        normals[0]=0;normals[1]=0;normals[2]=0;
-        texPos[0]=0;texPos[1]=0;texPos[2]=0;
+        //normals[0]=0;normals[1]=0;normals[2]=0;
+        //texPos[0]=0;texPos[1]=0;texPos[2]=0;
     }
-    STVertex *v[3];
+    STVertex v[3];
     //STFace *adjF[3];
     STVector3 normal;
-    STVector3 *normals[3];
-    STPoint2 *texPos[3];
+    STVector3 normals[3];
+    STPoint2 texPos[3];
 };
 inline std::ostream& operator <<(std::ostream& stream, const STFace& f);
 
@@ -60,12 +61,12 @@ public:
     //
     // Local members
     //
-    std::vector<STVertex*> mVertices;
-    std::vector<STVector3*> mNormals;
-    std::vector<STPoint2*> mTexPos;
-    std::vector<STFace*> mFaces;
+    std::vector<STVertex> mVertices;
+    std::vector<STVector3> mNormals;
+    std::vector<STPoint2> mTexPos;
+    std::vector<STFace> mFaces;
     
-    static std::string LoadObj(std::vector<STTriangleMesh*>& output_meshes, const std::string& filename);
+    static std::string LoadObj(std::vector<STTriangleMesh>& output_meshes, const std::string& filename);
     
     float mMaterialAmbient[4];
     float mMaterialDiffuse[4];

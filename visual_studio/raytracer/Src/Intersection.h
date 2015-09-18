@@ -51,23 +51,41 @@ public:
             // I,J will be set to some arbitrary orientation around K
             STVector3 I, J;
             STVector3 K = n;
-            if (K.x == 0.f && K.y == 0.f) {
+            if (K.x() == 0.f && K.y() == 0.f) {
                 I = STVector3(1.f, 0.f, 0.f);
                 J = STVector3(0.f, 1.f, 0.f);
             } else {
-                I = STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
-                I.Normalize();
-                J = STVector3::Cross(K, I);
-                J.Normalize();
+                I = K.cross3(STVector3(0.f, 0.f, 1.f)); //STVector3::Cross(K, STVector3(0.f, 0.f, 1.f));
+                I.normalize();
+                J = K.cross3(I);     //STVector3::Cross(K, I);
+                J.normalize();
             }
             // generate transform matrices between normal- and world-space from I,J,K axes
-            normalToWorld = STTransform4(
+            normalToWorld = STTransform4();
+            normalToWorld(0, 0) = I.x();
+            normalToWorld(1, 0) = I.y();
+            normalToWorld(2, 0) = I.z();
+            normalToWorld(3, 0) = 0.f;
+            normalToWorld(0, 1) = J.x();
+            normalToWorld(1, 1) = J.y();
+            normalToWorld(2, 1) = J.z();
+            normalToWorld(3, 1) = 0.f;
+            normalToWorld(0, 2) = K.x();
+            normalToWorld(1, 2) = K.y();
+            normalToWorld(2, 2) = K.z();
+            normalToWorld(3, 2) = 0.f;
+            normalToWorld(0, 3) = P.x();
+            normalToWorld(1, 3) = P.y();
+            normalToWorld(2, 3) = P.z();
+            normalToWorld(3, 3) = 1.f;
+
+            /*normalToWorld = STTransform4(
                 I.x, J.x, K.x, P.x,
                 I.y, J.y, K.y, P.y,
                 I.z, J.z, K.z, P.z,
                 0.f, 0.f, 0.f, 1.f
-                );
-            worldToNormal = normalToWorld.Inverse();
+                );*/
+            worldToNormal = normalToWorld.inverse();
         } else {
             normalToWorld = STTransform4::Identity();
             worldToNormal = STTransform4::Identity();

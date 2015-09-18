@@ -23,7 +23,7 @@ public:
 
     Ray(const STPoint3& _e, const STVector3& _d, const SceneObject* _e_obj, const STVector3& _e_normal,
         float _t_min = 0.f, float _t_max = FLT_MAX)
-        : e(_e), d(_d), e_obj(_e_obj), d_dot_e_normal(STVector3::Dot(_d, _e_normal)), t_min(_t_min), t_max(_t_max) {}
+        : e(_e), d(_d), e_obj(_e_obj), d_dot_e_normal(_d.dot( _e_normal)), t_min(_t_min), t_max(_t_max) {}
 
     Ray(const STPoint3& _e, const STVector3& _d, const SceneObject* _e_obj, float _d_dot_e_normal,
         float _t_min = 0.f, float _t_max = FLT_MAX)

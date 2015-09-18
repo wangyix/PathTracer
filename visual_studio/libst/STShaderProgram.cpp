@@ -234,7 +234,7 @@ void STShaderProgram::SetUniform(const std::string& name, const STVector2& value
 // Set a uniform global parameter of the program by name.
 void STShaderProgram::SetUniform(const std::string& name, const STVector3& value)
 {
-    SetUniform(name, value.x, value.y, value.z);
+    SetUniform(name, value.x(), value.y(), value.z());
 }
 
 // Set a uniform global parameter of the program by name.

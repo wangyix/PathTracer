@@ -36,7 +36,7 @@ public:
 	STPoint3 minCorner(){return STPoint3(xmin,ymin,zmin);}
 	STPoint3 maxCorner(){return STPoint3(xmax,ymax,zmax);}
     STVector3 edgeLength(){return STVector3(xmax-xmin,ymax-ymin,zmax-zmin);}
-    float maxEdgeLength(){STVector3 edge_length=edgeLength();return getMax(edge_length.x,edge_length.y,edge_length.z);}
+    float maxEdgeLength(){STVector3 edge_length=edgeLength();return getMax(edge_length.x(),edge_length.y(),edge_length.z());}
     void enlarge(const float offset){xmin-=offset;xmax+=offset;ymin-=offset;ymax+=offset;zmin-=offset;zmax+=offset;}
     void enlarge(const float offset[3]){xmin-=offset[0];xmax+=offset[0];ymin-=offset[1];ymax+=offset[1];zmin-=offset[2];zmax+=offset[2];}
 
