@@ -2,6 +2,8 @@
 #ifndef __STFORWARD_H__
 #define __STFORWARD_H__
 
+#include <Eigen/Dense>
+
 /*
 *  This file forward declares the classes and structs defined in libst.
 *  By including this file instead of manually forward-declaring each
@@ -14,13 +16,17 @@ struct STColor3f;
 struct STColor4f;
 struct STColor4ub;
 class STImage;
-struct STMatrix4;
+//struct STMatrix4;
 struct STPoint2;
-struct STPoint3;
+//struct STPoint3;
 class STShape;
 class STTexture;
 class STTimer;
 struct STVector2;
-struct STVector3;
+//struct STVector3;
+
+typedef Eigen::Matrix4f STTransform4;
+typedef Eigen::Vector4f STPoint3;
+typedef Eigen::Vector4f STVector3;
 
 #endif  // __STFORWARD_H__

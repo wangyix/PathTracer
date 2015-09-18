@@ -1,6 +1,8 @@
 #ifndef STTRANSFORM4_H
 #define STTRANSFORM4_H
 
+#if 0
+
 #include "stForward.h"
 #include <iostream>
 
@@ -71,3 +73,4 @@ STPoint3 operator * (const STTransform4& left, const STPoint3& right);
 
 #endif
 
+#endif

@@ -1,3 +1,4 @@
+#if 0
 // STPoint3.inl
 #ifndef __STPOINT3_INL__
 #define __STPOINT3_INL__
@@ -126,3 +127,4 @@ inline STPoint3 STPoint3::Min(const STPoint3& p1, const STPoint3& p2)
 }
 
 #endif  // __STPOINT3_INL__
+#endif

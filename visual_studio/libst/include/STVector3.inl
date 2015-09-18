@@ -1,3 +1,4 @@
+#if 0
 // STVector3.inl
 #ifndef __STVECTOR3_INL__
 #define __STVECTOR3_INL__
@@ -247,3 +248,4 @@ inline STVector3 operator-(const STPoint3& left, const STPoint3& right)
 }
 
 #endif  // __STVECTOR3_INL__
+#endif

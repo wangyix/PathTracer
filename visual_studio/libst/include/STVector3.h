@@ -2,6 +2,10 @@
 #ifndef __STVECTOR3_H__
 #define __STVECTOR3_H__
 
+#define STVector3(x, y, z) Eigen::Vector4f(x, y, z, 0.f)
+
+#if 0
+
 #include "stForward.h"
 
 #include <math.h>
@@ -100,3 +104,4 @@ inline STVector3 operator-(const STPoint3& left, const STPoint3& right);
 
 #endif  // __STVECTOR3_H__
 
+#endif

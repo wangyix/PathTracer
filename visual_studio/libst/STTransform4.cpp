@@ -1,3 +1,4 @@
+#if 0
 #include "STTransform4.h"
 #include "STVector3.h"
 #include "STPoint3.h"
@@ -334,3 +335,4 @@ STPoint3 operator * (const STTransform4& left, const STPoint3& right)
 	result.z = left[2][0]*right.x + left[2][1]*right.y + left[2][2]*right.z + left[2][3]*1.0f;
 	return result;
 }
+#endif
