@@ -61,7 +61,7 @@ void TriangleMesh::getAABB(const STTransform4& transform, AABB* aabb) const {
 
     *aabb = AABB(FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX);
     for (int i = 0; i < mesh->mVertices.size(); i++) {
-        AABB::combine(transform * mesh->mVertices[i]->pt, aabb);
+        AABB::combine(transform * mesh->mVertices[i].pt, aabb);
     }
 }
 

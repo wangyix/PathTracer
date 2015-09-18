@@ -1443,7 +1443,7 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
         } else if (command == "QJulia") {
             float4 mu;
             float epsilon;
-            ss >> mu.x >> mu.y >> mu.z >> mu.w >> epsilon;
+            ss >> mu.x() >> mu.y() >> mu.z() >> mu.w() >> epsilon;
             rtQJulia(mu, epsilon);
         } /*else if (command == "ParticipatingMedia") {
             float c1, c2, c3, s1, s2, s3;

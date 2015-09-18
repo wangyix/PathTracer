@@ -15,8 +15,12 @@
 
 #include "Shape.h"
 
+#include <Eigen/Dense>
 
-// begin from http://fastcpp.blogspot.com/p/common-datatypes.html
+typedef Eigen::Vector4f float4;
+typedef Eigen::Vector3f float3;
+
+/*// begin from http://fastcpp.blogspot.com/p/common-datatypes.html
 struct float4
 {
 	float4() {};
@@ -28,10 +32,9 @@ struct float4
  	inline float4 operator+(const float4& a) const { return float4(x+a.x, y+a.y, z+a.z, w+a.w); }
 	inline float4 operator-(const float4& a) const { return float4(x-a.x, y-a.y, z-a.z, w-a.w); }
 };
-
 // dot product of two float4 vectors
 inline float dot(const float4& a, const float4& b) {
- 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
 struct float3
@@ -51,16 +54,15 @@ inline float dot(const float3& a, const float3& b) {
  	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 // end from http://fastcpp.blogspot.com/p/common-datatypes.html
-/**
- * Returns cross product of two vectors
- */
+
+ // Returns cross product of two vectors
 inline float3 cross(const float3& left, const float3& right)
 {
 	return float3(left.y * right.z - left.z * right.y,
 					 left.z * right.x - left.x * right.z,
 					 left.x * right.y - left.y * right.x);
 }
-
+*/
 
 class quaternionJuliaSet : public Shape {
 public:
@@ -70,7 +72,7 @@ public:
         void operator delete(void* ptr) {
         return _aligned_free(ptr);
     }
-	quaternionJuliaSet(float4 _mu, const float _epsilon)
+	quaternionJuliaSet(const float4& _mu, const float _epsilon)
         : mu(_mu), epsilon(_epsilon)
 	{
 		this->name = "qjulia";
