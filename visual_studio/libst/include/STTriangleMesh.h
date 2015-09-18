@@ -2,8 +2,9 @@
 #ifndef __STTRIANGLEMESH_H__
 #define __STTRIANGLEMESH_H__
 
-#include "STPoint2.h"
 #include "STPoint3.h"
+#include "STPoint2.h"
+#include "STVector3.h"
 
 #include <string>
 #include <vector>

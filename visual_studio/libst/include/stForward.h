@@ -14,7 +14,7 @@ typedef Eigen::Vector4f STVector3;
 
 #else
 
-struct STMatrix4;
+class STTransform4;
 struct STPoint3;
 struct STVector3;
 
@@ -24,7 +24,7 @@ struct STColor3f;
 struct STColor4f;
 struct STColor4ub;
 class STImage;
-//struct STMatrix4;
+//class STTransform4;
 struct STPoint2;
 //struct STPoint3;
 class STShape;

@@ -1,6 +1,5 @@
 #include "Bsdf.h"
 #include "STColor3f.h"
-#include "STVector3.inl"
 #include "STUtil.h"
 
 #include <sstream>

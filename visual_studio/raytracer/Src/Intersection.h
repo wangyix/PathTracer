@@ -28,7 +28,7 @@ struct Vertex {
 public:
 
     Vertex(const Intersection& inter, const Bsdf* bsdf, const SceneObject* obj) :
-        w_to_prev(0.f),
+        w_to_prev(STVector3::Zero()),
         alpha(-1.f),
         G_prev(-1.f),
         qPsig_adj(-1.f),

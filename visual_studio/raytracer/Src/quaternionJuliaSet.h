@@ -15,54 +15,90 @@
 
 #include "Shape.h"
 
+#if USE_EIGEN
+
 #include <Eigen/Dense>
 
 typedef Eigen::Vector4f float4;
 typedef Eigen::Vector3f float3;
 
-/*// begin from http://fastcpp.blogspot.com/p/common-datatypes.html
+#else
+
+// begin from http://fastcpp.blogspot.com/p/common-datatypes.html
 struct float4
 {
+private:
+    float mx, my, mz, mw;
+public:
 	float4() {};
- 	float4(float s) : x(s), y(s), z(s), w(s) {}
- 	float4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
- 	float x, y, z, w;
+ 	//float4(float s) : x(s), y(s), z(s), w(s) {}
+ 	float4(float x, float y, float z, float w) : mx(x), my(y), mz(z), mw(w) {}
+
+    float& x() { return mx; }
+    const float& x() const { return mx; }
+    float& y() { return my; }
+    const float& y() const { return my; }
+    float& z() { return mz; }
+    const float& z() const { return mz; }
+    float& w() { return mw; }
+    const float& w() const { return mw; }
  
- 	inline float4 operator*(float s) const { return float4(x*s, y*s, z*s, w*s); }
- 	inline float4 operator+(const float4& a) const { return float4(x+a.x, y+a.y, z+a.z, w+a.w); }
-	inline float4 operator-(const float4& a) const { return float4(x-a.x, y-a.y, z-a.z, w-a.w); }
+    float4 operator*(float s) const { return float4(x()*s, y()*s, z()*s, w()*s); }
+    float4 operator+(const float4& a) const { return float4(x() + a.x(), y() + a.y(), z() + a.z(), w() + a.w()); }
+    float4 operator-(const float4& a) const { return float4(x() - a.x(), y() - a.y(), z() - a.z(), w() - a.w()); }
+
+    float dot(const float4& b) const {
+        return x() * b.x() + y() * b.y() + z() * b.z() + w() * b.w();
+    }
+
+    float squaredNorm() const {
+        return x()*x() + y()*y() + z()*z() + w()*w();
+    }
+    float norm() const {
+        return sqrtf(squaredNorm());
+    }    
 };
-// dot product of two float4 vectors
-inline float dot(const float4& a, const float4& b) {
-return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
 
 struct float3
 {
+private:
+    float mx, my, mz;
+public:
  	float3() {};
- 	float3(float s) : x(s), y(s), z(s) {}
- 	float3(float x, float y, float z) : x(x), y(y), z(z) {}
- 	float x, y, z;
+ 	//float3(float s) : x(s), y(s), z(s) {}
+ 	float3(float x, float y, float z) : mx(x), my(y), mz(z) {}
+
+    float& x() { return mx; }
+    const float& x() const { return mx; }
+    float& y() { return my; }
+    const float& y() const { return my; }
+    float& z() { return mz; }
+    const float& z() const { return mz; }
  
- 	inline float3 operator*(float s) const { return float3(x*s, y*s, z*s); }
- 	inline float3 operator+(const float3& a) const { return float3(x+a.x, y+a.y, z+a.z); }
+    float3 operator*(float s) const { return float3(x()*s, y()*s, z()*s); }
+    float3 operator+(const float3& a) const { return float3(x() + a.x(), y() + a.y(), z() + a.z()); }
 	
+    float dot(const float3& b) const {
+        return x() * b.x() + y() * b.y() + z() * b.z();
+    }
+    
+    float3 cross(const float3& right) const {
+        return float3(y() * right.z() - z() * right.y(),
+                      z() * right.x() - x() * right.z(),
+                      x() * right.y() - y() * right.x());
+    }
+
+    float squaredNorm() const {
+        return x()*x() + y()*y() + z()*z();
+    }
+    float norm() const {
+        return sqrtf(squaredNorm());
+    }
 };
 
-// dot product of two float3 vectors
-inline float dot(const float3& a, const float3& b) {
- 	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
 // end from http://fastcpp.blogspot.com/p/common-datatypes.html
 
- // Returns cross product of two vectors
-inline float3 cross(const float3& left, const float3& right)
-{
-	return float3(left.y * right.z - left.z * right.y,
-					 left.z * right.x - left.x * right.z,
-					 left.x * right.y - left.y * right.x);
-}
-*/
+#endif
 
 class quaternionJuliaSet : public Shape {
 public:

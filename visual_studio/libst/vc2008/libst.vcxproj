@@ -115,9 +115,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\STPoint2.inl" />
-    <None Include="..\include\STPoint3.inl" />
     <None Include="..\include\STVector2.inl" />
-    <None Include="..\include\STVector3.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

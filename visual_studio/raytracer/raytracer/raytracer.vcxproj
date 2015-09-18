@@ -124,7 +124,7 @@
     <ClInclude Include="..\Src\Shape.h" />
     <ClInclude Include="..\Src\Sphere.h" />
     <ClInclude Include="..\Src\thread-pool.h" />
-    <ClInclude Include="..\Src\Threaded.h" />
+    <ClInclude Include="..\Src\Defines.h" />
     <ClInclude Include="..\Src\Triangle.h" />
     <ClInclude Include="..\Src\TriangleMesh.h" />
     <ClInclude Include="..\Src\UniformGrid.h" />

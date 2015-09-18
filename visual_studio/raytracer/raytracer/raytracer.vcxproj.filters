@@ -154,7 +154,7 @@
     <ClInclude Include="..\Src\thread-pool.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\Threaded.h">
+    <ClInclude Include="..\Src\Defines.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

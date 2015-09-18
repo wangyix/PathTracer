@@ -52,7 +52,11 @@ public:
         emittedPower(emittedPower)
     {
         //tTranspose = transform.Transpose();
-        scale = transform.block(0, 0, 3, 1).norm(); //columnnMagnitude(0);  // assuming transform does not warp shape
+#if USE_EIGEN
+        scale = transform.block(0, 0, 3, 1).norm(); // assuming transform does not warp shape
+#else
+        scale = transform.columnnMagnitude(0);  // assuming transform does not warp shape
+#endif
         if (shape) shape->getAABB(transform, &aabb);
         if (shape) name = shape->name;
     }

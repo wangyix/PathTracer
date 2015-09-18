@@ -130,13 +130,7 @@
     <None Include="..\include\STPoint2.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="..\include\STPoint3.inl">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="..\include\STVector2.inl">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\include\STVector3.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

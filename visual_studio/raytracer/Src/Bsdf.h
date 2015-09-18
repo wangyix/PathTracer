@@ -1,7 +1,9 @@
 #pragma once
 
 #include "STColor3f.h"
-#include"STVector3.h"
+#include "STVector3.h"
+#include <algorithm>
+#include <string>
 
 inline float CosTheta(const STVector3 &w) { return w.z(); }
 inline float AbsCosTheta(const STVector3 &w) { return fabsf(w.z()); }

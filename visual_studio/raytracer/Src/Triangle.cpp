@@ -105,5 +105,9 @@ STPoint3 Triangle::uniformSampleSurface(STVector3* normal) const {
 
     *normal = c1*n1 + c2*n2 + c3*n3;
     //normal->Normalize();  // SceneObject will normalize this
-    return c1*v1 + c2*v2 + c3*v3;
+    STVector3 vv1 = STVector3(v1.x(), v1.y(), v1.z());
+    STVector3 vv2 = STVector3(v2.x(), v2.y(), v2.z());
+    STVector3 vv3 = STVector3(v3.x(), v3.y(), v3.z());
+    STVector3 ret = c1*vv1 + c2*vv2 + c3*vv3;
+    return STPoint3(ret.x(), ret.y(), ret.z());
 }

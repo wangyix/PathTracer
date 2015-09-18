@@ -28,8 +28,7 @@ public:
     Box(const STPoint3& center,const STVector3& size)   ////axis aligned box
         : i(STVector3(size.x(), 0.f, 0.f)), j(STVector3(0.f, size.y(), 0.f)), k(STVector3(0.f, 0.f, size.z()))
     {
-        STVector3 oo = center - size*.5f;
-        o = STPoint3(oo.x(), oo.y(), oo.z());
+        o = center - size*.5f;
         //maxInt = 2;
         this->name = "box";
         fillCob();

@@ -54,10 +54,10 @@ STTransform4 TranslationMatrix(float tx, float ty, float tz) {
 STTransform4::STTransform4()
 {
     // Don't initialize; should match Eigen behavior
-	/*for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
+	for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
 	{
 		_Entries[i][j] = 0.0f;
-	}*/
+	}
 }
 
 STTransform4::STTransform4(const STTransform4& t)
@@ -110,20 +110,20 @@ STTransform4 STTransform4::Zero() {
     }
     return zero;
 }
-/*
+
 STTransform4 STTransform4::Identity()
 {
 	STTransform4 id;
 	for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
 	{
 		if (i == j)
-			id[i][j] = 1.0f;
+			id(i,j) = 1.0f;
 		else
-			id[i][j] = 0.0f;
+			id(i,j) = 0.0f;
 	}
 	return id;
 }
-
+/*
 STTransform4 STTransform4::Translation(float tx, float ty, float tz)
 {
 	STTransform4 trans = Identity();
@@ -319,7 +319,7 @@ STTransform4 STTransform4::inverse() const
 
 float STTransform4::columnnMagnitude(int col) const {
     STVector3 column(_Entries[0][col], _Entries[1][col], _Entries[2][col]);
-    return column.Length();
+    return column.norm();
 }
 
 

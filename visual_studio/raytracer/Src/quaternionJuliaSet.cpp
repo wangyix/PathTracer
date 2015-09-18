@@ -128,10 +128,8 @@ float4 IntersectQJulia(const STVector3& _rO, const STVector3& rD, const float4& 
 		
 	}
 	
-	//float4 hit; hit.x() = rO.x(); hit.y() = rO.y(); hit.z() = rO.z(); hit.w() = dist;
-	//return hit;
-    rO.w() = dist;
-    return rO;
+	float4 hit; hit.x() = rO.x(); hit.y() = rO.y(); hit.z() = rO.z(); hit.w() = dist;
+	return hit;
 }
 // end of code from "OpenCL RayTraced Quaternion Julia-Set Example" in Mac Developer Library
 
@@ -276,7 +274,11 @@ bool quaternionJuliaSet::doesIntersect(const Ray& ray) const {
 }
 
 void quaternionJuliaSet::getAABB(const STTransform4& transform, AABB* aabb) const {
-    float scale = transform.block(0, 0, 3, 1).norm();   // columnnMagnitude(0);    // assuming transform does not warp shape
+#if USE_EIGEN
+    float scale = transform.block(0, 0, 3, 1).norm(); // assuming transform does not warp shape
+#else
+    float scale = transform.columnnMagnitude(0);  // assuming transform does not warp shape
+#endif
     float r = scale * RADIUS;
     STPoint3 c = transform * STPoint3(0.f, 0.f, 0.f);
     *aabb = AABB(c.x() - r, c.x() + r, c.y() - r, c.y() + r, c.z() - r, c.z() + r);

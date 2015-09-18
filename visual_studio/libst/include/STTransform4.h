@@ -45,8 +45,8 @@ public:
     }
 
 	// Factory methods for constructing useful transformations
-	/*static STTransform4 Identity();
-	static STTransform4 Translation(float tx, float ty, float tz);
+	static STTransform4 Identity();
+	/*static STTransform4 Translation(float tx, float ty, float tz);
 	static STTransform4 Scaling(float sx, float sy, float sz);
 	static STTransform4 Rotation(float rx, float ry, float rz);
     */

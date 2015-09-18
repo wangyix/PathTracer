@@ -80,7 +80,8 @@ bool STTriangleMesh::Build()
 
 bool STTriangleMesh::UpdateGeometry()
 {
-    mMassCenter = STPoint3(0.0f,0.0f,0.0f);
+    //mMassCenter = STPoint3(0.0f,0.0f,0.0f);
+    STVector3 massCenter = STVector3::Zero();  // actually a point, but needs * and / operations for averaging points
     mSurfaceArea = 0.0f;
     if(mVertices.size()>0){
         mBoundingBoxMin=mBoundingBoxMax=mVertices[0].pt;
@@ -98,9 +99,13 @@ bool STTriangleMesh::UpdateGeometry()
         face->normal = (face->v[0].pt - face->v[1].pt).cross3(face->v[0].pt - face->v[2].pt);  //STVector3::Cross(face->v[0]->pt - face->v[1]->pt, face->v[0]->pt - face->v[2]->pt);
         float area = face->normal.norm();
         mSurfaceArea+=area;
-        mMassCenter=mMassCenter+(face->v[0].pt+face->v[1].pt+face->v[2].pt)*(area/3.0f);
+        STVector3 v0 = STVector3(face->v[0].pt.x(), face->v[0].pt.y(), face->v[0].pt.z());
+        STVector3 v1 = STVector3(face->v[1].pt.x(), face->v[1].pt.y(), face->v[1].pt.z());
+        STVector3 v2 = STVector3(face->v[2].pt.x(), face->v[2].pt.y(), face->v[2].pt.z());
+        massCenter = massCenter + (v0 + v1 + v2)*(area / 3.0f);
     }
-    mMassCenter=mMassCenter/mSurfaceArea;
+    massCenter = massCenter / mSurfaceArea;
+    mMassCenter = STPoint3(massCenter.x(), massCenter.y(), massCenter.z());
     for(unsigned int i=0;i<mFaces.size();i++){
         mFaces[i].normal.normalize();
     }
@@ -245,13 +250,15 @@ std::string STTriangleMesh::LoadObj(std::vector<STTriangleMesh>& output_meshes, 
 
 STPoint3 STTriangleMesh::GetMassCenter(const std::vector<STTriangleMesh*>& input_meshes)
 {
-    STPoint3 massCenter=STPoint3(0.0,0.0,0.0);
+    STVector3 massCenter = STVector3(0.0, 0.0, 0.0); // actually a point, but needs * and / operators for averaging
     float totalArea=0.0f;
     for(unsigned int i = 0; i<input_meshes.size(); i++){
-        massCenter = massCenter + input_meshes[i]->mMassCenter * input_meshes[i]->mSurfaceArea;
+        STVector3 iMassCenter = STVector3(input_meshes[i]->mMassCenter.x(), input_meshes[i]->mMassCenter.y(), input_meshes[i]->mMassCenter.z());
+        massCenter = massCenter + iMassCenter * input_meshes[i]->mSurfaceArea;
         totalArea+=input_meshes[i]->mSurfaceArea;
     }
-    return massCenter/totalArea;
+    massCenter /= totalArea;
+    return STPoint3(massCenter.x(), massCenter.y(), massCenter.z());
 }
 
 std::pair<STPoint3,STPoint3> STTriangleMesh::GetBoundingBox(const std::vector<STTriangleMesh*>& input_meshes)
@@ -271,7 +278,7 @@ std::pair<STPoint3,STPoint3> STTriangleMesh::GetBoundingBox(const std::vector<ST
 
 void STTriangleMesh::Recenter(const STPoint3& center)
 {
-    STVector3 translate = -center;
+    STVector3 translate = -STVector3(center.x(), center.y(), center.z());
     for(unsigned int i=0;i<mVertices.size();i++){
         mVertices[i].pt+=translate;
     }
