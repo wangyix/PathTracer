@@ -2,7 +2,7 @@
 #ifndef __STFORWARD_H__
 #define __STFORWARD_H__
 
-#define USE_EIGEN 0
+#define USE_EIGEN 1
 
 #if USE_EIGEN
 

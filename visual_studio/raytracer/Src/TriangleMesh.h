@@ -13,12 +13,6 @@
 
 class TriangleMesh : public Shape {
 public:
-    void* operator new(size_t size){
-        return _aligned_malloc(size, 16);
-    }
-        void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
 
 	TriangleMesh(STTriangleMesh& mesh_input,bool _counter_clockwise=true,bool calculate_smoothed_normal=false,
 		bool read_normal_from_obj=true,bool read_tex_coord_from_obj=true)

@@ -13,20 +13,26 @@
 
 
 struct Intersection {
-    float t;
-    STPoint3 point;
-    STVector3 normal;
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
 	//STPoint2 uv;
     Intersection(const float _t, const STPoint3& _point, const STVector3& _normal)//, STPoint2 _uv=STPoint2())
         : t(_t), point(_point), normal(_normal) {}
     Intersection(const Intersection& copy){ t = copy.t; point = copy.point; normal = copy.normal; }//uv = copy.uv; }
     Intersection() {}
     ~Intersection(){}
+
+    float t;
+    STPoint3 point;
+    STVector3 normal;
 };
 
 struct Vertex {
 public:
-
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Vertex(const Intersection& inter, const Bsdf* bsdf, const SceneObject* obj) :
         w_to_prev(STVector3::Zero()),
         alpha(-1.f),

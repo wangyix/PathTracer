@@ -98,6 +98,9 @@ private:
 class Scene
 {
 public:
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Scene();
     virtual ~Scene();
 
@@ -168,6 +171,32 @@ public:
 
     void buildAABBTrees();	////build the entire scene as an aabb-tree
 
+
+protected:
+    ////intersection functions with acceleration structures
+    bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
+    bool IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter);
+    //Intersection* IntersectUniformGrid(const Ray& ray, /*result*/SceneObject*& object);
+
+    bool DoesIntersectNoAccelStructure(const Ray& ray);
+    bool DoesIntersectAABBTree(const Ray& ray);
+
+    //void buildUniformGrids();	////build the entire scene as a uniform grid
+    //void fillLights(std::vector<Light *>& lights, Intersection* inter);
+    //void fillLightsWithAttenuation(std::vector<Light *>& lights, std::vector<STColor3f>& attenuations, Intersection* inter);
+    //STColor3f traceShadowRay(const Ray& ray, const Light& light);
+    //void getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb);
+
+    void generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex>& vertices, STColor3f* C_0t_sum);
+    void generateLightSubpath(std::vector<Vertex>& vertices);
+
+    float S_i_at(const std::vector<Vertex>& vertices, int i);
+    float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1);
+    float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i);
+
+    float qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_ab, const STVector3& w_ac);
+
+
 protected:
     std::vector<STTransform4> matStack;
     //Material* currMaterial;
@@ -220,29 +249,6 @@ protected:
     //std::vector<AABBTree*> aabb_trees;
     AABBTree* aabb_tree;
     //UniformGrid* uniform_grid;
-
-    ////intersection functions with acceleration structures
-    bool IntersectionNoAccelStructure(const Ray& ray, SceneObject const** object, Intersection* inter);
-    bool IntersectAABBTree(const Ray& ray, SceneObject const** object, Intersection* inter);
-    //Intersection* IntersectUniformGrid(const Ray& ray, /*result*/SceneObject*& object);
-
-    bool DoesIntersectNoAccelStructure(const Ray& ray);
-    bool DoesIntersectAABBTree(const Ray& ray);
-
-    //void buildUniformGrids();	////build the entire scene as a uniform grid
-    //void fillLights(std::vector<Light *>& lights, Intersection* inter);
-    //void fillLightsWithAttenuation(std::vector<Light *>& lights, std::vector<STColor3f>& attenuations, Intersection* inter);
-    //STColor3f traceShadowRay(const Ray& ray, const Light& light);
-    //void getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb);
-
-    void generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex>& vertices, STColor3f* C_0t_sum);
-    void generateLightSubpath(std::vector<Vertex>& vertices);
-
-    float S_i_at(const std::vector<Vertex>& vertices, int i);
-    float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1);
-    float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i);
-
-    float qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_ab, const STVector3& w_ac);
 };
 
 

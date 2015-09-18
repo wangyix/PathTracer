@@ -30,9 +30,6 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& out,const AABB& aabb){out<<"["<<aabb.xmin<<", "<<aabb.ymin<<", "<<aabb.zmin<<"]["<<aabb.xmax<<", "<<aabb.ymax<<", "<<aabb.zmax<<"]";return out;}
 
-    float xcenter, ycenter, zcenter;
-    float xmin, xmax, ymin, ymax, zmin, zmax;
-
 	STPoint3 minCorner(){return STPoint3(xmin,ymin,zmin);}
 	STPoint3 maxCorner(){return STPoint3(xmax,ymax,zmax);}
     STVector3 edgeLength(){return STVector3(xmax-xmin,ymax-ymin,zmax-zmin);}
@@ -69,6 +66,9 @@ public:
     {
         float max_value=a;if(b>max_value)max_value=b;if(c>max_value)max_value=c;return max_value;
     }
+
+    float xcenter, ycenter, zcenter;
+    float xmin, xmax, ymin, ymax, zmin, zmax;
 };
 
 #endif

@@ -39,6 +39,9 @@ private:
 class Camera {
     friend class CameraBsdf;
 public:
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Camera();
     Camera(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect);
     void setAttributes(const STPoint3& eye, const STVector3& up, const STPoint3& lookAt, float fovy, float aspect);

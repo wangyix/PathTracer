@@ -38,8 +38,6 @@ class AABBTree //: public SceneObject
 {
     //using SceneObject::name;
 public:
-    AABBTreeNode* root;
-
     AABBTree(const std::vector<SceneObject*>& objs) {
         //name="aabb_tree";
 
@@ -61,6 +59,8 @@ public:
     SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter) {
         return root->getIntersectionWithObject(ray, inter);
     }
+
+    AABBTreeNode* root;
 };
 
 #endif 

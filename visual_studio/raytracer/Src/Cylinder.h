@@ -11,12 +11,9 @@
 
 class Cylinder : public Shape {
 public:
-    void* operator new(size_t size){
-        return _aligned_malloc(size, 16);
-    }
-        void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Cylinder(const STPoint3& _A, const STPoint3& _B, float _radius) {
         this->name = "cylinder";
         //maxInt = 2;
@@ -76,17 +73,6 @@ public:
         toObjectInvTranspose = toUnitCylinderSpace.transpose();
     }
 
-    /*~Cylinder()
-    {
-        delete top;delete bottom;
-    }*/
-
-    /*Intersection* getIntersect(const Ray& ray);
-    bool doesIntersect(const Ray& ray);
-    Intersection** getIntersections(const Ray& ray);
-    bool isInsideOpen(const STPoint3& pt);
-    bool isInsideClosed(const STPoint3& pt);*/
-
     void getAABB(const STTransform4& transform, AABB* aabb) const override;
 
     bool getIntersect(const Ray& ray, Intersection* intersection) const override;
@@ -96,16 +82,12 @@ public:
     STPoint3 uniformSampleSurface(STVector3* normal) const override;
 
 private:
-    STPoint3 A, B;
-    float radius;
-
     STTransform4 toUnitCylinderSpace;
     STTransform4 toObjectSpace;
     STTransform4 toObjectInvTranspose;
 
-    //Triangle top, bottom;
-    //bool isWithinCylinder(const STPoint3& pt);
-    //Intersection* closer(Intersection* a, Intersection* b);
+    STPoint3 A, B;
+    float radius;
 };
 
 #endif

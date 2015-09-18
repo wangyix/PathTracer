@@ -41,6 +41,9 @@ inline std::ostream& operator <<(std::ostream& stream, const STFace& f);
 class STTriangleMesh
 {
 public:
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     //
     // Initialization
     //

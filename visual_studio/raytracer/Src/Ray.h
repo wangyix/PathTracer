@@ -16,6 +16,9 @@ class SceneObject;
 
 class Ray {
 public:
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Ray() : t_min(0.f), t_max(FLT_MAX), e_obj(NULL){}
     
     // for compatibility with existing code

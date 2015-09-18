@@ -15,12 +15,9 @@
 
 class SceneObject {
 public:
-    void* operator new(size_t size){
-        return _aligned_malloc(size, 16);
-    }
-        void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     /*SceneObject(Shape* _shape=NULL, const Material* _material=NULL, const STTransform4* _transform=NULL, const int _texture_index=-1) :
         shape(_shape),
         aabb(NULL),
@@ -107,20 +104,6 @@ public:
 
     const AABB& getAabb() const { return aabb; }
 
-protected:
-    std::unique_ptr<const Shape> shape;
-    AABB aabb;
-    //Material material;
-	//int texture_index;
-    const STTransform4 transform, tInverse, tInverseTranspose; //tTranspose, 
-    float scale;        // cached, stores the scaling factor in transform (it's assumed that transform does not warp shape)
-    
-    std::string name;
-
-    bool isLight;           // is true if emittedPower is non-zero
-    std::unique_ptr<const Bsdf> bsdf;
-    STColor3f emittedPower;
-
 private:
     SceneObject(const SceneObject& copy)    ////shallow copy
         : /*shape(copy.shape), aabb(copy.aabb), material(copy.material),*/
@@ -129,12 +112,29 @@ private:
         tInverseTranspose(copy.tInverseTranspose),
         name(copy.name)
     {}
+
+protected:
+    std::unique_ptr<const Shape> shape;
+    AABB aabb;
+    //Material material;
+    //int texture_index;
+    const STTransform4 transform, tInverse, tInverseTranspose; //tTranspose, 
+    float scale;        // cached, stores the scaling factor in transform (it's assumed that transform does not warp shape)
+
+    std::string name;
+
+    bool isLight;           // is true if emittedPower is non-zero
+    std::unique_ptr<const Bsdf> bsdf;
+    STColor3f emittedPower;
 };
 
 
 
 class TriangleMeshTriangle : public SceneObject {
 public:
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     // this class is basically a triangle wrapped in a SceneObject interface, used exclusively
     // for TriangleMesh's AABBTree
 
@@ -143,12 +143,7 @@ public:
         triangle(triangle) {
         triangle.getAABB(STTransform4::Identity(), &aabb);
     }  
-    void* operator new(size_t size) {
-        return _aligned_malloc(size, 16);
-    }
-    void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
+
     bool doesIntersect(const Ray& ray) const override{
         return triangle.doesIntersect(ray);
     }

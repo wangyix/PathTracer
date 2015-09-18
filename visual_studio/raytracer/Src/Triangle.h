@@ -10,13 +10,9 @@
 
 class Triangle : public Shape {
 public:
-    void* operator new(size_t size){
-        return _aligned_malloc(size, 16);
-    }
-        void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
-
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Triangle() {
         v1 = STPoint3(0.f, 0.f, 0.f);
         v2 = STPoint3(1.f, 0.f, 0.f);

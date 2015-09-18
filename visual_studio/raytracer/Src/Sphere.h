@@ -10,12 +10,9 @@
 
 class Sphere : public Shape {
 public:
-    void* operator new(size_t size){
-        return _aligned_malloc(size, 16);
-    }
-        void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     Sphere(const STPoint3& _center, float _radius)
         : center(_center), radius(_radius) 
     {

@@ -11,16 +11,14 @@
 
 class Box : public Shape {
 public:
-    void* operator new(size_t size){
-        return _aligned_malloc(size, 16);
-    }
-        void operator delete(void* ptr) {
-        return _aligned_free(ptr);
-    }
+
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
+
     Box(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z)
         : o(o), i(x - o), j(y - o), k(z - o)
     {
-        //maxInt = 2;
         this->name = "box";
         fillCob();
         initTriangles();
@@ -29,7 +27,6 @@ public:
         : i(STVector3(size.x(), 0.f, 0.f)), j(STVector3(0.f, size.y(), 0.f)), k(STVector3(0.f, 0.f, size.z()))
     {
         o = center - size*.5f;
-        //maxInt = 2;
         this->name = "box";
         fillCob();
         initTriangles();
@@ -37,67 +34,13 @@ public:
     Box(const Box& copy)
     {
         cob=copy.cob;
-        //maxInt=copy.maxInt;
         this->name=copy.name;
         for(int i=0;i<=12;i++){
             this->sides[i] = copy.sides[i];
         }
     }
-    /*~Box()
-    {
-        for(int i=0;i<12;i++)delete sides[i];
-    }*/
-
-    /*Intersection* getIntersect(const Ray& ray) {
-        Intersection *min_int = NULL, *inter;
-        for (int i = 0; i < 12; i++) {
-            inter = sides[i]->getIntersect(ray);
-            if (inter && (!min_int || inter->t < min_int->t)) {
-                if (min_int) delete min_int;
-                min_int = inter;
-            } else delete inter;
-        }
-        return min_int;
-    }
-    bool doesIntersect(const Ray& ray) {
-        for (int i = 0; i < 12; i++) {
-            bool inter = sides[i]->doesIntersect(ray);
-            if (inter) return inter;
-        }
-        return false;
-    }
-    Intersection** getIntersections(const Ray& ray) {
-        Intersection ** result = new Intersection*[maxInt];
-        for (int i = 0; i < maxInt; i++) result[i] = NULL;
-        Intersection *inter;
-        int index = 0;
-        for (int i = 0; i < 12; i++) {
-            inter = sides[i]->getIntersect(ray);
-            if (inter) {
-                result[index] = inter;
-                index++;
-            }
-        }
-        return result;
-    }
-    bool isInsideOpen(const STPoint3& pt) {
-        STVector3 coords = cob * (pt - o);
-        return (coords.x() > .001 && coords.y() > .001 && coords.z() > .001 &&
-                coords.x() < 1 - .001 && coords.y() < 1 - .001 && coords.z() < 1 - .001);
-    }
-    bool isInsideClosed(const STPoint3& pt) {
-        STVector3 coords = cob * (pt - o);
-        return (coords.x() >= -.001 && coords.y() >= -.001 && coords.z() >= -.001 &&
-                coords.x() <= 1 + .001 && coords.y() <= 1 + .001 && coords.z() <= 1 + .001);
-    }*/
 
     void getAABB(const STTransform4& transform, AABB* aabb) const override {
-        /*AABB* aabb=new AABB(FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX);
-        STVector3 min_corner;STVector3 max_corner;
-        AABB::combine(o,aabb);AABB::combine(o+i,aabb);AABB::combine(o+j,aabb);AABB::combine(o+k,aabb);
-        AABB::combine(o+i+j,aabb);AABB::combine(o+j+k,aabb);AABB::combine(o+k+i,aabb);AABB::combine(o+i+j+k,aabb);
-        return aabb;*/
-
         *aabb = AABB(FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX);
         AABB::combine(transform * o, aabb);
         AABB::combine(transform * (o + i), aabb);
@@ -162,10 +105,6 @@ public:
     }
 
 private:
-    STPoint3 o;
-    STVector3 i, j, k;
-    STTransform4 cob;
-    Triangle sides[12];
     void fillCob() {
         for (int ind = 0; ind < 3; ind++) {
             cob(ind,0) = this->i[ind];
@@ -189,6 +128,11 @@ private:
         sides[10] = Triangle(o + j, o + i + j + k, o + i + j);
         sides[11] = Triangle(o + j, o + j + k, o + i + j + k);
     }
+
+    STPoint3 o;
+    STVector3 i, j, k;
+    STTransform4 cob;
+    Triangle sides[12];
 };
 
 #endif
