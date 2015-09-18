@@ -1,4 +1,6 @@
 #include "STTransform4.h"
+#include "STVector3.h"
+#include "STPoint3.h"
 
 STTransform4 RotationMatrix(float rx, float ry, float rz) {
     STTransform4 rotx = STTransform4::Zero(), roty = STTransform4::Zero(), rotz = STTransform4::Zero();
@@ -42,16 +44,20 @@ STTransform4 TranslationMatrix(float tx, float ty, float tz) {
     return trans;
 }
 
-#if 0
+#if USE_EIGEN
+
+#else
+
 #include "STVector3.h"
 #include "STPoint3.h"
 
 STTransform4::STTransform4()
 {
-	for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
+    // Don't initialize; should match Eigen behavior
+	/*for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
 	{
 		_Entries[i][j] = 0.0f;
-	}
+	}*/
 }
 
 STTransform4::STTransform4(const STTransform4& t)
@@ -62,7 +68,7 @@ STTransform4::STTransform4(const STTransform4& t)
 	}
 }
 
-STTransform4::STTransform4(float a00, float a01, float a02, float a03,
+/*STTransform4::STTransform4(float a00, float a01, float a02, float a03,
     float a10, float a11, float a12, float a13,
     float a20, float a21, float a22, float a23,
     float a30, float a31, float a32, float a33) {
@@ -86,7 +92,7 @@ STTransform4::STTransform4(float a00, float a01, float a02, float a03,
     _Entries[3][1] = a31;
     _Entries[3][2] = a32;
     _Entries[3][3] = a33;
-}
+}*/
 
 STTransform4& STTransform4::operator = (const STTransform4& t)
 {
@@ -96,7 +102,15 @@ STTransform4& STTransform4::operator = (const STTransform4& t)
 	}
 	return *this;
 }
-
+STTransform4 STTransform4::Zero() {
+    STTransform4 zero;
+    for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
+    {
+        zero(i,j) = 0.f;
+    }
+    return zero;
+}
+/*
 STTransform4 STTransform4::Identity()
 {
 	STTransform4 id;
@@ -153,6 +167,7 @@ STTransform4 STTransform4::Rotation(float rx, float ry, float rz)
 
 	return rotx * roty * rotz;
 }
+*/
 
 
 STTransform4& STTransform4::operator += (const STTransform4& t)
@@ -197,7 +212,7 @@ STTransform4& STTransform4::operator /= (float s)
 	return *this;
 }
 
-STTransform4 STTransform4::Transpose() const
+STTransform4 STTransform4::transpose() const
 {
 	STTransform4 result;
 	for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
@@ -207,7 +222,7 @@ STTransform4 STTransform4::Transpose() const
 	return result;
 }
 
-STTransform4 STTransform4::Inverse() const
+STTransform4 STTransform4::inverse() const
 {
 	//
 	// Inversion by Cramer's rule.  Code taken from an Intel publication
@@ -220,10 +235,10 @@ STTransform4 STTransform4::Inverse() const
 	/* transpose matrix */
 	for (unsigned int i = 0; i < 4; i++)
 	{
-		src[i + 0 ] = (*this)[i][0];
-		src[i + 4 ] = (*this)[i][1];
-		src[i + 8 ] = (*this)[i][2];
-		src[i + 12] = (*this)[i][3];
+		src[i + 0 ] = (*this)(i, 0);
+		src[i + 4 ] = (*this)(i, 1);
+		src[i + 8 ] = (*this)(i, 2);
+		src[i + 12] = (*this)(i, 3);
 	}
 	/* calculate pairs for first 8 elements (cofactors) */
 	tmp[0] = src[10] * src[15];
@@ -296,7 +311,7 @@ STTransform4 STTransform4::Inverse() const
 	{
 		for (unsigned int j = 0; j < 4; j++)
 		{
-			FloatResult[i][j] = float(Result[i][j] * det);
+			FloatResult(i,j) = float(Result[i][j] * det);
 		}
 	}
 	return FloatResult;
@@ -318,9 +333,9 @@ STTransform4 operator * (const STTransform4& left, const STTransform4& right)
             float total = 0.0f;
             for(unsigned int i3 = 0; i3 < 4; i3++)
             {
-                total += left[i][i3] * right[i3][i2];
+                total += left(i, i3) * right(i3, i2);
             }
-            result[i][i2] = total;
+            result(i, i2) = total;
         }
     }
 	return result;
@@ -364,18 +379,18 @@ STTransform4 operator - (const STTransform4& left, const STTransform4& right)
 STVector3 operator * (const STTransform4& left, const STVector3& right)
 {
 	STVector3 result;
-	result.x = left[0][0]*right.x + left[0][1]*right.y + left[0][2]*right.z;
-	result.y = left[1][0]*right.x + left[1][1]*right.y + left[1][2]*right.z;
-	result.z = left[2][0]*right.x + left[2][1]*right.y + left[2][2]*right.z;
+    result.x() = left(0, 0)*right.x() + left(0, 1)*right.y() + left(0, 2) * right.z();
+    result.y() = left(1, 0)*right.x() + left(1, 1)*right.y() + left(1, 2) * right.z();
+    result.z() = left(2, 0)*right.x() + left(2, 1)*right.y() + left(2, 2) * right.z();
 	return result;
 }
 
 STPoint3 operator * (const STTransform4& left, const STPoint3& right)
 {
 	STPoint3 result;
-	result.x = left[0][0]*right.x + left[0][1]*right.y + left[0][2]*right.z + left[0][3]*1.0f;
-	result.y = left[1][0]*right.x + left[1][1]*right.y + left[1][2]*right.z + left[1][3]*1.0f;
-	result.z = left[2][0]*right.x + left[2][1]*right.y + left[2][2]*right.z + left[2][3]*1.0f;
+    result.x() = left(0, 0)*right.x() + left(0, 1)*right.y() + left(0, 2) * right.z() + left(0, 3);
+    result.y() = left(1, 0)*right.x() + left(1, 1)*right.y() + left(1, 2) * right.z() + left(1, 3);
+    result.z() = left(2, 0)*right.x() + left(2, 1)*right.y() + left(2, 2) * right.z() + left(2, 3);
 	return result;
 }
 #endif

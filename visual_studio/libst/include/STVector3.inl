@@ -1,4 +1,3 @@
-#if 0
 // STVector3.inl
 #ifndef __STVECTOR3_INL__
 #define __STVECTOR3_INL__
@@ -7,73 +6,78 @@
 * Inline file for STVector3.h
 */
 
-#include "STPoint3.h"
-#include "STUtil.h" // for STMin, STMax
+#include "STVector3.h"
 
-//
+#if USE_EIGEN
+
+#else
+
+#include <algorithm>
+
+#include "STPoint3.h"
+//#include "STUtil.h" // for STMin, STMax
 
 inline STVector3::STVector3()
 {
-    x = 0;
+    // Don't intialize; needs to match Eigen behavior
+    /*x = 0;
     y = 0;
-    z = 0;
+    z = 0;*/
 }
 
 inline STVector3::STVector3(float inX, float inY, float inZ)
 {
-    x = inX;
-    y = inY;
-    z = inZ;
+    this->x = inX;
+    this->y = inY;
+    this->z = inZ;
 }
 
-inline STVector3::STVector3(float s)
+/*inline STVector3::STVector3(float s)
 {
     x = s;
     y = s;
     z = s;
-}
+}*/
 
 inline STVector3::STVector3(const STVector3 &v)
 {
-    x = v.x;
-    y = v.y;
-    z = v.z;
+    this->x = v.x;
+    this->y = v.y;
+    this->z = v.z;
 }
 
-inline STVector3::STVector3(const STPoint3& p)
+/*inline STVector3::STVector3(const STPoint3& p)
 {
     x = p.x;
     y = p.y;
     z = p.z;
-}
+}*/
 
 inline STVector3& STVector3::operator=(const STVector3 &v)
 {
-    x = v.x;
-    y = v.y;
-    z = v.z;
+    this->x = v.x;
+    this->y = v.y;
+    this->z = v.z;
     return *this;
 }
 
 /**
 * Length of vector
 */
-inline float STVector3::Length() const
+inline float STVector3::norm() const
 {
-    return sqrtf(LengthSq());
+    return sqrtf(squaredNorm());
 }
 
 /**
 * Length squared of vector
 */
-inline float STVector3::LengthSq() const
+inline float STVector3::squaredNorm() const
 {
-    return x * x + y * y + z * z;
+    return this->x * this->x + this->y * this->y + this->z * this->z;
 }
 
-/**
-* True if all elements are real values
-*/
+/*// True if all elements are real values
 inline bool STVector3::Valid() const
 {
     // For standard floating-point math, the
@@ -81,33 +85,29 @@ inline bool STVector3::Valid() const
     // will test as not-equal to every value,
     // including itself!
     return ((x == x) && (y == y) && (z == z));
-}
+}*/
 
 /**
 * Sets the length of vector to 1
 */
-inline void STVector3::Normalize()
+inline void STVector3::normalize()
 {
-    float len = Length();
+    float len = norm();
     if (len != 0.0f) {
         (*this) /= len;
     }
 }
 
-/**
-* Sets the length of vector to NewLength
-*/
+/*// Sets the length of vector to NewLength
 inline void STVector3::SetLength(float newLength)
 {
     float len = Length();
     if (len != 0.0f) {
         (*this) *= newLength / len;
     }
-}
+}*/
 
-/**
-* Returns cross product of two vectors
-*/
+/*
 inline STVector3 STVector3::Cross(
     const STVector3& left, const STVector3& right)
 {
@@ -116,37 +116,35 @@ inline STVector3 STVector3::Cross(
                      left.x * right.y - left.y * right.x);
 }
 
-/**
-* Returns dot product of two vectors
-*/
 inline float STVector3::Dot(
     const STVector3& left, const STVector3& right)
 {
     return left.x * right.x + left.y * right.y + left.z * right.z;
 }
 
-/**
-* Returns direct product of two vectors
-*/
 inline STVector3 STVector3::DirectProduct(
     const STVector3& left, const STVector3& right)
 {
     return STVector3(left.x * right.x, left.y * right.y, left.z * right.z);
 }
 
-/**
-* Linearly interpolates between two vectors;
-* s = 0 returns left, s = 1 returns right
-*/
 inline STVector3 STVector3::Lerp(
     const STVector3& left, const STVector3& right, float s)
 {
     return left + s * (right - left);
+}*/
+
+STVector3 STVector3::cross3(const STVector3& b) {
+    return STVector3(this->y * b.z - this->z * b.y,
+                     this->z * b.x - this->x * b.z,
+                     this->x * b.y - this->y * b.x);
 }
 
-/**
-* Returns the vector that is the component-wise maximum of the given vectors
-*/
+float STVector3::dot(const STVector3& b) {
+    return this->x*b.x + this->y*b.y + this->z*b.z;
+}
+
+/*
 inline STVector3 STVector3::ComponentMax(
     const STVector3& left, const STVector3& right)
 {
@@ -156,9 +154,6 @@ inline STVector3 STVector3::ComponentMax(
         STMax(left.z, right.z));
 }
 
-/**
-* Returns the vector that is the component-wise minimum of the given vectors
-*/
 inline STVector3 STVector3::ComponentMin(
     const STVector3& left, const STVector3& right)
 {
@@ -167,6 +162,20 @@ inline STVector3 STVector3::ComponentMin(
         STMin(left.y, right.y),
         STMin(left.z, right.z));
 }
+*/
+
+STVector3 STVector3::cwiseMin(const STVector3& p) {
+    return STVector3((std::min)(this->x, p.x),
+        (std::min)(this->y, p.y),
+        (std::min)(this->z, p.z));
+}
+
+STVector3 STVector3::cwiseMax(const STVector3& p) {
+    return STVector3((std::max)(this->x, p.x),
+        (std::max)(this->y, p.y),
+        (std::max)(this->z, p.z));
+}
+
 
 inline STVector3 operator*(const STVector3& left, float right)
 {
@@ -205,33 +214,33 @@ inline STVector3 operator-(const STVector3& left, const STVector3& right)
 
 inline STVector3& STVector3::operator*=(float right)
 {
-    x *= right;
-    y *= right;
-    z *= right;
+    this->x *= right;
+    this->y *= right;
+    this->z *= right;
     return *this;
 }
 
 inline STVector3& STVector3::operator/=(float right)
 {
-    x /= right;
-    y /= right;
-    z /= right;
+    this->x /= right;
+    this->y /= right;
+    this->z /= right;
     return *this;
 }
 
 inline STVector3& STVector3::operator+=(const STVector3& right)
 {
-    x += right.x;
-    y += right.y;
-    z += right.z;
+    this->x += right.x;
+    this->y += right.y;
+    this->z += right.z;
     return *this;
 }
 
 inline STVector3& STVector3::operator-=(const STVector3& right)
 {
-    x -= right.x;
-    y -= right.y;
-    z -= right.z;
+    this->x -= right.x;
+    this->y -= right.y;
+    this->z -= right.z;
     return *this;
 }
 

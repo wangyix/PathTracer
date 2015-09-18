@@ -5,7 +5,7 @@
 #include "RayTrace.h"
 #include "quaternionJuliaSet.h"
 #include "thread-pool.h"
-#include "Threaded.h"
+#include "Defines.h"
 
 #include <iostream>
 #include <memory>

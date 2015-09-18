@@ -2,15 +2,23 @@
 #ifndef __STFORWARD_H__
 #define __STFORWARD_H__
 
+#define USE_EIGEN 0
+
+#if USE_EIGEN
+
 #include <Eigen/Dense>
 
-/*
-*  This file forward declares the classes and structs defined in libst.
-*  By including this file instead of manually forward-declaring each
-*  needed in a header, we can reduce the number of lines of boilerplate
-*  code, and also make certain changes easier to propagate (e.g. changing
-*  a class to a struct or vice versa).
-*/
+typedef Eigen::Matrix4f STTransform4;
+typedef Eigen::Vector4f STPoint3;
+typedef Eigen::Vector4f STVector3;
+
+#else
+
+struct STMatrix4;
+struct STPoint3;
+struct STVector3;
+
+#endif
 
 struct STColor3f;
 struct STColor4f;
@@ -24,9 +32,5 @@ class STTexture;
 class STTimer;
 struct STVector2;
 //struct STVector3;
-
-typedef Eigen::Matrix4f STTransform4;
-typedef Eigen::Vector4f STPoint3;
-typedef Eigen::Vector4f STVector3;
 
 #endif  // __STFORWARD_H__
