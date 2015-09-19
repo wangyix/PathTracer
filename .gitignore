@@ -207,3 +207,4 @@ FakesAssemblies/
 
 # I added this!
 *Thumbs.db
+*.tlog
