@@ -36,11 +36,10 @@ STTransform4 ScalingMatrix(float sx, float sy, float sz) {
     return scale;
 }
 STTransform4 TranslationMatrix(float tx, float ty, float tz) {
-    STTransform4 trans = STTransform4::Zero();
+    STTransform4 trans = STTransform4::Identity();
     trans(0, 3) = tx;
     trans(1, 3) = ty;
     trans(2, 3) = tz;
-    trans(3, 3) = 1.f;
     return trans;
 }
 
@@ -318,8 +317,10 @@ STTransform4 STTransform4::inverse() const
 }
 
 float STTransform4::columnnMagnitude(int col) const {
-    STVector3 column(_Entries[0][col], _Entries[1][col], _Entries[2][col]);
-    return column.norm();
+    float a = _Entries[0][col];
+    float b = _Entries[1][col];
+    float c = _Entries[2][col];
+    return sqrt(a*a + b*b + c*c);
 }
 
 
