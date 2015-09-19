@@ -34,14 +34,14 @@ struct STFace{
 #endif
     STFace(const STVertex& v0, const STVertex& v1, const STVertex& v2){
         v[0]=v0;v[1]=v1;v[2]=v2;
-        //normals[0]=0;normals[1]=0;normals[2]=0;
-        //texPos[0]=0;texPos[1]=0;texPos[2]=0;
+        normals[0] = NULL; normals[1] = NULL; normals[2] = NULL;
+        texPos[0] = NULL; texPos[1] = NULL; texPos[2] = NULL;
     }
     STVertex v[3];
     //STFace *adjF[3];
     STVector3 normal;
-    STVector3 normals[3];
-    STPoint2 texPos[3];
+    STVector3* normals[3];
+    STPoint2* texPos[3];
 };
 inline std::ostream& operator <<(std::ostream& stream, const STFace& f);
 
@@ -75,16 +75,11 @@ public:
     //
     // Local members
     //
-#if USE_EIGEN
-    std::vector<STVertex, Eigen::aligned_allocator<STVertex>> mVertices;
-    std::vector<STVector3, Eigen::aligned_allocator<STVector3>> mNormals;
-    std::vector<STFace, Eigen::aligned_allocator<STFace>> mFaces;
-#else
-    std::vector<STVertex> mVertices;
-    std::vector<STVector3> mNormals;
-    std::vector<STFace> mFaces;
-#endif
-    std::vector<STPoint2> mTexPos;
+
+    std::vector<STVertex*> mVertices;
+    std::vector<STVector3*> mNormals;
+    std::vector<STFace*> mFaces;
+    std::vector<STPoint2*> mTexPos;
     
 #if USE_EIGEN
     static std::string LoadObj(std::vector<STTriangleMesh, Eigen::aligned_allocator<STTriangleMesh>>& output_meshes, const std::string& filename);

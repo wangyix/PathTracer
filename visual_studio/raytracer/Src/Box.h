@@ -20,7 +20,7 @@ public:
         : o(o), i(x - o), j(y - o), k(z - o)
     {
         this->name = "box";
-        fillCob();
+        //fillCob();
         initTriangles();
     }
     Box(const STPoint3& center,const STVector3& size)   ////axis aligned box
@@ -28,12 +28,12 @@ public:
     {
         o = center - size*.5f;
         this->name = "box";
-        fillCob();
+        //fillCob();
         initTriangles();
     }
     Box(const Box& copy)
     {
-        cob=copy.cob;
+        //cob=copy.cob;
         this->name=copy.name;
         for(int i=0;i<=12;i++){
             this->sides[i] = copy.sides[i];
@@ -105,11 +105,12 @@ public:
     }
 
 private:
-    void fillCob() {
+    /*void fillCob() {
         for (int ind = 0; ind < 3; ind++) {
             cob(ind,0) = this->i[ind];
             cob(ind,1) = this->j[ind];
             cob(ind,2) = this->k[ind];
+            cob(ind, 3) = 0.f;
         }
         cob(3,3) = 1.;
 #if USE_EIGEN
@@ -117,7 +118,7 @@ private:
 #else
         cob = cob.inverse();
 #endif
-    }
+    }*/
     void initTriangles(){
         sides[0] = Triangle(o, o + j, o + i + j);
         sides[1] = Triangle(o, o + i + j, o + i);
@@ -135,7 +136,7 @@ private:
 
     STPoint3 o;
     STVector3 i, j, k;
-    STTransform4 cob;
+    //STTransform4 cob;
     Triangle sides[12];
 };
 
