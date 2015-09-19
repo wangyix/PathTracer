@@ -17,9 +17,9 @@ STPoint3 STPoint3::Zero() {
 STPoint3::STPoint3()
 {
     // Don't intialize; needs to match Eigen behavior
-    mx = 0;
+    /*mx = 0;
     my = 0;
-    mz = 0;
+    mz = 0;*/
 }
 
 STPoint3::STPoint3(float inX, float inY, float inZ)

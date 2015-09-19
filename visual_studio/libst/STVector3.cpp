@@ -21,9 +21,9 @@ STVector3 STVector3::Zero() {
 STVector3::STVector3()
 {
     // Don't intialize; needs to match Eigen behavior
-    mx = 0;
+    /*mx = 0;
     my = 0;
-    mz = 0;
+    mz = 0;*/
 }
 
 STVector3::STVector3(float inX, float inY, float inZ)

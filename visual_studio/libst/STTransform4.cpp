@@ -53,10 +53,10 @@ STTransform4 TranslationMatrix(float tx, float ty, float tz) {
 STTransform4::STTransform4()
 {
     // Don't initialize; should match Eigen behavior
-	for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
+	/*for (int i = 0; i < 4; i++) for (int j = 0; j < 4; j++)
 	{
 		_Entries[i][j] = 0.0f;
-	}
+	}*/
 }
 
 STTransform4::STTransform4(const STTransform4& t)
