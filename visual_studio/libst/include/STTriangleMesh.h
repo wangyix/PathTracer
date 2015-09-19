@@ -10,6 +10,10 @@
 #include <vector>
 #include <iostream>
 
+#if USE_EIGEN
+#include <Eigen/StdVector>
+#endif
+
 struct STFace;
 
 struct STVertex{
@@ -66,7 +70,11 @@ public:
     // Local members
     //
     std::vector<STVertex> mVertices;
+#if USE_EIGEN
+    std::vector<STVector3, Eigen::aligned_allocator<STVector3>> mNormals;
+#else
     std::vector<STVector3> mNormals;
+#endif
     std::vector<STPoint2> mTexPos;
     std::vector<STFace> mFaces;
     

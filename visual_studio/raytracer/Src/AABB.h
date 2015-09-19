@@ -25,7 +25,7 @@ public:
 	bool isInside(const STPoint3& point) const;
     float intersect(const Ray& ray) const;
 
-    void rescale(const STTransform4& transform);
+    //void rescale(const STTransform4& transform);
     void display();
 
 	friend std::ostream& operator<<(std::ostream& out,const AABB& aabb){out<<"["<<aabb.xmin<<", "<<aabb.ymin<<", "<<aabb.zmin<<"]["<<aabb.xmax<<", "<<aabb.ymax<<", "<<aabb.zmax<<"]";return out;}

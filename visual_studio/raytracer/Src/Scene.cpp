@@ -60,17 +60,38 @@ Scene::~Scene()
 
 
 
-float Scene::S_i_at(const std::vector<Vertex>& vertices, int i) {
+float Scene::S_i_at(
+#if USE_EIGEN
+    const std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices,
+#else
+    const std::vector<Vertex>& vertices,
+#endif
+    int i) {
+
     float Pa_from_i1 = vertices[i].Pa_from_next;
     return S_i_at(vertices, i, Pa_from_i1);
 }
 
-float Scene::S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1) {
+float Scene::S_i_at(
+#if USE_EIGEN
+    const std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices,
+#else
+    const std::vector<Vertex>& vertices,
+#endif
+    int i, float Pa_from_i1) {
+
     float S_1i = (i == 0) ? 0.f : vertices[i - 1].S;
     return S_i_at(vertices, i, Pa_from_i1, S_1i);
 }
 
-float Scene::S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i) {
+float Scene::S_i_at(
+#if USE_EIGEN
+    const std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices,
+#else
+    const std::vector<Vertex>& vertices,
+#endif
+    int i, float Pa_from_i1, float S_1i) {
+
     float pi_over_pi1 = Pa_from_i1 / vertices[i].Pa_from_prev;
     return (pi_over_pi1 * pi_over_pi1) * (vertices[i].prev_gap_nonspecular + S_1i);
 }
@@ -173,7 +194,13 @@ struct Path {
 //std::vector<Path> paths;
 
 
-void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex>& vertices, STColor3f* C_0t_sum) {
+void Scene::generateEyeSubpath(float u, float v, int x, int y, 
+#if USE_EIGEN
+    std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices,
+#else
+    std::vector<Vertex>& vertices,
+#endif
+    STColor3f* C_0t_sum) {
 
     camera.setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
 
@@ -185,7 +212,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
     camera.sample_z0(&z0, &z0_n, &z0_bsdf, &Pa_z0, &We0_z0);
 
     // record z0
-    vertices.emplace_back(Intersection(0.f, z0, z0_n), z0_bsdf, (const SceneObject*)NULL);
+    vertices.push_back(Vertex(Intersection(0.f, z0, z0_n), z0_bsdf, (const SceneObject*)NULL));
     //vertices.back().w_to_prev                    // not defined for z0
     vertices.back().alpha = We0_z0 / Pa_z0;
     //vertices.back().G_prev                    // not defined for y0
@@ -251,7 +278,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
         float cos_intersected_w = fabsf(-w.dot(inter.normal));
 
         // record new vertex
-        vertices.emplace_back(inter, inter_obj->getBsdf(), inter_obj);
+        vertices.push_back(Vertex(inter, inter_obj->getBsdf(), inter_obj));
         i++;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
@@ -309,7 +336,13 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y, std::vector<Verte
 }
 
 
-void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
+void Scene::generateLightSubpath(
+#if USE_EIGEN
+    std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices
+#else
+    std::vector<Vertex>& vertices
+#endif
+    ) {
 
     STPoint3 y0;
     STVector3 y0_n;
@@ -320,7 +353,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
     lightDistribution.sample_y0(&y0, &y0_n, &y0_obj, &y0_bsdf, &Pa_y0, &Le0_y0);
 
     // record y0
-    vertices.emplace_back(Intersection(0.f, y0, y0_n), y0_bsdf, y0_obj);
+    vertices.push_back(Vertex(Intersection(0.f, y0, y0_n), y0_bsdf, y0_obj));
     //vertices.back().w_to_prev                    // not defined for y0
     vertices.back().alpha = Le0_y0 / Pa_y0;
     //vertices.back().G_prev                    // not defined for y0
@@ -386,7 +419,7 @@ void Scene::generateLightSubpath(std::vector<Vertex>& vertices) {
         float cos_intersected_w = fabsf(-w.dot(inter.normal));
 
         // record new vertex
-        vertices.emplace_back(inter, inter_obj->getBsdf(), inter_obj);
+        vertices.push_back(Vertex(inter, inter_obj->getBsdf(), inter_obj));
         i++;
         vertices[i].w_to_prev = -w;
         vertices[i].alpha = vertices[i - 1].alpha * (f / vertices[i - 1].qPsig_adj);
@@ -440,13 +473,18 @@ void Scene::ProcessPixel(int x, int y) {
             float u = xs / width;
             float v = ys / height;
 
-            // generate eye subpath thru (u,v)
+#if USE_EIGEN
+            std::vector<Vertex, Eigen::aligned_allocator<Vertex>> vertices_E;
+            std::vector<Vertex, Eigen::aligned_allocator<Vertex>> vertices_L;
+#else
             std::vector<Vertex> vertices_E;
+            std::vector<Vertex> vertices_L;
+#endif
+            // generate eye subpath thru (u,v)
             STColor3f C0t_sum;
             generateEyeSubpath(u, v, x, y, vertices_E, &C0t_sum);
 
             // generate light subpath
-            std::vector<Vertex> vertices_L;
             generateLightSubpath(vertices_L);
 
             // accumulate C0t contributions
@@ -1262,7 +1300,7 @@ void Scene::buildAABBTrees()
     aabb_tree = new AABBTree(objects);
 }
 
-#define USE_ACCEL 1
+#define USE_ACCEL 0
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {

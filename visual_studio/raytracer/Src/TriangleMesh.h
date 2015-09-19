@@ -10,6 +10,9 @@
 #include "AABBTree.h"
 #include "STTriangleMesh.h"
 
+#if USE_EIGEN
+#include <Eigen/StdVector>
+#endif
 
 class TriangleMesh : public Shape {
 public:
@@ -30,7 +33,11 @@ public:
 			}
 		}
 
+#if USE_EIGEN
+        std::vector<STPoint3, Eigen::aligned_allocator<STPoint3>> points;
+#else
         std::vector<STPoint3> points;
+#endif
 
 		for(int i=0;i<(int)(mesh->mFaces.size());i++){
 			////calculate position

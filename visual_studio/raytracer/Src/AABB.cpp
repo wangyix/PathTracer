@@ -20,7 +20,7 @@ AABB::AABB(float xmin, float xmax, float ymin, float ymax, float zmin, float zma
     this->zcenter = .5f*(zmin + zmax);
 }
 
-void AABB::rescale(const STTransform4& transform)
+/*void AABB::rescale(const STTransform4& transform)
 {
     std::vector<STPoint3> pts;
     pts.push_back(STPoint3(xmin, ymin, zmin));
@@ -54,7 +54,7 @@ void AABB::rescale(const STTransform4& transform)
     xcenter = .5f*(xmin + xmax);
     ycenter = .5f*(ymin + ymax);
     zcenter = .5f*(zmin + zmax);
-}
+}*/
 
 static inline void intersectHelper(float* tin, bool* tinFound, float* tout, bool* toutFound,
                                    float eu, float ev, float ew, float du, float dv, float dw,

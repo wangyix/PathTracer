@@ -10,7 +10,9 @@
 #include <iostream>
 #include <memory>
 
-
+#if USE_EIGEN
+#include <Eigen/StdVector>
+#endif
 
 class LightDistribution {
 public:
@@ -91,16 +93,13 @@ private:
 };
 
 
-
-
-
-
 class Scene
 {
 public:
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
+
     Scene();
     virtual ~Scene();
 
@@ -187,18 +186,31 @@ protected:
     //STColor3f traceShadowRay(const Ray& ray, const Light& light);
     //void getObjectsAABB(const std::vector<SceneObject*>& objs, /*result*/AABB& aabb);
 
+#if USE_EIGEN
+    void generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices, STColor3f* C_0t_sum);
+    void generateLightSubpath(std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices);
+
+    float S_i_at(const std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices, int i);
+    float S_i_at(const std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices, int i, float Pa_from_i1);
+    float S_i_at(const std::vector<Vertex, Eigen::aligned_allocator<Vertex>>& vertices, int i, float Pa_from_i1, float S_1i);
+#else
     void generateEyeSubpath(float u, float v, int x, int y, std::vector<Vertex>& vertices, STColor3f* C_0t_sum);
     void generateLightSubpath(std::vector<Vertex>& vertices);
 
     float S_i_at(const std::vector<Vertex>& vertices, int i);
     float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1);
     float S_i_at(const std::vector<Vertex>& vertices, int i, float Pa_from_i1, float S_1i);
+#endif
 
     float qPsig_a_to_b(const Vertex& a, const Vertex& b, const STVector3& w_ab, const STVector3& w_ac);
 
 
 protected:
+#if USE_EIGEN
+    std::vector<STTransform4,Eigen::aligned_allocator<STTransform4>> matStack;
+#else
     std::vector<STTransform4> matStack;
+#endif
     //Material* currMaterial;
     //int currTexIndex;
     //bool use_shadow;
