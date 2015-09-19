@@ -19,7 +19,7 @@ public:
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
-    Ray() : t_min(0.f), t_max(FLT_MAX), e_obj(NULL){}
+    Ray() : e(STPoint3(0.f, 0.f, 0.f)), d(STVector3(0.f, 0.f, 0.f)), e_obj(NULL), t_min(0.f), t_max(FLT_MAX){}
     
     // for compatibility with existing code
     Ray(const STPoint3& _e, const STVector3& _d, float _t_min = 0.f, float _t_max = FLT_MAX)

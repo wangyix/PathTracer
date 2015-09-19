@@ -13,10 +13,13 @@ public:
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
-    Triangle() {
-        v1 = STPoint3(0.f, 0.f, 0.f);
-        v2 = STPoint3(1.f, 0.f, 0.f);
-        v3 = STPoint3(0.f, 1.f, 0.f);
+    Triangle() :
+        v1(STPoint3(0.f, 0.f, 0.f)),
+        v2(STPoint3(1.f, 0.f, 0.f)),
+        v3(STPoint3(0.f, 1.f, 0.f)),
+        n1(STVector3(0.f, 0.f, 0.f)),
+        n2(STVector3(0.f, 0.f, 0.f)), 
+        n3(STVector3(0.f, 0.f, 0.f)) {
     }
 
     Triangle(const STPoint3& _v1, const STPoint3& _v2, const STPoint3& _v3)

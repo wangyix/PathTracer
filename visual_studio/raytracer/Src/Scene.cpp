@@ -204,8 +204,8 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y,
 
     camera.setSampleUV(u, v);  // this will tell cameraBsdf which direction w to choose for z0->z1
 
-    STPoint3 z0;
-    STVector3 z0_n;
+    STPoint3 z0 = STPoint3(0.f, 0.f, 0.f);
+    STVector3 z0_n = STVector3(0.f, 0.f, 0.f);
     const Bsdf* z0_bsdf;
     float Pa_z0;
     STColor3f We0_z0;
@@ -226,7 +226,7 @@ void Scene::generateEyeSubpath(float u, float v, int x, int y,
     int i = 0;      // v_i is last inserted vertex
     while (true) {
         // choose next direction w
-        STVector3 w;
+        STVector3 w = STVector3(0.f, 0.f, 0.f);
         float Psig;
         float cos_sampled_w;
         STColor3f f = vertices[i].sample_f(vertices[i].w_to_prev, &w, &Psig, &cos_sampled_w);
@@ -344,8 +344,8 @@ void Scene::generateLightSubpath(
 #endif
     ) {
 
-    STPoint3 y0;
-    STVector3 y0_n;
+    STPoint3 y0 = STPoint3(0.f, 0.f, 0.f);
+    STVector3 y0_n = STVector3(0.f, 0.f, 0.f);
     const SceneObject* y0_obj;
     const Bsdf* y0_bsdf;
     float Pa_y0;
@@ -367,7 +367,7 @@ void Scene::generateLightSubpath(
     int i = 0;      // v_i is last inserted vertex
     while (true) {
         // choose next direction w
-        STVector3 w;
+        STVector3 w = STVector3(0.f, 0.f, 0.f);
         float Psig;
         float cos_sampled_w;
         STColor3f f = vertices[i].sample_f(vertices[i].w_to_prev, &w, &Psig, &cos_sampled_w);
@@ -1304,7 +1304,7 @@ void Scene::buildAABBTrees()
     aabb_tree = new AABBTree(objects);
 }
 
-#define USE_ACCEL 1
+#define USE_ACCEL 0
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {

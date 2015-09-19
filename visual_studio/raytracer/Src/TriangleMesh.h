@@ -41,12 +41,14 @@ public:
 
 		for(int i=0;i<(int)(mesh->mFaces.size());i++){
 			////calculate position
-			STPoint3 v[3];
+            STPoint3 origin = STPoint3(0.f, 0.f, 0.f);
+            STPoint3 v[3] = { origin, origin, origin };
 			for(int d=0;d<3;d++){v[d]=mesh->mFaces[i]->v[d].pt;}
 			if(!counter_clockwise){STPoint3 tmp=v[1];v[1]=v[2];v[2]=tmp;}
 			
             ////calculate normal
-            STVector3 n[3];
+            STVector3 zero = STVector3(0.f, 0.f, 0.f);
+            STVector3 n[3] = { zero, zero, zero };
             for(int d=0;d<3;d++){
                 if(mesh->mFaces[i]->normals[d]!=NULL)n[d]=*(mesh->mFaces[i]->normals[d]);
                 else n[d]=mesh->mFaces[i]->normal;

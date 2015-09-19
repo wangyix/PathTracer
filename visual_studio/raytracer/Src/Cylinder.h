@@ -33,7 +33,7 @@ public:
 
         // construct axes for cylinder (cylinder along z axis, from 0 to |A-B|
         // I, J are radius length, perpendicular to K, which is equal to B-A;
-        STVector3 I, J;
+        STVector3 I = STVector3(0.f, 0.f, 0.f), J = STVector3(0.f, 0.f, 0.f);
         STVector3 K = B - A;
         if (K.x() == 0.f && K.y() == 0.f) {
             I = STVector3(radius, 0.f, 0.f);

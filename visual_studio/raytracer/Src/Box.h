@@ -31,14 +31,6 @@ public:
         //fillCob();
         initTriangles();
     }
-    Box(const Box& copy)
-    {
-        //cob=copy.cob;
-        this->name=copy.name;
-        for(int i=0;i<=12;i++){
-            this->sides[i] = copy.sides[i];
-        }
-    }
 
     void getAABB(const STTransform4& transform, AABB* aabb) const override {
         *aabb = AABB(FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX, FLT_MAX, -FLT_MAX);

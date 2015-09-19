@@ -19,8 +19,8 @@ struct Intersection {
 	//STPoint2 uv;
     Intersection(const float _t, const STPoint3& _point, const STVector3& _normal)//, STPoint2 _uv=STPoint2())
         : t(_t), point(_point), normal(_normal) {}
-    Intersection(const Intersection& copy){ t = copy.t; point = copy.point; normal = copy.normal; }//uv = copy.uv; }
-    Intersection() {}
+
+    Intersection() : point(STPoint3(0.f, 0.f, 0.f)), normal(STVector3(0.f, 0.f, 0.f)) {}
     ~Intersection(){}
 
     float t;
@@ -34,7 +34,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
     Vertex(const Intersection& inter, const Bsdf* bsdf, const SceneObject* obj) :
-        w_to_prev(STVector3::Zero()),
+        w_to_prev(STVector3(0.f,0.f,0.f)),
         alpha(-1.f),
         G_prev(-1.f),
         qPsig_adj(-1.f),
@@ -55,7 +55,7 @@ public:
 
             // generate unit axes I,J,K  where K=normal;
             // I,J will be set to some arbitrary orientation around K
-            STVector3 I, J;
+            STVector3 I = STVector3(0.f, 0.f, 0.f), J = STVector3(0.f, 0.f, 0.f);
             STVector3 K = n;
             if (K.x() == 0.f && K.y() == 0.f) {
                 I = STVector3(1.f, 0.f, 0.f);
@@ -67,7 +67,6 @@ public:
                 J.normalize();
             }
             // generate transform matrices between normal- and world-space from I,J,K axes
-            normalToWorld = STTransform4();
             normalToWorld(0, 0) = I.x();
             normalToWorld(1, 0) = I.y();
             normalToWorld(2, 0) = I.z();
@@ -109,7 +108,7 @@ public:
     }
     STColor3f sample_f(const STVector3& wo_w, STVector3* wi_w, float* pdf_sig, float* cos_wi) const {
         STVector3 wo = worldToNormal * wo_w;
-        STVector3 wi;
+        STVector3 wi = STVector3(0.f,0.f,0.f);
         STColor3f f = bsdf->sample_f(wo, &wi, pdf_sig, cos_wi);
         *wi_w = normalToWorld * wi;
         return f;

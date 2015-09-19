@@ -18,23 +18,6 @@ public:
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
-    /*SceneObject(Shape* _shape=NULL, const Material* _material=NULL, const STTransform4* _transform=NULL, const int _texture_index=-1) :
-        shape(_shape),
-        aabb(NULL),
-        material(_material==NULL?Material():(*_material)),
-        transform(_transform==NULL?STTransform4::Identity():(*_transform)),
-        texture_index(_texture_index),
-        name("scene_object"),
-        isLight(false),
-        bsdf(new Lambertian(grayLambertian)),
-        emittedPower(0.f)
-    {
-        tInverse = transform.Inverse();
-        tInverseTranspose = tInverse.Transpose();
-        if (shape) aabb=shape->getAABB();
-        if (aabb) aabb->rescale(transform);
-        if (shape) name=shape->name;
-    }*/
 
     // updated object that uses bsdf.
     SceneObject(Shape* shape, const STTransform4& transform, const Bsdf* bsdf, STColor3f emittedPower = STColor3f(0.f)) :
@@ -47,7 +30,6 @@ public:
         bsdf(bsdf),
         emittedPower(emittedPower)
     {
-        //tTranspose = transform.Transpose();
 #if USE_EIGEN
         scale = transform.block(0, 0, 3, 1).norm(); // assuming transform does not warp shape
 #else

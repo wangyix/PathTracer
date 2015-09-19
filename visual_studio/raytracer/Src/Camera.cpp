@@ -8,8 +8,9 @@
 static const double pi = 3.14159265358979;
 
 Camera::Camera()
-    : eye(STPoint3(0.f, 0.f, 0.f)), up(STVector3(0.f, 1.f, 0.f)), lookAt(STPoint3(0.f, 0.f, -1.f)), fovy(45.f), aspect(1.f), cameraBsdf(*this)
+    : cameraBsdf(*this)
 {
+    setAttributes(STPoint3(0.f, 0.f, 0.f), STVector3(0.f, 1.f, 0.f), STPoint3(0.f, 0.f, -1.f), 45.f, 1.f);
 }
 
 Camera::Camera(const STPoint3& _eye, const STVector3& _up, const STPoint3& _lookAt, float _fovy, float _aspect)
@@ -46,7 +47,7 @@ void Camera::setAttributes(const STPoint3& _eye, const STVector3& _up, const STP
     STVector3 K = getLook();
     const STPoint3& P = eye;
 
-    STTransform4 viewToWorld = STTransform4();
+    STTransform4 viewToWorld;
     viewToWorld(0, 0) = I.x();
     viewToWorld(1, 0) = I.y();
     viewToWorld(2, 0) = I.z();

@@ -20,10 +20,8 @@ struct STVertex{
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
-    STVertex() {}
-    STVertex(float x, float y, float z, float u=0, float v=0) {
-        pt=STPoint3(x,y,z);
-    }
+    STVertex() : pt(STPoint3(0.f, 0.f, 0.f)) {}
+    STVertex(float x, float y, float z, float u = 0, float v = 0) : pt(STPoint3(x, y, z)) {}
     STPoint3 pt;
 };
 inline std::ostream& operator <<(std::ostream& stream, const STVertex& v);
@@ -34,6 +32,7 @@ struct STFace{
 #endif
     STFace(const STVertex& v0, const STVertex& v1, const STVertex& v2){
         v[0]=v0;v[1]=v1;v[2]=v2;
+        normal = STVector3(0.f, 0.f, 0.f);
         normals[0] = NULL; normals[1] = NULL; normals[2] = NULL;
         texPos[0] = NULL; texPos[1] = NULL; texPos[2] = NULL;
     }

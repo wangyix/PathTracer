@@ -41,6 +41,9 @@ STImage STTriangleMesh::whiteImg=STImage(256, 256, STImage::Pixel(255,255,255,25
 // Initialization
 //
 STTriangleMesh::STTriangleMesh()
+    : mMassCenter(STPoint3(0.f,0.f,0.f)),
+    mBoundingBoxMax(STPoint3(0.f,0.f,0.f)),
+    mBoundingBoxMin(STPoint3(0.f,0.f,0.f))
 {
     for(int i=0;i<3;i++){
         mMaterialAmbient[i]=0.2f;

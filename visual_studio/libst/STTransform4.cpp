@@ -379,19 +379,21 @@ STTransform4 operator - (const STTransform4& left, const STTransform4& right)
 
 STVector3 operator * (const STTransform4& left, const STVector3& right)
 {
-	STVector3 result;
-    result.x() = left(0, 0)*right.x() + left(0, 1)*right.y() + left(0, 2) * right.z();
-    result.y() = left(1, 0)*right.x() + left(1, 1)*right.y() + left(1, 2) * right.z();
-    result.z() = left(2, 0)*right.x() + left(2, 1)*right.y() + left(2, 2) * right.z();
+    STVector3 result = STVector3(
+        left(0, 0)*right.x() + left(0, 1)*right.y() + left(0, 2) * right.z(),
+        left(1, 0)*right.x() + left(1, 1)*right.y() + left(1, 2) * right.z(),
+        left(2, 0)*right.x() + left(2, 1)*right.y() + left(2, 2) * right.z()
+        );
 	return result;
 }
 
 STPoint3 operator * (const STTransform4& left, const STPoint3& right)
 {
-	STPoint3 result;
-    result.x() = left(0, 0)*right.x() + left(0, 1)*right.y() + left(0, 2) * right.z() + left(0, 3);
-    result.y() = left(1, 0)*right.x() + left(1, 1)*right.y() + left(1, 2) * right.z() + left(1, 3);
-    result.z() = left(2, 0)*right.x() + left(2, 1)*right.y() + left(2, 2) * right.z() + left(2, 3);
+    STPoint3 result = STPoint3(
+        result.x() = left(0, 0)*right.x() + left(0, 1)*right.y() + left(0, 2) * right.z() + left(0, 3),
+        result.y() = left(1, 0)*right.x() + left(1, 1)*right.y() + left(1, 2) * right.z() + left(1, 3),
+        result.z() = left(2, 0)*right.x() + left(2, 1)*right.y() + left(2, 2) * right.z() + left(2, 3)
+        );
 	return result;
 }
 #endif

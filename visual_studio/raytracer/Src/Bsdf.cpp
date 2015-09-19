@@ -141,9 +141,7 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
     // Handle total internal reflection for transmission
     if (sint2 >= 1.) {
         *pdf_sig = 1.f;
-        wi->x() = -wo.x();
-        wi->y() = -wo.y();
-        wi->z() = wo.z();
+        *wi = STVector3(-wo.x(), -wo.y(), wo.z());
         *cos_wi = AbsCosTheta(*wi);
         return R;
     } else {
@@ -154,9 +152,7 @@ STColor3f SpecularDiel::sample_f(const STVector3& wo, STVector3* wi, float *pdf_
         float q = (Fr.r + Fr.g + Fr.b) / 3.f;
         if (randFloat() < q) {
             *pdf_sig = q;
-            wi->x() = -wo.x();
-            wi->y() = -wo.y();
-            wi->z() = wo.z();
+            *wi = STVector3(-wo.x(), -wo.y(), wo.z());
             *cos_wi = AbsCosTheta(*wi);
             return Fr * R;
         } else {

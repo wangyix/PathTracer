@@ -235,8 +235,8 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
     const STVector3& d = ray_unit.d;
 
     float min_inter_t = FLT_MAX;
-    STPoint3 min_inter_p;
-    STVector3 min_inter_p_n;
+    STPoint3 min_inter_p = STPoint3(0.f, 0.f, 0.f);
+    STVector3 min_inter_p_n = STVector3(0.f, 0.f, 0.f);
 
     // intersect with caps
     if (d.z() != 0.f) {   // if ray parallel to caps, then no intersection    
@@ -369,8 +369,8 @@ float Cylinder::getSurfaceArea() const {
 
 STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
 
-    STPoint3 p_unit;    // the chosen point in unit-cylinder-space
-    STVector3 p_n_unit;
+    STPoint3 p_unit = STPoint3(0.f, 0.f, 0.f);    // the chosen point in unit-cylinder-space
+    STVector3 p_n_unit = STVector3(0.f, 0.f, 0.f);
 
     // generate random in [0,total] and see if it's in [0,topCapCutoff],
     // [topCapCutoff,bottomCapCutoff], or [bottomCapCutoff,total] to choose either
