@@ -61,18 +61,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../lib\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../lib\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../Lib/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./Temp/</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../Lib/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./Temp/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VCInstallDir)\bin\x86_amd64;$(VCInstallDir)\bin;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <OutDir>../Lib/</OutDir>
+    <IntDir>./Temp/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
     <LibraryPath>$(VCInstallDir)\bin\x86_amd64;$(VCInstallDir)\bin;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <OutDir>../Lib/</OutDir>
+    <IntDir>./Temp/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -90,7 +94,7 @@
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(Configuration)/libst.lib</OutputFile>
+      <OutputFile>$(OutDir)$(Platform)/$(Configuration)/libst.lib</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -108,7 +112,7 @@
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(Configuration)/libst.lib</OutputFile>
+      <OutputFile>$(OutDir)$(Platform)/$(Configuration)/libst.lib</OutputFile>
       <AdditionalOptions>/MACHINE:X64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
@@ -125,7 +129,7 @@
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(Configuration)/libst.lib</OutputFile>
+      <OutputFile>$(OutDir)$(Platform)/$(Configuration)/libst.lib</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -141,7 +145,7 @@
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(Configuration)/libst.lib</OutputFile>
+      <OutputFile>$(OutDir)$(Platform)/$(Configuration)/libst.lib</OutputFile>
       <AdditionalOptions>/MACHINE:X64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>

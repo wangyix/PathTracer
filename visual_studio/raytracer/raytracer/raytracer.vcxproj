@@ -66,23 +66,27 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\Bin\</OutDir>
+    <OutDir>../Bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IntDir>..\Temp\</IntDir>
+    <IntDir>../Temp/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExecutablePath>$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
-    <LibraryPath>$(VCInstallDir)\bin\x86_amd64;$(VCInstallDir)\bin;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <OutDir>../Bin/</OutDir>
+    <IntDir>../Temp/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\Bin\</OutDir>
-    <IntDir>..\Temp\</IntDir>
+    <OutDir>../Bin/</OutDir>
+    <IntDir>../Temp/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExecutablePath>$(VC_ExecutablePath_x64);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(FxCopDir);$(PATH);</ExecutablePath>
     <LibraryPath>$(VCInstallDir)\bin\x86_amd64;$(VCInstallDir)\bin;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
+    <OutDir>../Bin/</OutDir>
+    <IntDir>../Temp/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -95,8 +99,8 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)RayTracer.exe</OutputFile>
-      <AdditionalLibraryDirectories>../../libst/lib/$(Configuration);../../libst/ext/vc2008/lib/$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../libst/lib/$(Platform)/$(Configuration);../../libst/ext/vc2008/lib/$(Platform)/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype26.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,8 +115,8 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)RayTracer.exe</OutputFile>
-      <AdditionalLibraryDirectories>../../libst/lib/$(Configuration);../../libst/ext/vc2008/lib/$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../libst/lib/$(Platform)/$(Configuration);../../libst/ext/vc2008/lib/$(Platform)/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype26.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -130,8 +134,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)RayTracer.exe</OutputFile>
-      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../libst/lib/$(Configuration);../../libst/ext/vc2008/lib/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype26.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../libst/lib/$(Platform)/$(Configuration);../../libst/ext/vc2008/lib/$(Platform)/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -150,8 +154,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)RayTracer.exe</OutputFile>
-      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype231.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../libst/lib/$(Configuration);../../libst/ext/vc2008/lib/$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libst.lib;libpng.lib;jpeg.lib;zlib.lib;freetype26.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../libst/lib/$(Platform)/$(Configuration);../../libst/ext/vc2008/lib/$(Platform)/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
