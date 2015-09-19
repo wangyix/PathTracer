@@ -245,7 +245,7 @@ namespace STShapes
         unsigned int numSlices = kDefaultSlices,
         unsigned int numStacks = kDefaultStacks);
     STShape* CreateSphere(
-        float radius, const STPoint3& center = STPoint3::Zero(),
+        float radius, const STPoint3& center = STPoint3(0.f, 0.f, 0.f),
         unsigned int numSlices = kDefaultSlices,
         unsigned int numStacks = kDefaultStacks);
     STShape* CreateRect(float width, float height);

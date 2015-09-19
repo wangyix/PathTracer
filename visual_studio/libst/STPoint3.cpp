@@ -9,11 +9,6 @@
 
 #include "STVector3.h"
 
-//const STPoint3 STPoint3::Origin(0.0f, 0.0f, 0.0f);
-STPoint3 STPoint3::Zero() {
-    return STPoint3(0.f, 0.f, 0.f);
-}
-
 STPoint3::STPoint3()
 {
     // Don't intialize; needs to match Eigen behavior

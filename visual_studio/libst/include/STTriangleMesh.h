@@ -21,7 +21,7 @@ struct STVertex{
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
     STVertex() {}
-    STVertex(float x, float y, float z, float u=0, float v=0){
+    STVertex(float x, float y, float z, float u=0, float v=0) {
         pt=STPoint3(x,y,z);
     }
     STPoint3 pt;

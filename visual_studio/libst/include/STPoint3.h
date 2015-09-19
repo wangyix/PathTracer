@@ -22,9 +22,6 @@ private:
     float mx, my, mz;
 
 public:
-    //static const STPoint3 Origin;
-    static STPoint3 Zero();
-
     STPoint3();
     STPoint3(float x, float y, float z);
     //explicit STPoint3(const STVector3& v);
