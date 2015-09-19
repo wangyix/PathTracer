@@ -299,6 +299,7 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
         intersection->t = min_inter_t;
         intersection->point = toObjectSpace * min_inter_p;
         intersection->normal = toObjectInvTranspose * min_inter_p_n;
+        intersection->normal.normalize();
         return true;
     }
     return false;
@@ -413,6 +414,7 @@ STPoint3 Cylinder::uniformSampleSurface(STVector3* normal) const {
     }
 
     *normal = toObjectInvTranspose * p_n_unit;
+    normal->normalize();
     return toObjectSpace * p_unit;
 }
 

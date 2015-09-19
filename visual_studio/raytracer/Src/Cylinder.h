@@ -71,6 +71,12 @@ public:
         );*/
         toUnitCylinderSpace = toObjectSpace.inverse();
         toObjectInvTranspose = toUnitCylinderSpace.transpose();
+#if USE_EIGEN
+        // must do this for transposed transforms, otherwise the w of the resulting point/vector is wrong
+        toObjectInvTranspose(3, 0) = 0.f;
+        toObjectInvTranspose(3, 1) = 0.f;
+        toObjectInvTranspose(3, 2) = 0.f;
+#endif
     }
 
     void getAABB(const STTransform4& transform, AABB* aabb) const override;

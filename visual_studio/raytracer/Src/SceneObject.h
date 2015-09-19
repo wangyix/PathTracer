@@ -31,6 +31,12 @@ public:
         emittedPower(emittedPower)
     {
 #if USE_EIGEN
+        // must do this for transposed transforms, otherwise the w of the resulting point/vector is wrong
+        STTransform4& tInvTrans = *const_cast<STTransform4*>(&tInverseTranspose);
+        tInvTrans(3, 0) = 0.f;
+        tInvTrans(3, 1) = 0.f;
+        tInvTrans(3, 2) = 0.f;
+
         scale = transform.block(0, 0, 3, 1).norm(); // assuming transform does not warp shape
 #else
         scale = transform.columnnMagnitude(0);  // assuming transform does not warp shape
