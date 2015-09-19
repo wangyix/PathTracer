@@ -179,7 +179,13 @@ std::ostream& operator <<(std::ostream& stream, const STFace& f) {
     return stream;
 }
 
-std::string STTriangleMesh::LoadObj(std::vector<STTriangleMesh>& output_meshes, const std::string& filename){
+std::string STTriangleMesh::LoadObj(
+#if USE_EIGEN
+    std::vector<STTriangleMesh, Eigen::aligned_allocator<STTriangleMesh>>& output_meshes,
+#else
+    std::vector<STTriangleMesh>& output_meshes,
+#endif
+    const std::string& filename){
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 	std::string base;
@@ -199,14 +205,14 @@ std::string STTriangleMesh::LoadObj(std::vector<STTriangleMesh>& output_meshes, 
         output_meshes.emplace_back();
         STTriangleMesh* stmesh = &output_meshes.back();
         for(unsigned int vertex_id=0; vertex_id<mesh.positions.size()/3; vertex_id++)
-            stmesh->mVertices.emplace_back(mesh.positions[vertex_id*3],
-                                           mesh.positions[vertex_id*3+1],
-                                           mesh.positions[vertex_id*3+2]);
+            stmesh->mVertices.push_back(STVertex(mesh.positions[vertex_id*3],
+                                                mesh.positions[vertex_id*3+1],
+                                                mesh.positions[vertex_id*3+2]));
         for(unsigned int face_id=0; face_id<mesh.indices.size()/3; face_id++){
             int indices[3];for(int j=0;j<3;j++)indices[j]=mesh.indices[face_id*3+j];
-            stmesh->mFaces.emplace_back(stmesh->mVertices[indices[0]],
-                                        stmesh->mVertices[indices[1]],
-                                        stmesh->mVertices[indices[2]]);
+            stmesh->mFaces.push_back(STFace(stmesh->mVertices[indices[0]],
+                                            stmesh->mVertices[indices[1]],
+                                            stmesh->mVertices[indices[2]]));
         }
         if(mesh.normals.size()>0){
             for(unsigned int normal_id=0; normal_id<mesh.normals.size()/3; normal_id++)

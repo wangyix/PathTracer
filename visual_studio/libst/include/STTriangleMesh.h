@@ -17,6 +17,9 @@
 struct STFace;
 
 struct STVertex{
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     STVertex() {}
     STVertex(float x, float y, float z, float u=0, float v=0){
         pt=STPoint3(x,y,z);
@@ -26,6 +29,9 @@ struct STVertex{
 inline std::ostream& operator <<(std::ostream& stream, const STVertex& v);
 
 struct STFace{
+#if USE_EIGEN
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+#endif
     STFace(const STVertex& v0, const STVertex& v1, const STVertex& v2){
         v[0]=v0;v[1]=v1;v[2]=v2;
         //normals[0]=0;normals[1]=0;normals[2]=0;
@@ -69,17 +75,23 @@ public:
     //
     // Local members
     //
-    std::vector<STVertex> mVertices;
 #if USE_EIGEN
+    std::vector<STVertex, Eigen::aligned_allocator<STVertex>> mVertices;
     std::vector<STVector3, Eigen::aligned_allocator<STVector3>> mNormals;
+    std::vector<STFace, Eigen::aligned_allocator<STFace>> mFaces;
 #else
+    std::vector<STVertex> mVertices;
     std::vector<STVector3> mNormals;
+    std::vector<STFace> mFaces;
 #endif
     std::vector<STPoint2> mTexPos;
-    std::vector<STFace> mFaces;
     
+#if USE_EIGEN
+    static std::string LoadObj(std::vector<STTriangleMesh, Eigen::aligned_allocator<STTriangleMesh>>& output_meshes, const std::string& filename);
+#else
     static std::string LoadObj(std::vector<STTriangleMesh>& output_meshes, const std::string& filename);
-    
+#endif
+
     float mMaterialAmbient[4];
     float mMaterialDiffuse[4];
     float mMaterialSpecular[4];

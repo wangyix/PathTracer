@@ -1183,7 +1183,11 @@ void Scene::rtGroupObjects(int num) {
 
 void Scene::rtTriangleMesh(const std::string& file_name, const bool& counter_clockwise, const bool& smoothed_normal)
 {
+#if USE_EIGEN
+    std::vector<STTriangleMesh, Eigen::aligned_allocator<STTriangleMesh>> meshes;
+#else
     std::vector<STTriangleMesh> meshes;
+#endif
     STTriangleMesh::LoadObj(meshes, file_name);
     for (int i = 0; i < (int)meshes.size(); i++) {
         objects.push_back(new SceneObject(new TriangleMesh(meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
@@ -1300,7 +1304,7 @@ void Scene::buildAABBTrees()
     aabb_tree = new AABBTree(objects);
 }
 
-#define USE_ACCEL 0
+#define USE_ACCEL 1
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {

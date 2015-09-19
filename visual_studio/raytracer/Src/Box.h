@@ -112,7 +112,11 @@ private:
             cob(ind,2) = this->k[ind];
         }
         cob(3,3) = 1.;
+#if USE_EIGEN
+        cob = cob.inverse().eval();
+#else
         cob = cob.inverse();
+#endif
     }
     void initTriangles(){
         sides[0] = Triangle(o, o + j, o + i + j);
