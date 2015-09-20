@@ -20,29 +20,21 @@ AABB::AABB(float xmin, float xmax, float ymin, float ymax, float zmin, float zma
     this->zcenter = .5f*(zmin + zmax);
 }
 
-/*void AABB::rescale(const STTransform4& transform)
+void AABB::rescale(const STTransform4& transform)
 {
-    std::vector<STPoint3> pts;
-    pts.push_back(STPoint3(xmin, ymin, zmin));
-    pts.push_back(STPoint3(xmin, ymin, zmax));
-    pts.push_back(STPoint3(xmin, ymax, zmin));
-    pts.push_back(STPoint3(xmin, ymax, zmax));
-    pts.push_back(STPoint3(xmax, ymin, zmin));
-    pts.push_back(STPoint3(xmax, ymin, zmax));
-    pts.push_back(STPoint3(xmax, ymax, zmin));
-    pts.push_back(STPoint3(xmax, ymax, zmax));
-    pts[0] = transform * pts[0];
-    pts[1] = transform * pts[1];
-    pts[2] = transform * pts[2];
-    pts[3] = transform * pts[3];
-    pts[4] = transform * pts[4];
-    pts[5] = transform * pts[5];
-    pts[6] = transform * pts[6];
-    pts[7] = transform * pts[7];
+    STPoint3 pts[8];
+    pts[0] = transform * STPoint3(xmin, ymin, zmin);
+    pts[1] = transform * STPoint3(xmin, ymin, zmax);
+    pts[2] = transform * STPoint3(xmin, ymax, zmin);
+    pts[3] = transform * STPoint3(xmin, ymax, zmax);
+    pts[4] = transform * STPoint3(xmax, ymin, zmin);
+    pts[5] = transform * STPoint3(xmax, ymin, zmax);
+    pts[6] = transform * STPoint3(xmax, ymax, zmin);
+    pts[7] = transform * STPoint3(xmax, ymax, zmax);
     xmin = xmax = pts[0].x();
     ymin = ymax = pts[0].y();
     zmin = zmax = pts[0].z();
-    for(int i = 0;i < 8;++i)
+    for(int i = 1;i < 8;++i)
     {
         if (pts[i].x() < xmin) xmin = pts[i].x();
         if (pts[i].x() > xmax) xmax = pts[i].x();
@@ -54,7 +46,7 @@ AABB::AABB(float xmin, float xmax, float ymin, float ymax, float zmin, float zma
     xcenter = .5f*(xmin + xmax);
     ycenter = .5f*(ymin + ymax);
     zcenter = .5f*(zmin + zmax);
-}*/
+}
 
 static inline void intersectHelper(float* tin, bool* tinFound, float* tout, bool* toutFound,
                                    float eu, float ev, float ew, float du, float dv, float dw,

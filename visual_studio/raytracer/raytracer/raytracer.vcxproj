@@ -169,6 +169,7 @@
     <ClCompile Include="..\Src\Camera.cpp" />
     <ClCompile Include="..\Src\Cylinder.cpp" />
     <ClCompile Include="..\Src\main.cpp" />
+    <ClCompile Include="..\Src\QuadAA.cpp" />
     <ClCompile Include="..\Src\quaternionJuliaSet.cpp" />
     <ClCompile Include="..\Src\Scene.cpp" />
     <ClCompile Include="..\Src\semaphore.cc" />
@@ -185,6 +186,7 @@
     <ClInclude Include="..\Src\Camera.h" />
     <ClInclude Include="..\Src\Cylinder.h" />
     <ClInclude Include="..\Src\Intersection.h" />
+    <ClInclude Include="..\Src\QuadAA.h" />
     <ClInclude Include="..\Src\quaternionJuliaSet.h" />
     <ClInclude Include="..\Src\Ray.h" />
     <ClInclude Include="..\Src\RayTrace.h" />
