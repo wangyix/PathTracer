@@ -30,5 +30,6 @@
 //#include "AABBTree.h"
 //#include "UniformGrid.h"
 //#include "VolumetricTexture.h"
+#include "QuadAA.h"
 
 #endif

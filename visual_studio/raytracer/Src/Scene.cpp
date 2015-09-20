@@ -456,7 +456,6 @@ void Scene::AddCstToBrightPixel(int x, int y, const STColor3f& C_st) {
 
 
 void Scene::ProcessPixel(int x, int y) {
-
     // work on pixel (x, y)
     STColor3f C_sum_this_pixel(0.f);
 
@@ -1120,6 +1119,11 @@ void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v
     objects.push_back(new SceneObject(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
 }
 
+void Scene::rtQuadAA(int uIdx, bool uPosNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
+{
+    objects.push_back(new SceneObject(new QuadAA(uIdx, uPosNormal, xmin, xmax, ymin, ymax, zmin, zmax), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+}
+
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3)
 {
     objects.push_back(new SceneObject(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
@@ -1304,7 +1308,7 @@ void Scene::buildAABBTrees()
     aabb_tree = new AABBTree(objects);
 }
 
-#define USE_ACCEL 1
+#define USE_ACCEL 0
 
 bool Scene::Intersect(const Ray& ray, SceneObject const** object, Intersection* inter)
 {
@@ -1468,6 +1472,30 @@ void Scene::initializeSceneFromScript(std::string sceneFilename)
             v[1] = STPoint3(x2, y2, z2);
             v[2] = STPoint3(x3, y3, z3);
             rtTriangle(v[0], v[1], v[2]);
+        } else if (command == "QuadAA") {
+            char xyz, normalSign;
+            float xmin, xmax, ymin, ymax, zmin, zmax;
+            ss >> xyz >> normalSign >> xmin >> xmax >> ymin >> ymax >> zmin >> zmax;
+            int uIdx = -1;
+            switch (xyz) {
+            case 'x': uIdx = 0; break;
+            case 'y': uIdx = 1; break;
+            case 'z': uIdx = 2; break;
+            default:
+                printf("WARNING! QuadAA constant dimension not 'x', 'y', or 'z'. Using 'x'.\n");
+                uIdx = 0;
+                break;
+            }
+            bool uPosNormal;
+            switch (normalSign) {
+            case '+': uPosNormal = true; break;
+            case '-': uPosNormal = false; break;
+            default:
+                printf("WARNING! QuadAA u-dimension pos/neg normal not '+' or '-'.  Using '+'.\n");
+                uPosNormal = true;
+                break;
+            }
+            rtQuadAA(uIdx, uPosNormal, xmin, xmax, ymin, ymax, zmin, zmax);
         } else if (command == "Box") {
             float o1, o2, o3, x1, x2, x3, y1, y2, y3, z1, z2, z3;
             ss >> o1 >> o2 >> o3 >> x1 >> x2 >> x3 >> y1 >> y2 >> y3 >> z1 >> z2 >> z3;

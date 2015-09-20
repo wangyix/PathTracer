@@ -135,6 +135,7 @@ public:
     void rtSphere(const STPoint3& center, float radius);
     void rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3);
     void rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3);
+    void rtQuadAA(int uIdx, bool uPosNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
     void rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z);
     void rtBox(const STPoint3& center, const STVector3& size);
     void rtCylinder(const STPoint3& A, const STPoint3& B, float radius);

@@ -1,7 +1,7 @@
 #include "QuadAA.h"
 #include <assert.h>
 
-QuadAA::QuadAA(int uIdx, bool posNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
+QuadAA::QuadAA(int uIdx, bool uPosNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
     : uIdx(uIdx)
 {
     assert(xmin <= xmax);
@@ -9,7 +9,7 @@ QuadAA::QuadAA(int uIdx, bool posNormal, float xmin, float xmax, float ymin, flo
     assert(zmin <= zmax);
 
     name = "QuadAA";
-    uNormalDir = posNormal ? 1.f : -1.f;
+    uNormalDir = uPosNormal ? 1.f : -1.f;
 
     initializeUvwXyzArrays();
 
@@ -25,7 +25,7 @@ QuadAA::QuadAA(int uIdx, bool posNormal, float xmin, float xmax, float ymin, flo
 
     // u was set to the min for that dimension, if min/max are different for some reason
     if (xyzMin[uIdx] != xyzMax[uIdx]) {
-        printf("WARNING: QuadAA min/max for u-dimension are different! Will use min for u\n");
+        printf("WARNING: QuadAA min/max for u-dimension are different! Will use min for u.\n");
     }
 }
 
@@ -53,13 +53,13 @@ bool QuadAA::getIntersect(const Ray& ray, Intersection* intersection) const {
     float d_uvw[3];
     point3ToUvw(ray.e, e_uvw);
     vector3ToUvw(ray.d, d_uvw);
-    const float& e_u = e_uvw[0], e_v = e_uvw[1], e_w = e_uvw[2];
-    const float& d_u = d_uvw[0], d_v = d_uvw[1], d_w = d_uvw[2];
+    const float &e_u = e_uvw[0], &e_v = e_uvw[1], &e_w = e_uvw[2];
+    const float &d_u = d_uvw[0], &d_v = d_uvw[1], &d_w = d_uvw[2];
     
     if (d_u == 0.f) return false;   // ray is parallel with quad
 
     float p_uvw[3];     // intersection point
-    float& p_u = p_uvw[0], p_v = p_uvw[1], p_w = p_uvw[2];
+    float &p_u = p_uvw[0], &p_v = p_uvw[1], &p_w = p_uvw[2];
 
     float t = (u - e_u) / d_u;
     if (!ray.inRange(t)) return false;
@@ -75,6 +75,7 @@ bool QuadAA::getIntersect(const Ray& ray, Intersection* intersection) const {
     }
     intersection->normal = STVector3(0.f, 0.f, 0.f);
     intersection->normal(uIdx) = uNormalDir;
+    return true;
 }
 
 bool QuadAA::doesIntersect(const Ray& ray) const {
@@ -82,8 +83,8 @@ bool QuadAA::doesIntersect(const Ray& ray) const {
     float d_uvw[3];
     point3ToUvw(ray.e, e_uvw);
     vector3ToUvw(ray.d, d_uvw);
-    const float& e_u = e_uvw[0], e_v = e_uvw[1], e_w = e_uvw[2];
-    const float& d_u = d_uvw[0], d_v = d_uvw[1], d_w = d_uvw[2];
+    const float &e_u = e_uvw[0], &e_v = e_uvw[1], &e_w = e_uvw[2];
+    const float &d_u = d_uvw[0], &d_v = d_uvw[1], &d_w = d_uvw[2];
 
     if (d_u == 0.f) return false;   // ray is parallel with quad
 

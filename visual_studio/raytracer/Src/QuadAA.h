@@ -5,7 +5,7 @@
 
 class QuadAA : public Shape {
 public:
-    QuadAA(int uIdx, bool posNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
+    QuadAA(int uIdx, bool uPosNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
 
     bool getIntersect(const Ray& ray, Intersection* intersection) const override;
     bool doesIntersect(const Ray& ray) const override;
