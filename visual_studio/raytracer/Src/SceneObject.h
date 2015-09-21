@@ -66,13 +66,6 @@ public:
         return false;
     }
 
-    virtual SceneObject* getIntersectionWithObject(const Ray& ray, Intersection* inter) {
-        if (getIntersect(ray, inter)) {
-            return this;
-        }
-        return NULL;
-    }
-
     virtual float getSurfaceArea() const {
         return shape->getSurfaceArea() * scale * scale;
     }

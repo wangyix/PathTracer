@@ -175,8 +175,10 @@ SceneObject* AABBTreeNode::getIntersectionWithObject(const Ray& ray, Intersectio
 	//if(this->left)std::cout<<"left: "<<*(this->left->aabb)<<std::endl;
 	//if(this->right)std::cout<<"right: "<<*(this->right->aabb)<<std::endl;
     if(object != NULL){
-        //return object->getIntersectionWithObject(ray,intersected_object);
-        return object->getIntersectionWithObject(ray, inter);
+        if (object->getIntersect(ray, inter)) {
+            return object;
+        }
+        return NULL;
     }
     else{
         if(aabb.doesIntersect(ray)) {
