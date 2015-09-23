@@ -9,6 +9,7 @@
 #include "AABB.h"
 #include "AABBTree.h"
 #include "STTriangleMesh.h"
+#include "SceneObjectTransform.h"
 
 #if USE_EIGEN
 #include <Eigen/StdVector>

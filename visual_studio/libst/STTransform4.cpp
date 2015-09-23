@@ -323,6 +323,20 @@ float STTransform4::columnnMagnitude(int col) const {
     return sqrt(a*a + b*b + c*c);
 }
 
+float STTransform4::squaredNorm() const {
+    float sum = 0.f;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            float e = _Entries[i][j];
+            sum += e * e;
+        }
+    }
+    return sum;
+}
+
+float STTransform4::norm() const {
+    return sqrtf(squaredNorm());
+}
 
 STTransform4 operator * (const STTransform4& left, const STTransform4& right)
 {

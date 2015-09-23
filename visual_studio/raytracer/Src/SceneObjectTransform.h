@@ -98,7 +98,7 @@ protected:
 
 
 
-class TriangleMeshTriangle : public SceneObjectTransform {
+class TriangleMeshTriangle : public SceneObject {
 public:
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -107,7 +107,7 @@ public:
         // for TriangleMesh's AABBTree
 
         TriangleMeshTriangle(const Triangle& triangle)
-        : SceneObjectTransform(NULL, STTransform4::Identity(), NULL),    // shape and bsdf will be NULL
+        : SceneObject(NULL, NULL),    // shape and bsdf will be NULL
         triangle(triangle) {
         triangle.getAABB(STTransform4::Identity(), &aabb);
     }

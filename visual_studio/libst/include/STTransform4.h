@@ -66,6 +66,9 @@ public:
 
     float columnnMagnitude(int col) const;
 
+    float squaredNorm() const;
+    float norm() const;
+
 	friend std::ostream& operator<<(std::ostream& out,const STTransform4& t)
 	{
 		for(int i=0;i<4;i++)out<<"["<<t._Entries[i][0]<<", "<<t._Entries[i][1]<<", "<<t._Entries[i][2]<<", "<<t._Entries[i][3]<<"]"<<std::endl;return out;

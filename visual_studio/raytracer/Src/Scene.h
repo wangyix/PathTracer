@@ -165,6 +165,8 @@ public:
     //void rtUnbindTexture(){ currTexIndex = -1; }
     void rtSaveEveryNPercent(int n);
 
+    void addShapeWithCurrentSceneFileState(Shape* shape);
+
     void setRenderSubimage(int blocks_x, int blocks_y, int block_i, int block_j);
 
     void savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename);

@@ -2,6 +2,7 @@
 #include <Windows.h>
 
 #include "Scene.h"
+#include "SceneObjectTransform.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -1111,42 +1112,42 @@ void Scene::rtTranslate(float tx, float ty, float tz)
 
 void Scene::rtSphere(const STPoint3& center, float radius)
 {
-    objects.push_back(new SceneObject(new Sphere(center, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new Sphere(center, radius));
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3)
 {
-    objects.push_back(new SceneObject(new Triangle(v1, v2, v3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new Triangle(v1, v2, v3));
 }
 
 void Scene::rtQuadAA(int uIdx, bool uPosNormal, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
 {
-    objects.push_back(new SceneObject(new QuadAA(uIdx, uPosNormal, xmin, xmax, ymin, ymax, zmin, zmax), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new QuadAA(uIdx, uPosNormal, xmin, xmax, ymin, ymax, zmin, zmax));
 }
 
 void Scene::rtTriangle(const STPoint3& v1, const STPoint3& v2, const STPoint3& v3, const STPoint2& uv1, const STPoint2& uv2, const STPoint2& uv3)
 {
-    objects.push_back(new SceneObject(new Triangle(v1, v2, v3, uv1, uv2, uv3), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new Triangle(v1, v2, v3, uv1, uv2, uv3));
 }
 
 void Scene::rtBox(const STPoint3& o, const STPoint3& x, const STPoint3& y, const STPoint3& z)
 {
-    objects.push_back(new SceneObject(new Box(o, x, y, z), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new Box(o, x, y, z));
 }
 
 void Scene::rtBox(const STPoint3& center, const STVector3& size)
 {
-    objects.push_back(new SceneObject(new Box(center, size), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new Box(center, size));
 }
 
 void Scene::rtCylinder(const STPoint3& A, const STPoint3& B, float radius)
 {
-    objects.push_back(new SceneObject(new Cylinder(A, B, radius), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new Cylinder(A, B, radius));
 }
 
 void Scene::rtQJulia(const float4& mu, const float epsilon)
 {
-    objects.push_back(new SceneObject(new quaternionJuliaSet(mu, epsilon), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    addShapeWithCurrentSceneFileState(new quaternionJuliaSet(mu, epsilon));
 }
 
 void Scene::rtSaveEveryNPercent(int n)  {
@@ -1194,7 +1195,7 @@ void Scene::rtTriangleMesh(const std::string& file_name, const bool& counter_clo
 #endif
     STTriangleMesh::LoadObj(meshes, file_name);
     for (int i = 0; i < (int)meshes.size(); i++) {
-        objects.push_back(new SceneObject(new TriangleMesh(meshes[i], counter_clockwise, smoothed_normal), matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+        addShapeWithCurrentSceneFileState(new TriangleMesh(meshes[i], counter_clockwise, smoothed_normal));
     }
     //objects.push_back(new SceneObject(new TriangleMesh(file_name,counter_clockwise,smoothed_normal), currMaterial, &matStack.back(), currTexIndex));
 }
@@ -1302,6 +1303,14 @@ void Scene::buildUniformGrids()
 
     uniform_grid = new UniformGrid(objects, scene_bounding_box, scene_subdivision);
 }*/
+
+void Scene::addShapeWithCurrentSceneFileState(Shape* shape) {
+    if ((matStack.back() - STTransform4::Identity()).norm() < 0.001f) {
+        objects.push_back(new SceneObject(shape, newCopyBsdf(&*currBsdf), currEmittedPower));
+    } else {
+        objects.push_back(new SceneObjectTransform(shape, matStack.back(), newCopyBsdf(&*currBsdf), currEmittedPower));
+    }
+}
 
 void Scene::buildAABBTrees()
 {
