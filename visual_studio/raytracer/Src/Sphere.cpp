@@ -116,7 +116,7 @@ bool Sphere::getIntersect(const Ray& ray, Intersection* intersection) const {
     intersection->t = t;
     intersection->point = ray.at(t);
     intersection->normal = (intersection->point - center);
-    //intersection->normal.Normalize();     // sceneObject will normalize this later
+    intersection->normal.normalize();
     return true;
 }
 
