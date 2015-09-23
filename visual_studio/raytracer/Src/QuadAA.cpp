@@ -97,16 +97,15 @@ bool QuadAA::doesIntersect(const Ray& ray) const {
 }
 
 void QuadAA::getAABB(const STTransform4& transform, AABB* aabb) const {
-    float* xyzMin[3] = { &aabb->xmin, &aabb->ymin, &aabb->zmin };
-    float* xyzMax[3] = { &aabb->xmax, &aabb->ymax, &aabb->zmax };
     float uvwMin[3] = { u, vmin, wmin };
-    float uvwmax[3] = { u, vmax, wmax };
-
+    float uvwMax[3] = { u, vmax, wmax };
+    float xyzMin[3];
+    float xyzMax[3];
     for (int i = 0; i < 3; i++) {
-        *xyzMin[i] = uvwMin[xyz2uvw[i]];
-        *xyzMax[i] = uvwmax[xyz2uvw[i]];
+        xyzMin[i] = uvwMin[xyz2uvw[i]];
+        xyzMax[i] = uvwMax[xyz2uvw[i]];
     }
-
+    *aabb = AABB(xyzMin[0], xyzMax[0], xyzMin[1], xyzMax[1], xyzMin[2], xyzMax[2]);
     aabb->rescale(transform);
 }
 

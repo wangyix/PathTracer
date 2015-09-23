@@ -103,10 +103,10 @@ public:
 #if USE_EIGEN
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 #endif
-        // this class is basically a triangle wrapped in a SceneObject interface, used exclusively
-        // for TriangleMesh's AABBTree
+    // this class is basically a triangle wrapped in a SceneObject interface, used exclusively
+    // for TriangleMesh's AABBTree
 
-        TriangleMeshTriangle(const Triangle& triangle)
+    TriangleMeshTriangle(const Triangle& triangle)
         : SceneObject(NULL, NULL),    // shape and bsdf will be NULL
         triangle(triangle) {
         triangle.getAABB(STTransform4::Identity(), &aabb);
