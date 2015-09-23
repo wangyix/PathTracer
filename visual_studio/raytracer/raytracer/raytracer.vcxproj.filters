@@ -82,9 +82,6 @@
     <ClInclude Include="..\Src\Scene.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\SceneObject.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Src\Shape.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -113,6 +110,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Src\QuadAA.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\SceneObjectTransform.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Src\SceneObject.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

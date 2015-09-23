@@ -191,6 +191,7 @@
     <ClInclude Include="..\Src\Ray.h" />
     <ClInclude Include="..\Src\RayTrace.h" />
     <ClInclude Include="..\Src\Scene.h" />
+    <ClInclude Include="..\Src\SceneObjectTransform.h" />
     <ClInclude Include="..\Src\SceneObject.h" />
     <ClInclude Include="..\Src\semaphore.h" />
     <ClInclude Include="..\Src\Shape.h" />
