@@ -657,6 +657,7 @@ void Scene::Render() {
     }
     std::string pixelsImgFilename = filenameNoExtension + extension;
     std::string brightPixelsImgFilename = filenameNoExtension + "_bright" + extension;
+    std::string sumPixelsImgFilename = filenameNoExtension + "_sum" + extension;
 
 
 
@@ -710,7 +711,7 @@ void Scene::Render() {
         std::cout << percent << "% ";
 
         if (percent % saveEveryNPercent == 0) {
-            savePixels(pixelsImgFilename, brightPixelsImgFilename);
+            savePixels(pixelsImgFilename, brightPixelsImgFilename, sumPixelsImgFilename);
         }
 
     } while (percent < 100);
@@ -761,7 +762,7 @@ void Scene::Render() {
     }*/
 }
 
-void Scene::savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename) {
+void Scene::savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename, const std::string& sumPixelsFilename) {
 
     // each weighted contribution C_st is multiplied by C_ST_MULTIPLIER before being added to a pixel color;
     // it should be proprotional to (sampleRate^2).
@@ -793,6 +794,14 @@ void Scene::savePixels(const std::string& pixelsFilename, const std::string& bri
         }
         STImage im_bright(width, height, brightPixelsCopy);
         im_bright.Save(brightPixelsFilename);
+    }
+    {
+        std::vector<STColor3f> sumPixels(pixels.size());
+        for (int i = 0; i < sumPixels.size(); i++) {
+            sumPixels[i] = C_ST_MULTIPLIER * (pixels[i] + brightPixels[i]);
+        }
+        STImage im_sum(width, height, sumPixels);
+        im_sum.Save(sumPixelsFilename);
     }
 }
 

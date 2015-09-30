@@ -169,7 +169,7 @@ public:
 
     void setRenderSubimage(int blocks_x, int blocks_y, int block_i, int block_j);
 
-    void savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename);
+    void savePixels(const std::string& pixelsFilename, const std::string& brightPixelsFilename, const std::string& sumPixelsFilename);
 
     void buildAABBTrees();	////build the entire scene as an aabb-tree
 
