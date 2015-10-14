@@ -271,10 +271,18 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
         float b = 2.f * STVector2::Dot(d_xy, e_xy);
         float c = e_xy.LengthSq() - 1.f;
         float disc = b * b - 4 * a * c;
-        if (disc >= 0.f) {
-            float neg_b_over_2a = -b / (2.f * a);
-            float sqrtf_disc_over_2a = sqrtf(disc) / (2.f * a);
-            float t1 = neg_b_over_2a - sqrtf_disc_over_2a;
+        if (disc > 0.f) {   // > insteand of >= to ensure z != 0
+            float t1, t2;
+            if (disc <= 0.f) return false;    // ray misses bounding sphere (<= instead of < ensures z!=0)
+            if (b > 0.f) {
+                float z = 0.5f * (-b - sqrtf(disc));
+                t1 = z / a;
+                t2 = c / z;
+            } else {
+                float z = 0.5f * (-b + sqrtf(disc));
+                t1 = c / z;
+                t2 = z / a;
+            }
             if (ray_unit.inRange(t1) && t1 < min_inter_t) {
                 STPoint3 inter_side = ray_unit.at(t1);
                 if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
@@ -283,7 +291,6 @@ bool Cylinder::getIntersect(const Ray& ray, Intersection* intersection) const {
                     min_inter_p_n = STVector3(inter_side.x(), inter_side.y(), 0.f);
                 }
             }
-            float t2 = neg_b_over_2a + sqrtf_disc_over_2a;
             if (ray_unit.inRange(t2) && t2 < min_inter_t) {
                 STPoint3 inter_side = ray_unit.at(t2);
                 if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
@@ -341,17 +348,24 @@ bool Cylinder::doesIntersect(const Ray& ray) const {
         float b = 2.f * STVector2::Dot(d_xy, e_xy);
         float c = e_xy.LengthSq() - 1.f;
         float disc = b * b - 4 * a * c;
-        if (disc >= 0.f) {
-            float neg_b_over_2a = -b / (2.f * a);
-            float sqrtf_disc_over_2a = sqrtf(disc) / (2.f * a);
-            float t1 = neg_b_over_2a - sqrtf_disc_over_2a;
+        if (disc > 0.f) {   // > insteand of >= to ensure z != 0
+            float t1, t2;
+            if (disc <= 0.f) return false;    // ray misses bounding sphere (<= instead of < ensures z!=0)
+            if (b > 0.f) {
+                float z = 0.5f * (-b - sqrtf(disc));
+                t1 = z / a;
+                t2 = c / z;
+            } else {
+                float z = 0.5f * (-b + sqrtf(disc));
+                t1 = c / z;
+                t2 = z / a;
+            }
             if (ray_unit.inRange(t1)) {
                 STPoint3 inter_side = ray_unit.at(t1);
                 if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height
                     return true;
                 }
             }
-            float t2 = neg_b_over_2a + sqrtf_disc_over_2a;
             if (ray_unit.inRange(t2)) {
                 STPoint3 inter_side = ray_unit.at(t2);
                 if (inter_side.z() >= 0.f && inter_side.z() <= 1.f) {   // check if intersection is within cylinder height

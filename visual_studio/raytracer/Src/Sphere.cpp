@@ -105,11 +105,17 @@ bool Sphere::getIntersect(const Ray& ray, Intersection* intersection) const {
     float b = 2 * ray.d.dot(ray.e - center);
     float c = (ray.e - center).squaredNorm() - radius * radius;
     float disc = b * b - 4 * a * c;
-    if (disc < 0.) return false;
-    float neg_b_over_2a = -b / (2.f * a);
-    float sqrt_disc_over_2a = sqrtf(disc) / (2.f * a);
-    float t1 = neg_b_over_2a - sqrt_disc_over_2a;
-    float t2 = neg_b_over_2a + sqrt_disc_over_2a;     // we know t1 <= t2 since a > 0
+    float t1, t2;
+    if (disc <= 0.f) return false;    // ray misses bounding sphere (<= instead of < ensures z!=0)
+    if (b > 0.f) {
+        float z = 0.5f * (-b - sqrtf(disc));
+        t1 = z / a;  
+        t2 = c / z;
+    } else {
+        float z = 0.5f * (-b + sqrtf(disc));
+        t1 = c / z;
+        t2 = z / a;
+    }
     if (t2 < ray.t_min || t1 > ray.t_max) return false;
     // (!(ray.inRange(t1) || ray.inRange(t2))) return false;
     float t = (t1 >= ray.t_min ? t1 : t2);
@@ -125,13 +131,18 @@ bool Sphere::doesIntersect(const Ray& ray) const {
     float b = 2 * ray.d.dot(ray.e - center);
     float c = (ray.e - center).squaredNorm() - radius * radius;
     float disc = b * b - 4 * a * c;
-    if (disc < 0.) return false;
-    float neg_b_over_2a = -b / (2.f * a);
-    float sqrt_disc_over_2a = sqrtf(disc) / (2.f * a);
-    float t1 = neg_b_over_2a - sqrt_disc_over_2a;
-    float t2 = neg_b_over_2a + sqrt_disc_over_2a;     // we know t1 <= t2 since a > 0
-    if (t2 < ray.t_min || t1 > ray.t_max) return false;
-    return true;
+    float t1, t2;
+    if (disc <= 0.f) return false;    // ray misses bounding sphere (<= instead of < ensures z!=0)
+    if (b > 0.f) {
+        float z = 0.5f * (-b - sqrtf(disc));
+        t1 = z / a;
+        t2 = c / z;
+    } else {
+        float z = 0.5f * (-b + sqrtf(disc));
+        t1 = c / z;
+        t2 = z / a;
+    }
+    return (t2 >= ray.t_min && t1 <= ray.t_max);
 }
 
 float Sphere::getSurfaceArea() const {

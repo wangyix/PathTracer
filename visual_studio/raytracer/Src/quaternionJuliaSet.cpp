@@ -143,12 +143,17 @@ bool intersectBoundingSphere(const STPoint3& e, const STVector3& d_normalized, f
     float b = 2.f * c_to_e.dot(d_normalized);   //STVector3::Dot(c_to_e, d_normalized);
     float c = c_to_e.squaredNorm() - RADIUS * RADIUS;
     float disc = b * b - 4.f  * c;    // a = 1
-    if (disc < 0.f) return false;    // ray misses bounding sphere
-    float neg_half_b_over_2a = -0.5f * b;                   // a = 1
-    float half_sqrt_4ac_over_2a = 0.5f * sqrtf(disc);       // a = 1
-    *t1 = neg_half_b_over_2a - half_sqrt_4ac_over_2a;
-    *t2 = neg_half_b_over_2a + half_sqrt_4ac_over_2a;       // we know t1 <= t2
-    return (*t2 >= 0.f);
+    if (disc <= 0.f) return false;    // ray misses bounding sphere (<= instead of < ensures z!=0)
+    if (b > 0.f) {
+        float z = 0.5f * (-b - sqrtf(disc));
+        *t1 = z;        // z / a
+        *t2 = c / z;
+    } else {
+        float z = 0.5f * (-b + sqrtf(disc));
+        *t1 = c / z;
+        *t2 = z;        // z / a
+    }
+    return true;
 }
 
 
