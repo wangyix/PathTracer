@@ -46,7 +46,7 @@ bottom-left cell, the second process rendering the bottom-right cell, the third
 process rendering the top-left cell, and the fourth process rendering the top-right
 cell.  Each process will output a PNG image.  The output images then need to be added
 together to form the final image.  This was done using PngAdder.exe, which was a
-small program written using theh lodepng class.
+small program written using the lodepng library.
 
 
 Raytracer.exe can render the image (or subimage) in multiple threads, by adding
